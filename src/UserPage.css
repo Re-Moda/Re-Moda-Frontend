@@ -1,0 +1,1149 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Playfair+Display:wght@700&display=swap');
+
+body, .scrapbook-user-page {
+  font-family: 'Montserrat', Arial, sans-serif;
+  background: #faf7f4;
+  margin: 0;
+  padding: 0;
+}
+
+.scrapbook-user-page {
+  max-width: 1200px;
+  margin: 48px auto;
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: 0 8px 40px 0 #00000018, 0 2px 8px #e0bfff11;
+  padding: 56px 56px 40px 56px;
+  position: relative;
+  overflow: visible;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr;
+  gap: 48px;
+}
+
+.scrapbook-title {
+  grid-column: 1 / -1;
+  font-family: 'Playfair Display', serif;
+  font-size: 3.2rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #181818;
+  margin-bottom: 32px;
+  text-align: center;
+  text-transform: uppercase;
+  line-height: 1.1;
+  position: relative;
+  z-index: 2;
+}
+
+.scrapbook-main {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+.scrapbook-main.chat-mode {
+  grid-template-columns: 1fr 1.5fr;
+}
+
+/* Magazine-style avatar/closet section */
+.scrapbook-figure-box {
+  background: #fff;
+  border: 6px solid #181818;
+  border-radius: 32px;
+  width: 340px;
+  height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px #00000018, 0 2px 8px #e0bfff11;
+  position: relative;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.scrapbook-figure-box.drag-over {
+  background: #f7e8ff !important;
+  border-color: #bfae9e !important;
+  box-shadow: 0 0 0 8px #e0bfff33, 0 8px 32px #00000018;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.avatar-overlay-container {
+  position: relative;
+  width: 320px;
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-img {
+  width: 320px;
+  height: 500px;
+  object-fit: contain;
+  display: block;
+  z-index: 1;
+  border-radius: 24px;
+  box-shadow: 0 2px 24px #00000018;
+  background: #f8f8f8;
+}
+.avatar-clothes-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 320px;
+  height: 500px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.avatar-clothes-img {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.scrapbook-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 32px;
+  align-items: flex-end;
+}
+.scrapbook-category-btn {
+  background: #fff;
+  border: 2.5px solid #181818;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-size: 1.15rem;
+  color: #181818;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s, border 0.2s;
+  box-shadow: 0 2px 8px #00000011;
+  outline: none;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.scrapbook-category-btn.active, .scrapbook-category-btn:hover {
+  background: #181818;
+  border-color: #bfae9e;
+  color: #fff;
+  box-shadow: 0 2px 12px #bfae9e33;
+}
+
+.scrapbook-clothes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 18px 48px 18px;
+  position: relative;
+  min-width: 260px;
+  min-height: 320px;
+  box-shadow: 0 2px 12px #00000011;
+}
+
+/* Navigation buttons */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #181818;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #333;
+}
+
+.nav-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.prev-btn {
+  left: 8px;
+}
+
+.next-btn {
+  right: 8px;
+}
+
+.page-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(24, 24, 24, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.scrapbook-clothes-grid.with-categories {
+  display: grid;
+  grid-template-columns: 40px repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-rows: repeat(2, 180px);
+  grid-auto-flow: column;
+  gap: 0 40px;
+  align-items: stretch;
+  width: 100%;
+  height: 360px;
+  min-height: 360px;
+  max-height: 360px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.grid-category-column {
+  grid-row: 1 / span 100;
+  grid-column: 1;
+  background: none;
+  padding: 0;
+  border-right: none;
+  min-width: 40px;
+  max-width: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: stretch;
+  height: 100%;
+  justify-content: stretch;
+}
+
+.scrapbook-clothes-grid.with-categories > .scrapbook-clothes-card {
+  align-self: stretch;
+}
+
+.scrapbook-category-btn {
+  width: 50%;
+  min-height: 54px;
+  height: 54px;
+  border-radius: 0;
+  margin: 0;
+  border-bottom: 1.5px solid #181818;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 0.8rem;
+  padding-left: 0;
+}
+.scrapbook-category-btn:last-child {
+  border-bottom: none;
+}
+
+.scrapbook-clothes-card {
+  perspective: 800px;
+  position: relative;
+  background: #faf7f4;
+  border: 2.5px solid #181818;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 8px 14px 8px;
+  box-shadow: 0 2px 8px #00000011;
+  min-width: 110px;
+  min-height: 110px;
+  transition: box-shadow 0.2s, border 0.2s, background 0.2s;
+  font-family: 'Montserrat', Arial, sans-serif;
+  cursor: pointer;
+  width: 160px;
+  height: 180px;
+  min-width: 160px;
+  min-height: 180px;
+  max-width: 160px;
+  max-height: 180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  grid-row: span 1;
+}
+.scrapbook-clothes-card .clothes-card-front,
+.scrapbook-clothes-card .clothes-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.scrapbook-clothes-card .clothes-card-front {
+  z-index: 2;
+  background: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+}
+.scrapbook-clothes-card .clothes-card-back {
+  transform: rotateY(180deg);
+  z-index: 3;
+  background: #fff;
+  border-radius: 18px;
+  padding: 12px 8px 8px 8px;
+  box-sizing: border-box;
+  /* Fix mirrored content */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.scrapbook-clothes-card.flipped {
+  z-index: 10;
+}
+
+.scrapbook-clothes-card:not(.flipped) {
+  z-index: 1;
+}
+
+.scrapbook-clothes-card:hover {
+  box-shadow: 0 4px 18px #bfae9e33, 0 2px 8px #00000011;
+  border-color: #bfae9e;
+  background: #fff;
+}
+
+/* Info button for build mode */
+.clothes-info-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #181818;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.2s, border-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.clothes-info-btn:hover {
+  background: #f7e8ff;
+  border-color: #bfae9e;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.scrapbook-clothes-icon {
+  margin-bottom: 10px;
+}
+.scrapbook-clothes-caption {
+  font-size: 1.08rem;
+  color: #181818;
+  margin-top: 4px;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  opacity: 0.85;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.scrapbook-add-btn {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #181818;
+  color: #fff;
+  font-size: 2.4rem;
+  border: 2.5px solid #bfae9e;
+  box-shadow: 0 2px 8px #00000022;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  z-index: 2;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+.scrapbook-add-btn:hover {
+  background: #bfae9e;
+  color: #181818;
+  box-shadow: 0 4px 18px #bfae9e33;
+}
+
+.scrapbook-bottom-btns {
+  display: flex;
+  gap: 32px;
+  justify-content: right;
+  margin-top: 48px;
+  grid-column: 1 / -1;
+}
+
+.scrapbook-build-btn, .scrapbook-chat-btn {
+  font-size: 1.18rem;
+  padding: 16px 48px;
+  border-radius: 16px;
+  border: 2.5px solid #181818;
+  background: #fff;
+  color: #181818;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #00000011;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  font-family: 'Montserrat', Arial, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.scrapbook-build-btn:hover, .scrapbook-chat-btn:hover {
+  background: #181818;
+  color: #fff;
+  border-color: #bfae9e;
+}
+
+.avatar-clothes-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 320px;
+  height: 500px;
+  pointer-events: none;
+  z-index: 3;
+}
+.avatar-remove-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  color: #181818;
+  border: 2px solid #bfae9e;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 2px 8px #00000022;
+  cursor: pointer;
+  z-index: 10;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+.avatar-remove-btn:hover {
+  background: #181818;
+  color: #fff;
+  border-color: #bfae9e;
+}
+
+.avatar-tags-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.avatar-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #faf7f4;
+  border: 2px solid #bfae9e;
+  border-radius: 18px;
+  padding: 7px 18px 7px 16px;
+  font-size: 1.08rem;
+  color: #181818;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 8px #00000011;
+  margin-bottom: 4px;
+}
+.avatar-tag-remove {
+  background: none;
+  border: none;
+  color: #bfae9e;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-left: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.avatar-tag-remove:hover {
+  background: #bfae9e;
+  color: #fff;
+}
+
+.clothes-info-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+.clothes-info-tag {
+  background: #f7e8ff;
+  color: #181818;
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.clothes-info-desc-edit {
+  width: 100%;
+  min-height: 80px;
+  border: 1.5px solid #bfae9e;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-family: 'Montserrat', Arial, sans-serif;
+  padding: 8px 10px;
+  margin-top: 6px;
+  background: #faf7f4;
+  color: #181818;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border 0.2s, background 0.2s;
+  line-height: 1.4;
+  text-align: center;
+}
+.clothes-info-desc-edit:focus {
+  outline: none;
+  border: 2px solid #181818;
+  background: #fff;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Container for clothes grid and description */
+.clothes-and-description-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Build mode description display */
+.build-mode-description {
+  background: #fff;
+  border: 2.5px solid #181818;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 600px;
+  margin-top: 0;
+}
+
+.description-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.description-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: #181818;
+  margin: 0;
+  font-weight: 700;
+}
+
+.close-description-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #bfae9e;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.close-description-btn:hover {
+  background: #f7e8ff;
+  color: #181818;
+}
+
+.description-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.description-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.description-tag {
+  background: #f7e8ff;
+  color: #181818;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.description-text {
+  font-size: 0.95rem;
+  color: #181818;
+  font-family: 'Montserrat', Arial, sans-serif;
+  line-height: 1.5;
+  text-align: left;
+}
+
+@media (max-width: 1200px) {
+  .scrapbook-user-page {
+    max-width: 99vw;
+    padding: 18px 2vw 18px 2vw;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .scrapbook-main {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .scrapbook-figure-box {
+    width: 90vw;
+    max-width: 340px;
+    height: 60vw;
+    max-height: 520px;
+  }
+  .avatar-overlay-container {
+    width: 90vw;
+    max-width: 320px;
+    height: 60vw;
+    max-height: 500px;
+  }
+  .avatar-img, .avatar-clothes-svg {
+    width: 90vw;
+    max-width: 320px;
+    height: 60vw;
+    max-height: 500px;
+  }
+  .avatar-clothes-img {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+.avatar-clothes-svg.clickable {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.avatar-clothes-svg.clickable:hover {
+  opacity: 0.7;
+}
+
+/* Remove chips row and chip styles */
+.avatar-chips-row, .avatar-chip, .avatar-chip-remove {
+  display: none !important;
+}
+
+.avatar-accessory-img {
+  position: absolute;
+  left: 50%;
+  top: 60%;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Chat Interface Styles */
+.chat-container {
+  background: #fff;
+  border: 2.5px solid #181818;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  overflow: hidden;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  background: #181818;
+  color: #fff;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.close-chat-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.close-chat-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.chat-messages {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-welcome {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+}
+
+.chat-message {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.chat-message.user {
+  justify-content: flex-end;
+}
+
+.chat-message.assistant {
+  justify-content: flex-start;
+}
+
+.message-content {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.chat-message.user .message-content {
+  background: #181818;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message.assistant .message-content {
+  background: #f7e8ff;
+  color: #181818;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-container {
+  padding: 16px 20px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  border: 1.5px solid #bfae9e;
+  border-radius: 20px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-family: 'Montserrat', Arial, sans-serif;
+  resize: none;
+  min-height: 40px;
+  max-height: 100px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.chat-input:focus {
+  border-color: #181818;
+}
+
+.chat-input:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.send-btn {
+  background: #181818;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 60px;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: #333;
+}
+
+.send-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bfae9e;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.scrapbook-chat-btn.active {
+  background: #181818;
+  color: #fff;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(180, 160, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+.modal-content {
+  background: linear-gradient(135deg, #f7f0ff 60%, #e0e7ff 100%);
+  border-radius: 22px;
+  padding: 36px 28px 28px 28px;
+  box-shadow: 0 8px 32px rgba(120, 80, 200, 0.18), 0 2px 8px rgba(0,0,0,0.08);
+  min-width: 340px;
+  max-width: 95vw;
+  text-align: center;
+  border: 3px dashed #bfae9e;
+  animation: popIn 0.25s cubic-bezier(.68,-0.55,.27,1.55);
+  position: relative;
+  overflow: visible;
+}
+@keyframes popIn {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.modal-content h2 {
+  font-family: 'Playfair Display', 'Patrick Hand', cursive, serif;
+  color: #bfae9e;
+  margin-bottom: 18px;
+  font-size: 1.7rem;
+  letter-spacing: 0.04em;
+  text-shadow: 1px 1px 0 #fff0f5, 2px 2px 0 #e0e7ff;
+}
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  width: 90%;
+  margin: 0 auto 12px auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px dashed #bfae9e;
+  background: #f9f6ff;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
+  box-shadow: 0 1px 4px rgba(124,77,255,0.04);
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+.modal-content input:focus,
+.modal-content textarea:focus,
+.modal-content select:focus {
+  border: 2px solid #a18cd1;
+}
+.modal-content button {
+  background: linear-gradient(90deg, #f7e8ff 0%, #bfae9e 100%);
+  color: #7c4dff;
+  border: 2px dashed #bfae9e;
+  border-radius: 12px;
+  padding: 10px 28px;
+  font-size: 1.1rem;
+  font-family: 'Montserrat', Arial, sans-serif;
+  margin-top: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #bfae9e33;
+  transition: background 0.18s, transform 0.12s, color 0.18s;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.modal-content button:active {
+  transform: scale(0.97);
+}
+.modal-content img {
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px #bfae9e33;
+  border: 2.5px dashed #bfae9e;
+  background: #f7f0ff;
+}
+.modal-sticker {
+  position: absolute;
+  top: -24px;
+  left: -24px;
+  background: #fff0f5;
+  border: 2.5px dashed #ffb6c1;
+  color: #c71585;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.1rem;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #f8c8dc;
+  transform: rotate(-7deg);
+  z-index: 10;
+}
+.modal-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #fff0f5;
+  border: 2px dashed #bfae9e;
+  color: #bfae9e;
+  font-size: 1.3rem;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 1px 1px 0 #f8c8dc;
+  font-family: 'Patrick Hand', cursive;
+  transition: background 0.18s, color 0.18s;
+  z-index: 20;
+}
+.modal-close-btn:hover {
+  background: #ffe4fa;
+  color: #7c4dff;
+}
+
+/* Generated image styles */
+.generated-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 12px;
+  margin-top: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e0bfff;
+  background: #fff;
+}
+
+/* Generate image button */
+.generate-image-btn {
+  background: linear-gradient(135deg, #e0bfff, #bfae9e);
+  border: 2px solid #181818;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: #181818;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.generate-image-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #bfae9e, #e0bfff);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.generate-image-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generate-image-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Outfit suggestion in chat */
+.chat-outfit-suggestion {
+  margin: 24px 0 0 0;
+  padding: 18px 16px 16px 16px;
+  background: #f7e8ff;
+  border: 2.5px dashed #e0bfff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px #bfae9e22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.outfit-pieces-row {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.outfit-piece {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.outfit-piece-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #bfae9e;
+  margin-bottom: 2px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 #fff;
+}
+.outfit-piece-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 2px solid #e0bfff;
+  background: #fff;
+  box-shadow: 0 2px 8px #bfae9e22;
+  margin-bottom: 2px;
+}
+.outfit-piece-placeholder {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f3f3;
+  border-radius: 10px;
+  border: 2px dashed #e0bfff;
+  color: #bfae9e;
+  font-size: 0.9rem;
+}
+.wear-outfit-btn {
+  background: linear-gradient(135deg, #e0bfff, #bfae9e);
+  border: 2px solid #181818;
+  border-radius: 10px;
+  padding: 8px 22px;
+  font-size: 1.05rem;
+  color: #181818;
+  cursor: pointer;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 8px #bfae9e22;
+  margin-top: 8px;
+  transition: all 0.18s;
+}
+.wear-outfit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #bfae9e, #e0bfff);
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 4px 12px #bfae9e33;
+}
+.wear-outfit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
