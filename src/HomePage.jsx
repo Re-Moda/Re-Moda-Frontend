@@ -22,7 +22,7 @@ const HomePage = (props) => {
   };
 
   const handleLogin = () => {
-    if (props.onLogin) props.onLogin();
+    window.location.href = "/signin";
   };
 
   return (
@@ -40,7 +40,7 @@ const HomePage = (props) => {
           <div className="nav-buttons">
             <button onClick={scrollToMission}>About Us</button>
             <button onClick={handleLogin}>Log In</button>
-            <button>Sign Up</button>
+            <button onClick={props.onSignUp}>Sign Up</button>
           </div>
         </div>
       </nav>
