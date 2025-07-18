@@ -51,10 +51,6 @@ const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
           <span className="idcard-value idcard-line">{name}</span>
         </div>
         <div className="idcard-field">
-          <span className="idcard-label">EMAIL</span>
-          <span className="idcard-value idcard-line">{email}</span>
-        </div>
-        <div className="idcard-field">
           <span className="idcard-label">ID</span>
           <span className="idcard-value idcard-line">MODA-{CURRENT_YEAR}</span>
         </div>
@@ -63,7 +59,9 @@ const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
         <div className="idcard-seal">
           <img src={logo} alt="Re:Moda Logo Sticker" className="idcard-seal-logo" />
         </div>
-        <div className="idcard-year">{CURRENT_YEAR}</div>
+        <div className="idcard-year">{CURRENT_YEAR}
+          <div className="idcard-role" style={{ fontSize: '1.1rem', color: '#b48bbd', fontWeight: 'bold', marginTop: '2px', letterSpacing: '0.08em' }}>Stylist</div>
+        </div>
       </div>
     </div>
   </div>
@@ -76,6 +74,19 @@ const securityQuestions = [
   "What city were you born in?",
   "What is your favorite food?"
 ];
+
+// Helper to copy computed styles from src to dest recursively
+function copyComputedStyles(src, dest) {
+  const computed = window.getComputedStyle(src);
+  for (let key of computed) {
+    dest.style[key] = computed.getPropertyValue(key);
+  }
+  for (let i = 0; i < src.children.length; i++) {
+    if (dest.children[i]) {
+      copyComputedStyles(src.children[i], dest.children[i]);
+    }
+  }
+}
 
 const SignUpPage = () => {
   const [step, setStep] = useState(1); // Start directly on the profile form
@@ -113,9 +124,20 @@ const SignUpPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setShowAnimation(true);
+    // If a photo was uploaded, wait for photoPreview to be set before showing the card
+    if (photo && !photoPreview) {
+      // Wait until photoPreview is set (FileReader is async)
+      await new Promise((resolve) => {
+        const check = () => {
+          if (photoPreview) resolve();
+          else setTimeout(check, 50);
+        };
+        check();
+      });
+    }
     setTimeout(() => {
       setShowIdCard(true);
       setBgClass("idcard-bg");
@@ -129,13 +151,52 @@ const SignUpPage = () => {
   };
 
   const handleSaveCard = async () => {
-    if (idCardRef.current) {
-      const canvas = await html2canvas(idCardRef.current, { backgroundColor: null });
-      const link = document.createElement("a");
-      link.download = `remoda-id-card.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+    if (!idCardRef.current) return;
+
+    // Clone the card and append to body for a clean capture
+    const clone = idCardRef.current.cloneNode(true);
+    copyComputedStyles(idCardRef.current, clone); // <-- Copy styles!
+    clone.style.position = 'fixed';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.opacity = '1';
+    clone.style.transform = 'none';
+    clone.style.boxShadow = 'none';
+    clone.style.display = 'block';
+    document.body.appendChild(clone);
+
+    // Wait for all images in the clone to load
+    const images = clone.querySelectorAll('img');
+    await Promise.all(Array.from(images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = img.onerror = resolve;
+      });
+    }));
+
+    // Wait a short time for rendering
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Capture the clone
+    const canvas = await window.html2canvas
+      ? window.html2canvas(clone, { backgroundColor: null, useCORS: true })
+      : await import('html2canvas').then(m => m.default(clone, { backgroundColor: null, useCORS: true }));
+
+    document.body.removeChild(clone);
+
+    if (!canvas) {
+      alert('Failed to capture the card.');
+      return;
     }
+    const dataUrl = canvas.toDataURL('image/png');
+    if (!dataUrl || dataUrl.length < 100) {
+      alert('The downloaded image is empty. Please make sure your card is visible and try again.');
+      return;
+    }
+    const link = document.createElement('a');
+    link.download = 'remoda-id-card.png';
+    link.href = dataUrl;
+    link.click();
   };
 
   const goToProfile = () => {
@@ -232,8 +293,13 @@ const SignUpPage = () => {
           <div className={startCardAnim ? "idcard-twirl-in" : ""} style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
             <IdCard ref={idCardRef} name={form.name} email={form.email} photo={photoPreview} avatarType={avatarType} />
             <div style={{ display: 'flex', gap: '1.2rem', marginTop: '1.2rem' }}>
-              <button className="magazine-signup-btn" onClick={handleSaveCard}>Save Card</button>
-              <button className="magazine-signup-btn" onClick={goToProfile}>Next</button>
+              <button className="magazine-signup-btn download-btn" onClick={handleSaveCard} aria-label="Download ID Card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="4" y="17" width="16" height="4" rx="2" fill="currentColor"/>
+                </svg>
+              </button>
+              <button className="magazine-signup-btn" onClick={goToProfile}>Sign In</button>
             </div>
           </div>
         )}
