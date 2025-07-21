@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import "./SignUpPage.css";
 import html2canvas from "html2canvas";
 import logo from "./assets/logo.png";
+import axios from "axios";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -30,7 +31,7 @@ const PlaceholderPhoto = () => (
   </div>
 );
 
-const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
+const IdCard = React.forwardRef(({ username, email, photo, avatarType }, ref) => (
   <div className="idcard-vertical" ref={ref}>
     <div className="idcard-sidebar">
       <span className="idcard-vertical-brand">RE:MODA</span>
@@ -47,8 +48,8 @@ const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
       </div>
       <div className="idcard-fields">
         <div className="idcard-field">
-          <span className="idcard-label">NAME</span>
-          <span className="idcard-value idcard-line">{name}</span>
+          <span className="idcard-label">USER</span>
+          <span className="idcard-value idcard-line">{username}</span>
         </div>
         <div className="idcard-field">
           <span className="idcard-label">ID</span>
@@ -92,7 +93,7 @@ const SignUpPage = () => {
   const [step, setStep] = useState(1); // Start directly on the profile form
   const [avatarType] = useState("boy"); // Default to boy icon
   const [form, setForm] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
     securityQuestion: securityQuestions[0],
@@ -126,6 +127,20 @@ const SignUpPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    try {
+      const response = await axios.post("http://localhost:3000/auth/signup", {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        security_question: form.securityQuestion,
+        security_answer: form.securityAnswer
+      }) 
+      console.log("Sign up successful.", response.data);
+    } catch (error) {
+      console.error("Error signing up.", error);
+    }
+
     setShowAnimation(true);
     // If a photo was uploaded, wait for photoPreview to be set before showing the card
     if (photo && !photoPreview) {
@@ -215,7 +230,7 @@ const SignUpPage = () => {
                 <span className="window-dot yellow"></span>
                 <span className="window-dot green"></span>
               </div>
-              Create Your Profile
+              Sign Up
             </div>
             <div className="desktop-window-content">
               <div className="magazine-photo-section">
@@ -236,12 +251,12 @@ const SignUpPage = () => {
                 </label>
               </div>
               <form className="magazine-signup-form" onSubmit={handleSubmit}>
-                <label className="magazine-label">Name</label>
+                <label className="magazine-label">Username</label>
                 <input
                   type="text"
-                  name="name"
-                  placeholder="Your Name"
-                  value={form.name}
+                  name="username"
+                  placeholder="Your Username"
+                  value={form.username}
                   onChange={handleChange}
                   required
                 />
@@ -291,7 +306,7 @@ const SignUpPage = () => {
         )}
         {showIdCard && (
           <div className={startCardAnim ? "idcard-twirl-in" : ""} style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-            <IdCard ref={idCardRef} name={form.name} email={form.email} photo={photoPreview} avatarType={avatarType} />
+            <IdCard ref={idCardRef} username={form.username} email={form.email} photo={photoPreview} avatarType={avatarType} />
             <div style={{ display: 'flex', gap: '1.2rem', marginTop: '1.2rem' }}>
               <button className="magazine-signup-btn download-btn" onClick={handleSaveCard} aria-label="Download ID Card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px' }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

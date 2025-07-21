@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./UserPage.css";
 import avatar from "./assets/avatar.png";
 import model6 from "./assets/model6.jpg";
@@ -140,6 +140,12 @@ const UserPage = (props) => {
   const [pendingOutfit, setPendingOutfit] = useState(null); // For chat outfit suggestion
   const [pendingOutfitImages, setPendingOutfitImages] = useState(null);
 
+  useEffect(() => {
+    if (!sessionStorage.getItem("token")) {
+      window.location.href = "/signin";
+    }
+  }, []);
+  
   // Remove a worn item by type
   const handleRemove = (type) => {
     setWornItems((prev) => {

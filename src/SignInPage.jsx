@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./SignUpPage.css";
 import logo from "./assets/logo.png";
+import axios from "axios";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -20,7 +21,7 @@ const GirlIcon = ({ size = 100 }) => (
   </svg>
 );
 
-const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
+const IdCard = React.forwardRef(({ username, photo, avatarType }, ref) => (
   <div className="idcard-vertical" ref={ref}>
     <div className="idcard-sidebar">
       <span className="idcard-vertical-brand">RE:MODA</span>
@@ -37,12 +38,8 @@ const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
       </div>
       <div className="idcard-fields">
         <div className="idcard-field">
-          <span className="idcard-label">NAME</span>
-          <span className="idcard-value idcard-line">{name}</span>
-        </div>
-        <div className="idcard-field">
-          <span className="idcard-label">EMAIL</span>
-          <span className="idcard-value idcard-line">{email}</span>
+          <span className="idcard-label">USER</span>
+          <span className="idcard-value idcard-line">{username}</span>
         </div>
         <div className="idcard-field">
           <span className="idcard-label">ID</span>
@@ -60,13 +57,13 @@ const IdCard = React.forwardRef(({ name, email, photo, avatarType }, ref) => (
 ));
 
 const SignInPage = () => {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ username: "", password: "" });
   const [showIdCard, setShowIdCard] = useState(false);
   const [loading, setLoading] = useState(false);
   // Placeholder user data for demo
   const userData = {
     name: "Jane Doe",
-    email: form.email,
+    username: form.username,
     avatarType: "boy",
     photo: null
   };
@@ -75,14 +72,27 @@ const SignInPage = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSignIn = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
-    setShowIdCard(true);
+    setShowIdCard(false);
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const response = await axios.post("http://localhost:3000/auth/signin", {
+        username: form.username,  // payload to send to backend
+        password: form.password
+      })
+      sessionStorage.setItem("token", response.data.token);  // save token to session storage
+      setShowIdCard(true);
+      setTimeout(() => {
+        setLoading(false);
+        window.location.href = "/user";
+      }, 2000);
+      console.log("Sign in successful.", response.data);
+    } catch (error) {
       setLoading(false);
-      window.location.href = "/user";
-    }, 2000);
+      console.error("Error signing in.", error);
+    }
   };
 
   return (
@@ -100,12 +110,12 @@ const SignInPage = () => {
             </div>
             <div className="desktop-window-content">
               <form className="magazine-signup-form" onSubmit={handleSignIn} style={{ minWidth: 320 }}>
-                <label className="magazine-label">Email</label>
+                <label className="magazine-label">Username</label>
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="you@moda.com"
-                  value={form.email}
+                  type="username"
+                  name="username"
+                  placeholder="Your Username"
+                  value={form.username}
                   onChange={handleChange}
                   required
                 />
@@ -124,7 +134,7 @@ const SignInPage = () => {
           </div>
         ) : (
           <div className="idcard-twirl-in" style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-            <IdCard name={userData.name} email={userData.email} photo={userData.photo} avatarType={userData.avatarType} />
+            <IdCard username={userData.username} photo={userData.photo} avatarType={userData.avatarType} />
             {loading && (
               <div style={{ width: 220, marginTop: 24, textAlign: 'center' }}>
                 <div style={{ fontWeight: 600, marginBottom: 8 }}>Logging in...</div>
