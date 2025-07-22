@@ -5,6 +5,7 @@ import model6 from "./assets/model6.jpg";
 import model7 from "./assets/model7.mp4";
 import model8 from "./assets/model8.jpg";
 import shirt from "./assets/shirt.png";
+import axios from "axios";
 
 const categories = [
   "All",
@@ -14,40 +15,6 @@ const categories = [
   "Fav.",
   "Recurr.",
   "unused"
-];
-
-const clothes = [
-  { 
-    type: "shirt", 
-    id: 1, 
-    tags: ["cotton", "blue"], 
-    description: "A comfy blue cotton shirt perfect for casual days. Soft to the touch and breathable fabric that keeps you cool. Great for layering or wearing on its own. Pairs well with denim or khaki pants." 
-  },
-  { 
-    type: "pant", 
-    id: 2, 
-    tags: ["denim", "black"], 
-    description: "Classic black denim pants with a modern fit. Versatile staple that goes with everything in your wardrobe. Comfortable stretch denim that moves with you. Perfect for both casual and dressy occasions." 
-  },
-  { 
-    type: "pant", 
-    id: 3, 
-    tags: ["linen", "white"], 
-    description: "Breezy white linen pants for warm weather. Lightweight and breathable fabric that's perfect for summer days. The natural texture adds character while keeping you cool and comfortable." 
-  },
-  { 
-    type: "shirt", 
-    id: 4, 
-    tags: ["silk", "pink"], 
-    description: "Elegant pink silk blouse with a sophisticated drape. Luxurious fabric that feels amazing against your skin. Perfect for dressing up any outfit while staying comfortable throughout the day." 
-  },
-  {
-    type: "shirt",
-    id: 5,
-    tags: ["shirt"],
-    description: "A fancy shirt accessory!",
-    image: shirt
-  }
 ];
 
 const typeLabels = {
@@ -108,9 +75,9 @@ const UserPage = (props) => {
   // Track user-edited descriptions by id
   const [descriptions, setDescriptions] = useState(() => {
     const initial = {};
-    clothes.forEach((item) => {
-      initial[item.id] = item.description;
-    });
+    // clothes.forEach((item) => { // REMOVED
+    //   initial[item.id] = item.description; // REMOVED
+    // }); // REMOVED
     return initial;
   });
   // Track worn items by type (e.g., { shirt: {...}, pant: {...} })
@@ -127,7 +94,9 @@ const UserPage = (props) => {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 4;
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [closetItems, setClosetItems] = useState(clothes);
+  // Read closet items from sessionStorage
+  const [closetItems, setClosetItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -139,6 +108,24 @@ const UserPage = (props) => {
   // The avatar on the left should always remain the same, regardless of chat activity
   const [pendingOutfit, setPendingOutfit] = useState(null); // For chat outfit suggestion
   const [pendingOutfitImages, setPendingOutfitImages] = useState(null);
+
+  useEffect(() => {
+    const fetchCloset = async () => {
+      const jwtToken = sessionStorage.getItem("token");
+      try {
+        const response = await axios.get("http://localhost:3000/clothing-items", {
+          headers: { Authorization: `Bearer ${jwtToken}` }
+        });
+        setClosetItems(response.data); // or response.data.items if your backend returns { items: [...] }
+      } catch (error) {
+        console.error("Failed to fetch closet items:", error);
+      }
+      setLoading(false);
+    };
+    fetchCloset();
+  }, []);
+
+  if (loading) return <div>Loading your closet...</div>;
 
   useEffect(() => {
     if (!sessionStorage.getItem("token")) {

@@ -60,6 +60,7 @@ const SignInPage = () => {
   const [form, setForm] = useState({ username: "", password: "" });
   const [showIdCard, setShowIdCard] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   // Placeholder user data for demo
   const userData = {
     name: "Jane Doe",
@@ -76,6 +77,7 @@ const SignInPage = () => {
     e.preventDefault();
     setShowIdCard(false);
     setLoading(true);
+    setErrorMsg("");
 
     try {
       const response = await axios.post("http://localhost:3000/auth/signin", {
@@ -86,11 +88,16 @@ const SignInPage = () => {
       setShowIdCard(true);
       setTimeout(() => {
         setLoading(false);
-        window.location.href = "/user";
+        window.location.href = "/uploads";
       }, 2000);
       console.log("Sign in successful.", response.data);
     } catch (error) {
       setLoading(false);
+      if (error.response && error.response.status === 401) {
+        setErrorMsg("Incorrect username or password. Please try again.");
+      } else {
+        setErrorMsg("An unexpected error occurred. Please try again.");
+      }
       console.error("Error signing in.", error);
     }
   };
@@ -128,7 +135,49 @@ const SignInPage = () => {
                   onChange={handleChange}
                   required
                 />
+                {errorMsg && <div style={{ color: '#d72660', fontWeight: 600, margin: '8px 0', textAlign: 'center' }}>{errorMsg}</div>}
                 <button type="submit" className="magazine-signup-btn">Sign In</button>
+                <button
+                  type="button"
+                  className="magazine-signup-btn"
+                  style={{
+                    marginTop: 10,
+                    background: 'linear-gradient(90deg, #ede9fe 0%, #c4b5fd 100%)',
+                    color: '#7c3aed',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: '1.08rem',
+                    width: '100%',
+                    boxShadow: '0 2px 8px #e3f6fd44',
+                    cursor: 'pointer',
+                    transition: 'background 0.18s',
+                    letterSpacing: 0.01,
+                  }}
+                  onClick={() => window.location.href = '/forgot-password'}
+                >
+                  Forgot password?
+                </button>
+                <button
+                  type="button"
+                  className="magazine-signup-btn"
+                  style={{
+                    marginTop: 10,
+                    background: '#ede9fe',
+                    color: '#7c3aed',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    fontSize: '1.08rem',
+                    width: '100%',
+                    boxShadow: '0 2px 8px #e3f6fd44',
+                    cursor: 'pointer',
+                    transition: 'background 0.18s',
+                  }}
+                  onClick={() => window.location.href = '/signup'}
+                >
+                  Back to Sign Up
+                </button>
               </form>
             </div>
           </div>
