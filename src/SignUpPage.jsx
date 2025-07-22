@@ -350,7 +350,7 @@ const SignUpPage = () => {
                       src={AVATAR_IMAGES[selectedAvatarIdx === null ? 0 : selectedAvatarIdx]}
                       alt={`Avatar ${(selectedAvatarIdx === null ? 0 : selectedAvatarIdx) + 1}`}
                       className={`carousel-avatar-img selected${avatarLocked ? ' locked' : ''}`}
-                      style={{ opacity: 1, transform: 'scale(1)', zIndex: 2, border: avatarLocked ? '3px solid #22c55e' : '3px solid #7c3aed', height: 180, width: 90 }}
+                      style={{ opacity: 1, transform: 'scale(1)', zIndex: 2, border: avatarLocked ? '3px solid #22c55e' : '3px solid #7c3aed', height: 320, width: 160 }}
                       onClick={() => { if (!avatarLocked) setAvatarError(""); }}
                     />
                   </div>
@@ -368,13 +368,10 @@ const SignUpPage = () => {
                     >Change</button>
                   )}
                 </div>
-                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 32 }}>
-                  <img src={favStar} alt="Favorite Star" style={{ width: 100, height: 100, filter: 'drop-shadow(0 2px 8px #b7e6e0)', display: 'block' }} />
-                </div>
                 {avatarError && <div style={{ color: '#d72660', fontWeight: 600, marginTop: 4 }}>{avatarError}</div>}
               </div>
               {/* Right: Form fields */}
-              <div style={{ flex: 1, minWidth: 260, maxWidth: 340, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+              <div style={{ flex: 1, minWidth: 400, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
                 <form className="magazine-signup-form" onSubmit={handleSubmit}>
                   <label className="magazine-label">Username</label>
                   <input

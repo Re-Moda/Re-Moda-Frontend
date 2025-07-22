@@ -849,7 +849,7 @@
   border: 3px solid #7a9cc6;
   border-radius: 0.5rem;
   box-shadow: 0 8px 32px 0 rgba(80, 60, 60, 0.18), 0 0 0 6px #b3d1f7;
-  width: 620px;
+  width: 800px;
   max-width: 98vw;
   margin: 0 auto;
   margin-top: 2.5rem;
@@ -897,7 +897,7 @@
   padding: 1.5rem 1.5rem 1.2rem 1.5rem;
   display: flex;
   flex-direction: row;
-  gap: 1.5rem;
+  gap: 48px;
   align-items: flex-start;
   background: #f8f8f8;
 }
