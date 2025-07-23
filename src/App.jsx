@@ -6,6 +6,7 @@ import UserPage from "./UserPage.jsx";
 import SignUpPage from "./SignUpPage.jsx";
 import SignInPage from "./SignInPage.jsx";
 import ForgotPasswordPage from "./ForgotPasswordPage.jsx";
+import ErrorBoundary from "./ErrorBoundary.jsx";
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
         <Route path="/" element={<HomePage onSignUp={() => window.location.href = '/signup'} />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/signin" element={<SignInPage />} />
-        <Route path="/user" element={<UserPage />} />
+        <Route path="/user" element={<ErrorBoundary><UserPage /></ErrorBoundary>} />
         <Route path="/uploads" element={<UploadsPage />} />
         <Route path="/upload" element={<Navigate to="/uploads" replace />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

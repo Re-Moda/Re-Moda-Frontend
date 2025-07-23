@@ -23,11 +23,18 @@ const ForgotPasswordPage = () => {
     setSuccessMsg("");
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:3000/auth/forgot-password", {
-        username: form.username
+      const response = await fetch("http://localhost:3000/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: form.username })
       });
-      setFetchedQuestion(response.data.security_question);
-      setQuestionFetched(true);
+      const data = await response.json();
+      if (data.success) {
+        setFetchedQuestion(data.data.security_question);
+        setQuestionFetched(true);
+      } else {
+        setErrorMsg("User not found or error fetching question.");
+      }
     } catch (error) {
       setErrorMsg("User not found or error fetching question.");
     }
