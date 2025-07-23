@@ -1,13 +1,16 @@
 body {
-    background: radial-gradient(
-    ellipse 120% 100% at 50% 70%,
-    #f8bbd0 0%,   /* pastel pink at the bottom */
-    #b39ddb 40%  /* pastel purple */);
-    margin: 20px;
+    margin: 0;
 }
+
 .thrift-page-container {
     display: flex;
     flex-direction: column;
+    background: radial-gradient(
+    ellipse 120% 100% at 50% 70%,
+    #f8bbd0 0%,   /* pastel pink at the bottom */
+    #b39ddb 40%);  /* pastel purple); */
+    margin: 0;
+    padding: 20px;
 }
 .map-info-container-wrapper {
     display: flex;
