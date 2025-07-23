@@ -323,65 +323,109 @@ const SignUpPage = () => {
               </div>
               Sign Up
             </div>
-            <div className="desktop-window-content" style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', gap: 32 }}>
-              {/* Left: Upload photo (optional) */}
-              <div className="magazine-photo-section" style={{ minWidth: 200, maxWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <label htmlFor="photo-upload" className="magazine-avatar-label">
-                  <img src={photoPreview || pic} alt="Your Avatar" className="magazine-avatar magazine-avatar-uploadable" style={{ width: 160, height: 160, objectFit: 'cover' }} />
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={handlePhotoChange}
-                  />
-                  <div className="magazine-photo-label" style={{ textAlign: 'center', marginTop: 12 }}>{photo ? "Change Photo" : "Upload Photo (optional)"}</div>
-                </label>
-                {/* Avatar picker required label and carousel directly below upload photo */}
-                <div className="avatar-picker-label" style={{ margin: '18px 0 6px 0', fontWeight: 600, color: '#7c3aed', fontSize: '1.08rem', textAlign: 'center' }}>Pick Your Avatar <span style={{ color: '#d72660', fontWeight: 700 }}>*</span></div>
-                <div
-                  className={`carousel-avatar-picker${carouselAnimating ? ' animating' : ''}`}
-                  onMouseEnter={() => setCarouselPaused(true)}
-                  onMouseLeave={() => setCarouselPaused(false)}
-                >
-                  <button className="avatar-arrow-btn" onClick={handlePrevAvatar} aria-label="Previous Avatar" disabled={avatarLocked}>◀</button>
-                  <div className="carousel-avatar-list" style={{ justifyContent: 'center' }}>
-                    <img
-                      src={AVATAR_IMAGES[selectedAvatarIdx === null ? 0 : selectedAvatarIdx]}
-                      alt={`Avatar ${(selectedAvatarIdx === null ? 0 : selectedAvatarIdx) + 1}`}
-                      className={`carousel-avatar-img selected${avatarLocked ? ' locked' : ''}`}
-                      style={{ opacity: 1, transform: 'scale(1)', zIndex: 2, border: avatarLocked ? '3px solid #22c55e' : '3px solid #7c3aed', height: 320, width: 160 }}
-                      onClick={() => { if (!avatarLocked) setAvatarError(""); }}
-                    />
+            <div className="desktop-window-content" style={{ flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center', gap: 64, padding: '2rem 2.5rem', minHeight: 500, height: '100%', overflow: 'auto' }}>
+              {/* Avatar selector takes up half the window */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', minWidth: 0, height: '100%', overflow: 'hidden' }}>
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <div className="avatar-picker-label" style={{ margin: '18px 0 6px 0', fontWeight: 600, color: '#7c3aed', fontSize: '1.08rem', textAlign: 'center' }}></div>
+                  <div className={`carousel-avatar-picker${carouselAnimating ? ' animating' : ''}`}
+                    onMouseEnter={() => setCarouselPaused(true)}
+                    onMouseLeave={() => setCarouselPaused(false)}
+                    style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: '100%' }}
+                  >
+                    <button className="avatar-arrow-btn" onClick={handlePrevAvatar} aria-label="Previous Avatar" disabled={avatarLocked}>◀</button>
+                    <div className="carousel-avatar-list" style={{ justifyContent: 'center', width: '100%', display: 'flex', alignItems: 'center', height: '100%', position: 'relative' }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: '18px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 4,
+                        background: 'rgba(255,255,255,0.92)',
+                        padding: '0.3em 1.2em',
+                        borderRadius: '1.2em',
+                        boxShadow: '0 2px 8px #e6d6fa22',
+                        fontWeight: 600,
+                        color: '#7c3aed',
+                        fontSize: '1.08rem',
+                        textAlign: 'center',
+                        border: '2px solid #bfaeec',
+                        pointerEvents: 'none'
+                      }}>
+                        Pick Your Avatar <span style={{ color: '#d72660', fontWeight: 700 }}>*</span>
+                      </div>
+                      <img
+                        src={AVATAR_IMAGES[selectedAvatarIdx === null ? 0 : selectedAvatarIdx]}
+                        alt={`Avatar ${(selectedAvatarIdx === null ? 0 : selectedAvatarIdx) + 1}`}
+                        className={`carousel-avatar-img selected${avatarLocked ? ' locked' : ''}`}
+                        style={{
+                          width: '98%',
+                          height: '98%',
+                          maxWidth: '1000px',
+                          maxHeight: '600px',
+                          minWidth: '320px',
+                          minHeight: '400px',
+                          objectFit: 'contain',
+                          margin: '-44px 0 0 0',
+                          display: 'block',
+                          borderRadius: '2.5rem',
+                          boxShadow: '0 4px 32px #e6d6fa33'
+                        }}
+                        onClick={() => { if (!avatarLocked) setAvatarError(""); }}
+                      />
+                      <div style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translate(-50%, 50%)', zIndex: 3 }}>
+                        {!avatarLocked ? (
+                          <button className="avatar-select-btn" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
+                            onClick={() => { setAvatarLocked(true); setAvatarError(""); }}
+                            disabled={selectedAvatarIdx === null}
+                          >Select</button>
+                        ) : (
+                          <button className="avatar-select-btn" style={{ background: '#b0b0b0', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
+                            onClick={() => setAvatarLocked(false)}
+                          >Change</button>
+                        )}
+                      </div>
+                    </div>
+                    <button className="avatar-arrow-btn" onClick={handleNextAvatar} aria-label="Next Avatar" disabled={avatarLocked}>▶</button>
                   </div>
-                  <button className="avatar-arrow-btn" onClick={handleNextAvatar} aria-label="Next Avatar" disabled={avatarLocked}>▶</button>
+                  {avatarError && <div style={{ color: '#d72660', fontWeight: 600, marginTop: 4 }}>{avatarError}</div>}
                 </div>
-                <div style={{ textAlign: 'center', marginTop: 10 }}>
-                  {!avatarLocked ? (
-                    <button className="avatar-select-btn" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', marginTop: 6, boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
-                      onClick={() => { setAvatarLocked(true); setAvatarError(""); }}
-                      disabled={selectedAvatarIdx === null}
-                    >Select</button>
-                  ) : (
-                    <button className="avatar-select-btn" style={{ background: '#b0b0b0', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', marginTop: 6, boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
-                      onClick={() => setAvatarLocked(false)}
-                    >Change</button>
-                  )}
-                </div>
-                {avatarError && <div style={{ color: '#d72660', fontWeight: 600, marginTop: 4 }}>{avatarError}</div>}
               </div>
               {/* Right: Form fields */}
-              <div style={{ flex: 1, minWidth: 400, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+              <div style={{ flex: 1, minWidth: 400, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%', overflow: 'auto' }}>
                 <form className="magazine-signup-form" onSubmit={handleSubmit}>
-                  <label className="magazine-label">Username</label>
-                  <input
-                    type="text"
-                    name="username"
-                    placeholder="Your Username"
-                    value={form.username}
-                    onChange={handleChange}
-                    required
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 48 }}>
+                      <img
+                        src={photoPreview || pic}
+                        alt="Profile"
+                        style={{ width: 150, height: 150, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
+                      />
+                      <input
+                        id="photo-upload-inline"
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handlePhotoChange}
+                      />
+                      <div className="magazine-photo-label" style={{ textAlign: 'center', marginTop: 6, fontSize: '0.95rem', color: '#b48bbd', fontWeight: 600 }}>
+                        {photo ? 'Change Photo' : 'Upload Photo (optional)'}
+                      </div>
+                    </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: '0 0 180px', width: 180 }}>
+                      <label className="magazine-label" htmlFor="username-input" style={{ marginBottom: 4 }}>Username</label>
+                      <input
+                        id="username-input"
+                        type="text"
+                        name="username"
+                        placeholder="Your Username"
+                        value={form.username}
+                        onChange={handleChange}
+                        required
+                        style={{ width: '100%', minWidth: 0 }}
+                      />
+                    </div>
+                  </div>
                   <label className="magazine-label">Email</label>
                   <input
                     type="email"
@@ -399,6 +443,7 @@ const SignUpPage = () => {
                     value={form.password}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                   />
                   <label className="magazine-label">Security Question</label>
                   <select

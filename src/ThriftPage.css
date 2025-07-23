@@ -1,0 +1,65 @@
+body {
+    background: radial-gradient(
+    ellipse 120% 100% at 50% 70%,
+    #f8bbd0 0%,   /* pastel pink at the bottom */
+    #b39ddb 40%  /* pastel purple */);
+    margin: 20px;
+}
+.thrift-page-container {
+    display: flex;
+    flex-direction: column;
+}
+.map-info-container-wrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+}
+.sidebar-container {
+    display: flex;
+    flex-direction: column;
+    width: 25vw;
+    height: 55vh;
+    background-color: white;
+    border-radius: 20px;
+    padding: 20px;
+}
+.thrift-store-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+}
+.thrift-list-item {
+    margin-bottom: 16px;
+    cursor: pointer;
+    padding: 8px;
+    border-bottom: 3px solid #000;
+}
+.thrift-list-item:hover {
+    background: #f3e5f5;
+    border-radius: 20px;
+}
+.map-container {
+    width: 70vw;
+    height: 59vh;
+    display: flex;
+    align-items: flex-start;
+    border-radius: 20px;
+    margin: 0;
+    position: relative;
+}
+/* Essential CSS for Google Maps to render properly */
+.map-container > div {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 20px;
+    position: absolute !important;
+}
+.unused-items-container {
+    margin-top: 20px;
+    height: 50vh;
+    background-color: white;
+    border-radius: 20px;
+    padding: 20px;
+}
