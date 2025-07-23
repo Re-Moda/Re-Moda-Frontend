@@ -1,0 +1,20 @@
+body {
+    background: radial-gradient(
+    ellipse 120% 100% at 50% 70%,
+    #f8bbd0 0%,   /* pastel pink at the bottom */
+    #b39ddb 40%  /* pastel purple */);
+    margin: 20px;
+}
+.map-info-container-wrapper {
+    display: flex;
+    justify-content: flex-end;
+}
+.map-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 60vw;
+    height: 40vw;
+    border-radius: 20px;
+    margin: 0;
+}

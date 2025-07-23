@@ -402,6 +402,7 @@ const SignUpPage = () => {
                     value={form.password}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                   />
                   <label className="magazine-label">Security Question</label>
                   <select
