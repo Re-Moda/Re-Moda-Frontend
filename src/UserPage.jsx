@@ -203,7 +203,7 @@ const UserPage = () => {
         : (item.category || item.tag)?.toLowerCase() === selectedCategory
     );
   })();
-
+  
   // Top and bottom items for try-on
   const tops = closetItems.filter(item => (item.category || item.tag)?.toLowerCase() === 'top');
   const bottoms = closetItems.filter(item => (item.category || item.tag)?.toLowerCase() === 'bottom');

@@ -141,15 +141,6 @@ const SignUpPage = () => {
   const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [avatarLocked, setAvatarLocked] = useState(false);
 
-  // Auto-rotate carousel
-  useEffect(() => {
-    if (carouselPaused || avatarLocked) return;
-    const interval = setInterval(() => {
-      handleNextAvatar();
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [carouselPaused, avatarLocked, selectedAvatarIdx]);
-
   // Arrow handlers for horizontal avatar carousel (with animation)
   const handlePrevAvatar = (e) => {
     if (e) e.preventDefault();
@@ -323,37 +314,37 @@ const SignUpPage = () => {
               </div>
               Sign Up
             </div>
-            <div className="desktop-window-content" style={{ flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center', gap: 64, padding: '2rem 2.5rem', minHeight: 500, height: '100%', overflow: 'auto' }}>
+            <div className="desktop-window-content" style={{ flexDirection: 'row', alignItems: 'stretch', justifyContent: 'center', gap: 48, padding: '1.2rem 1.5rem', minHeight: 500, height: '100%', overflow: 'auto' }}>
               {/* Avatar selector takes up half the window */}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', minWidth: 0, height: '100%', overflow: 'hidden' }}>
+              <div className="carousel-column" style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', minWidth: 120, height: '100%', overflow: 'hidden', position: 'relative' }}>
+                <button
+                  onClick={() => window.location.href = '/'}
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    left: 4,
+                    zIndex: 20,
+                    background: '#e3f0ff',
+                    color: '#3a5a8c',
+                    border: '2px solid #b0b0ff',
+                    borderRadius: '1.2rem',
+                    fontWeight: 600,
+                    fontSize: '0.98rem',
+                    padding: '6px 18px',
+                    boxShadow: '0 1.5px 6px #b0b0ff33',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'background 0.18s, color 0.18s',
+                  }}
+                >Go Back Home</button>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                  <div className="avatar-picker-label" style={{ margin: '18px 0 6px 0', fontWeight: 600, color: '#7c3aed', fontSize: '1.08rem', textAlign: 'center' }}></div>
                   <div className={`carousel-avatar-picker${carouselAnimating ? ' animating' : ''}`}
                     onMouseEnter={() => setCarouselPaused(true)}
                     onMouseLeave={() => setCarouselPaused(false)}
                     style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: '100%' }}
                   >
-                    <button className="avatar-arrow-btn" onClick={handlePrevAvatar} aria-label="Previous Avatar" disabled={avatarLocked}>◀</button>
+                    <button className="avatar-arrow-btn" onClick={handlePrevAvatar} aria-label="Previous Avatar" disabled={avatarLocked} style={avatarLocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>◀</button>
                     <div className="carousel-avatar-list" style={{ justifyContent: 'center', width: '100%', display: 'flex', alignItems: 'center', height: '100%', position: 'relative' }}>
-                      <div style={{
-                        position: 'absolute',
-                        top: '18px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        zIndex: 4,
-                        background: 'rgba(255,255,255,0.92)',
-                        padding: '0.3em 1.2em',
-                        borderRadius: '1.2em',
-                        boxShadow: '0 2px 8px #e6d6fa22',
-                        fontWeight: 600,
-                        color: '#7c3aed',
-                        fontSize: '1.08rem',
-                        textAlign: 'center',
-                        border: '2px solid #bfaeec',
-                        pointerEvents: 'none'
-                      }}>
-                        Pick Your Avatar <span style={{ color: '#d72660', fontWeight: 700 }}>*</span>
-                      </div>
                       <img
                         src={AVATAR_IMAGES[selectedAvatarIdx === null ? 0 : selectedAvatarIdx]}
                         alt={`Avatar ${(selectedAvatarIdx === null ? 0 : selectedAvatarIdx) + 1}`}
@@ -366,63 +357,109 @@ const SignUpPage = () => {
                           minWidth: '320px',
                           minHeight: '400px',
                           objectFit: 'contain',
-                          margin: '-44px 0 0 0',
+                          margin: '-10px 0 0 0',
                           display: 'block',
                           borderRadius: '2.5rem',
-                          boxShadow: '0 4px 32px #e6d6fa33'
+                          boxShadow: '0 4px 32px #e6d6fa33',
+                          border: avatarLocked ? '3px solid #cdfa9c' : '3px solid #b0b0ff',
+                          background: avatarLocked ? '#f7c7db' : 'transparent',
                         }}
                         onClick={() => { if (!avatarLocked) setAvatarError(""); }}
                       />
                       <div style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translate(-50%, 50%)', zIndex: 3 }}>
                         {!avatarLocked ? (
-                          <button className="avatar-select-btn" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
+                          <button className="avatar-select-btn" style={{ background: '#bfaeec', color: '#7c3aed', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
                             onClick={() => { setAvatarLocked(true); setAvatarError(""); }}
                             disabled={selectedAvatarIdx === null}
                           >Select</button>
                         ) : (
-                          <button className="avatar-select-btn" style={{ background: '#b0b0b0', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600, fontSize: '1.08rem', cursor: 'pointer', boxShadow: '0 2px 8px #b7e6e044', transition: 'background 0.18s' }}
+                          <button className="avatar-select-btn" style={{
+                            background: avatarLocked ? '#f7c7db' : '#bfaeec',
+                            color: avatarLocked ? '#d72660' : '#7c3aed',
+                            border: avatarLocked ? '2px solid #f7c7db' : 'none',
+                            borderRadius: 8,
+                            padding: '8px 24px',
+                            fontWeight: 600,
+                            fontSize: '1.08rem',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px #b7e6e044',
+                            transition: 'background 0.18s, color 0.18s, border 0.18s',
+                          }}
                             onClick={() => setAvatarLocked(false)}
                           >Change</button>
                         )}
                       </div>
                     </div>
-                    <button className="avatar-arrow-btn" onClick={handleNextAvatar} aria-label="Next Avatar" disabled={avatarLocked}>▶</button>
+                    <button className="avatar-arrow-btn" onClick={handleNextAvatar} aria-label="Next Avatar" disabled={avatarLocked} style={avatarLocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>▶</button>
                   </div>
                   {avatarError && <div style={{ color: '#d72660', fontWeight: 600, marginTop: 4 }}>{avatarError}</div>}
                 </div>
               </div>
               {/* Right: Form fields */}
-              <div style={{ flex: 1, minWidth: 400, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%', overflow: 'auto' }}>
+              <div className="form-scrollable" style={{ flex: '1 1 0', minWidth: 320, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%' }}>
                 <form className="magazine-signup-form" onSubmit={handleSubmit}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 48 }}>
-                      <img
-                        src={photoPreview || pic}
-                        alt="Profile"
-                        style={{ width: 150, height: 150, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
-                      />
-                      <input
-                        id="photo-upload-inline"
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={handlePhotoChange}
-                      />
-                      <div className="magazine-photo-label" style={{ textAlign: 'center', marginTop: 6, fontSize: '0.95rem', color: '#b48bbd', fontWeight: 600 }}>
-                        {photo ? 'Change Photo' : 'Upload Photo (optional)'}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
+                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16 }}>
+                      <div style={{ position: 'relative', width: 140, height: 140 }}>
+                        <img
+                          src={photoPreview || pic}
+                          alt="Profile"
+                          style={{ width: 140, height: 140, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
+                        />
+                        <label htmlFor="photo-upload-inline" style={{
+                          position: 'absolute',
+                          bottom: -8,
+                          right: -8,
+                          background: '#fff',
+                          borderRadius: '50%',
+                          boxShadow: '0 1.5px 6px #b0b0ff33',
+                          padding: 4,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '2px solid #b0b0ff',
+                          zIndex: 10,
+                          width: 26,
+                          height: 26,
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14.7 2.29a1 1 0 0 1 1.42 0l1.59 1.59a1 1 0 0 1 0 1.42l-9.3 9.3-2.12.71.71-2.12 9.3-9.3zM3 17h14v2H3v-2z" fill="#7c3aed"/>
+                          </svg>
+                          <input
+                            id="photo-upload-inline"
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handlePhotoChange}
+                          />
+                        </label>
                       </div>
                     </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: '0 0 180px', width: 180 }}>
-                      <label className="magazine-label" htmlFor="username-input" style={{ marginBottom: 4 }}>Username</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 220, maxWidth: '100%', marginTop: 0 }}>
+                      <label className="magazine-label" style={{ marginTop: 12 }}>Username</label>
                       <input
-                        id="username-input"
                         type="text"
                         name="username"
                         placeholder="Your Username"
                         value={form.username}
                         onChange={handleChange}
+                        className="magazine-signup-input"
                         required
-                        style={{ width: '100%', minWidth: 0 }}
+                        autoComplete="username"
+                        style={{ marginBottom: 8, minWidth: 120, maxWidth: 260, width: '100%' }}
+                      />
+                      <label className="magazine-label">Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        value={form.password}
+                        onChange={handleChange}
+                        className="magazine-signup-input"
+                        required
+                        autoComplete="new-password"
+                        style={{ minWidth: 120, maxWidth: 260, width: '100%' }}
                       />
                     </div>
                   </div>
@@ -435,64 +472,92 @@ const SignUpPage = () => {
                     onChange={handleChange}
                     required
                   />
-                  <label className="magazine-label">Password</label>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                    autoComplete="new-password"
-                  />
-                  <label className="magazine-label">Security Question</label>
-                  <select
-                    name="securityQuestion"
-                    value={form.securityQuestion}
-                    onChange={handleChange}
-                    className="magazine-signup-select"
-                    required
-                  >
-                    {securityQuestions.map((q, i) => (
-                      <option key={i} value={q}>{q}</option>
-                    ))}
-                  </select>
-                  <label className="magazine-label">Security Answer</label>
-                  <input
-                    type="text"
-                    name="securityAnswer"
-                    placeholder="Your Answer"
-                    value={form.securityAnswer}
-                    onChange={handleChange}
-                    required
-                  />
-                  <button type="submit" className="magazine-signup-btn" style={{ marginTop: 18 }}>Sign Up</button>
-                  <div style={{ display: 'flex', alignItems: 'center', marginTop: 12, width: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'flex-end', marginBottom: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <label className="magazine-label">Security Question</label>
+                      <select
+                        name="securityQuestion"
+                        value={form.securityQuestion}
+                        onChange={handleChange}
+                        className="magazine-signup-select"
+                        required
+                        style={{ width: '100%' }}
+                      >
+                        {securityQuestions.map((q, i) => (
+                          <option key={i} value={q}>{q}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <label className="magazine-label">Security Answer</label>
+                      <input
+                        type="text"
+                        name="securityAnswer"
+                        placeholder="Your Answer"
+                        value={form.securityAnswer}
+                        onChange={handleChange}
+                        className="magazine-signup-input"
+                        required
+                        style={{ marginLeft: 12, flex: 1, maxWidth: 260, minWidth: 120 }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: 12, marginTop: 18, width: '100%' }}>
+                    <button type="submit" className="magazine-signup-btn" style={{
+                      flex: 0.6,
+                      marginTop: 0,
+                      background: '#e3f0ff',
+                      color: '#3a5a8c',
+                      border: '2px solid #b0b0ff',
+                      borderRadius: '0.7rem',
+                      boxShadow: '0 2px 8px #b0b0ff33, 0 1.5px 0 #fff inset',
+                      fontWeight: 700,
+                      fontFamily: 'Poppins, Arial, sans-serif',
+                      fontSize: '1.08rem',
+                      padding: '10px 0',
+                      letterSpacing: '0.04em',
+                      transition: 'background 0.18s, box-shadow 0.18s',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}>Sign Up</button>
                     <button
                       type="button"
                       className="google-auth-btn"
                       style={{
-                        flex: 1,
-                        background: '#fff',
-                        color: '#232323',
-                        border: '1.5px solid #e0e0e0',
-                        borderRadius: 8,
-                        fontWeight: 600,
+                        flex: 1.4,
+                        background: '#e3f0ff',
+                        color: '#3a5a8c',
+                        border: '2px solid #b0b0ff',
+                        borderRadius: '0.7rem',
+                        boxShadow: '0 2px 8px #b0b0ff33, 0 1.5px 0 #fff inset',
+                        fontWeight: 700,
                         fontSize: '1.08rem',
                         padding: '10px 0',
-                        boxShadow: '0 2px 8px #e3f6fd44',
+                        marginLeft: 12,
+                        fontFamily: 'Poppins, Arial, sans-serif',
+                        letterSpacing: '0.04em',
+                        outline: 'none',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: 10,
-                        cursor: 'pointer',
-                        transition: 'background 0.18s, border 0.18s',
+                        gap: 8,
                       }}
                       onClick={() => alert('Google sign up coming soon!')}
                     >
                       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: 22, height: 22, marginRight: 8 }} />
-                      Sign up with Google
+                      <span style={{ fontWeight: 700, fontSize: '1.08rem' }}>Sign Up with Google</span>
                     </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 18 }}>
+                    <span style={{ fontSize: '1rem', color: '#7c3aed', textAlign: 'center', width: '100%' }}>
+                      Already have an account? <a href="/signin" className="signin-link" style={{ color: '#3a5a8c', textDecoration: 'none', fontWeight: 600 }}>Sign in</a>
+                      <style>{`
+                        .signin-link:hover {
+                          text-decoration: underline;
+                        }
+                      `}</style>
+                    </span>
                   </div>
                 </form>
               </div>
