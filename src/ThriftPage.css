@@ -69,9 +69,54 @@ body {
     position: absolute !important;
 }
 .unused-items-container {
+    display: flex;
+    flex-direction: column;
     margin-top: 20px;
     height: 50vh;
     background-color: white;
     border-radius: 20px;
     padding: 20px;
+}
+.unused-items-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.unused-items-list ul {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;           /* space between images */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.unused-item img {
+    width: 300px;      /* or whatever size you want */
+    height: 300px;
+    object-fit: cover; /* keeps aspect ratio, crops if needed */
+    border-radius: 8px; /* optional: rounded corners */
+    border: 1px solid #000;
+  }
+.unused-items-container button:hover {
+    transform: scale(1.05);
+}
+.back-to-closet-btn {
+    background-color: #f3e5f5;
+    border-radius: 10px;
+    padding: 5px;
+    cursor: pointer;
+}
+.unused-items-footer {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-top: 20px;
+}
+.donate-btn {
+    font-size: 15px;
+    font-weight: bold;
+    background-color: #f3e5f5;
+    border-radius: 30px;
+    padding: 20px 30px 20px 30px;
+    cursor: pointer;
 }
