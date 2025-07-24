@@ -1,14 +1,15 @@
 import "./ThriftPage.css";
 import { useEffect, useState } from "react";
 import { GoogleMap, LoadScript, Marker } from'@react-google-maps/api';
-import pinkStarMarker from "./assets/pink-star-marker.png"
+import pinkStarMarker from "./assets/pink-star-marker.png";
+import goldStarMarker from "./assets/gold-star-marker.png";
 
 // Google Maps libraries to load (Places API is needed for place search)
 const libraries = ["places"];
 
 // ThriftMap component renders the Google Map and its markers
 // Receives coordinates, places, and callbacks as props
-const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker }) => {  // passing as props 
+const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker, goldStarMarker, selectedPlace }) => {  // passing as props 
     return (
         <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={libraries}>
             {/* Only render the map if coordinates are available */}
@@ -20,7 +21,7 @@ const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker
                     onLoad={onMapLoad}  // loads places array into state
                 >
                     {/* Render custom markers for each place */}
-                    {renderMarkers(places, setSelectedPlace, pinkStarMarker)}
+                    {renderMarkers(places, setSelectedPlace, pinkStarMarker, goldStarMarker, selectedPlace, coords)}
                 </GoogleMap>
               )}
         </LoadScript>
@@ -29,32 +30,71 @@ const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker
 
 // Helper function to render a Marker for each place
 // Uses a custom icon and sets up click handler
-const renderMarkers = (places, setSelectedPlace, pinkStarMarker) => {
-    if(!Array.isArray(places)) return null;
-    return places.map(place => {
-        // Extract latitude and longitude from Google Maps LatLng object or plain object
-        const pos = place.geometry?.location;
-        let lat, lng;
-        if (pos) {
-            lat = typeof pos.lat === "function" ? pos.lat() : pos.lat;
-            lng = typeof pos.lng === "function" ? pos.lng() : pos.lng;
-        }
-        if(typeof lat !== "number" || typeof lng !== "number") {
-            console.log("Invalid lat or lng", place.name, pos);
-            return null;
-        }
-        return(
+const renderMarkers = (places, setSelectedPlace, pinkStarMarker, goldStarMarker, selectedPlace, coords) => {
+    const allMarkers = [];
+    if (coords) {
+        allMarkers.push(
             <Marker
-                key={place.place_id}
-                position={{ lat, lng }}
-                icon={{
-                    url: pinkStarMarker,
-                    scaledSize: new window.google.maps.Size(30,30)
-                }}
-                onClick={() => setSelectedPlace(place)}
+                key="user-location"
+                position={coords}
             />
         )
-    })
+    }
+    if(Array.isArray(places)) {
+        places.forEach(place => {
+            // Extract latitude and longitude from Google Maps LatLng object or plain object
+            const pos = place.geometry?.location;
+            let lat, lng;
+            if (pos) {
+                lat = typeof pos.lat === "function" ? pos.lat() : pos.lat;
+                lng = typeof pos.lng === "function" ? pos.lng() : pos.lng;
+            }
+            if(typeof lat !== "number" || typeof lng !== "number") {
+                console.log("Invalid lat or lng", place.name, pos);
+                return null;
+            }
+            const isSelected = selectedPlace && selectedPlace.place_id === place.place_id;  // check if this place is selected
+            const markerIcon = isSelected ? goldStarMarker : pinkStarMarker;
+            allMarkers.push(
+                <Marker
+                    key={place.place_id}
+                    position={{ lat, lng }}
+                    icon={{
+                        url: markerIcon,
+                        scaledSize: new window.google.maps.Size(30,30)
+                    }}
+                    onClick={() => setSelectedPlace(place)}
+                />
+            )
+        });
+    }
+    return allMarkers;
+}
+
+const DetailedView = ({ place, onBack}) => {
+    if(!place) return <div>Loading...</div>;
+    return (
+        <div>
+            <button className="back-button" onClick={onBack}>← Back to List</button>
+            <h4>{place.name}</h4>
+            <p>{place.formatted_address}</p>
+            <p>Contact:</p>
+            <a href={`tel:${place.formatted_phone_number}`}>{place.formatted_phone_number}</a>
+            <br />
+            <a href={place.website} target="_blank" rel="noopener noreferrer">{place.website}</a>
+            <p>Hours:</p>
+            {place.opening_hours?.weekday_text?.map((day, index) => (
+                <p key={index}>{day}</p>
+            ))}
+            <p>Rating: {place.rating} stars from {place.user_ratings_total} reviews</p>
+            <p>Photos:</p>
+            <div className="photo-gallergy">
+                {place.photos?.map((photo, index) => (
+                    <img key={index} src={photo.getUrl({maxWidth: 300})} alt={`${place.name} photo`} />
+                ))}
+            </div>
+        </div>
+    )
 }
 
 // Main page component for the thrift store map and sidebar
@@ -62,8 +102,11 @@ const ThriftPage = () => {
     const [coords, setCoords] = useState(null);  // State for user's coordinates (from browser geolocation)
     const [places, setPlaces] = useState([]);  // State for array of nearby thrift store places
     const [selectedPlace, setSelectedPlace] = useState(null);  // State for the currently selected place (for details or highlighting)
-    const [placeDetails, setPlaceDetails] = useState(null);  // State for detailed info about a place (COMING BACK TO THIS)
+    const [detailedView, setDetailedView] = useState(false);  // State for showing list or detailed view
+    const [detailedPlace, setDetailedPlace] = useState(null);  // State for detailed info about a place (COMING BACK TO THIS)
+    const [isLoading, setIsLoading] = useState(false);  // State for loading state (reusable)
     const [mapRef, setMapRef] = useState(null);  // State to store a reference to the Google Map instance
+    const [directionsRenderer, setDirectionsRenderer] = useState(null);  // State to store a reference to the DirectionsRenderer instance (dont have to render it every time)
 
     // On mount, get user's current location using browser geolocation
     useEffect(() => {
@@ -107,16 +150,82 @@ const ThriftPage = () => {
         });
     }
 
+    const fetchPlaceBasicDetails = (places) => {  // helper function to fetch place details (rn just name & address)
+        if(!Array.isArray(places)) return null;
+        return places.map(place => (
+            <li
+                key={place.place_id}
+                className="thrift-list-item"
+                onClick={() => handleSidebarClick(place)}
+            >
+                <strong>{place.name}</strong>
+                <br />
+                <span>{place.vicinity || place.formatted_address}</span>
+            </li>
+        ))
+    }
+
+    const fetchPlaceDetails = (place) => {
+        if(!place) return null;
+        setIsLoading(true);
+        const service = new window.google.maps.places.PlacesService(mapRef);
+        service.getDetails({
+            placeId: place.place_id,
+            fields: ["name", "formatted_address", "formatted_phone_number", "website", "opening_hours", "photos", "rating", "user_ratings_total"]
+        }, (results, status) => {
+            setIsLoading(false);
+            if(status == window.google.maps.places.PlacesServiceStatus.OK && results) {
+                setDetailedPlace(results);
+            } else {
+                console.error("Error fetching place details", status);
+            }
+        })
+    }
+
     // When a sidebar item is clicked, select the place and center the map on it
     const handleSidebarClick = (place) => {
         setSelectedPlace(place);
-        if (mapRef && place.geometry && place.geometry.location) {
+        setDetailedView(true);
+        fetchPlaceDetails(place);
+        if (mapRef && coords && place.geometry && place.geometry.location) {
             const pos = place.geometry.location;
             const lat = typeof pos.lat === "function" ? pos.lat() : pos.lat;
             const lng = typeof pos.lng === "function" ? pos.lng() : pos.lng;
             mapRef.panTo({ lat, lng }); // Center the map on the selected place
+            showDirections(coords, {lat, lng});
         }
     };
+
+    const showDirections = (origin, destination) => {
+        if (!mapRef) return;
+        let renderer = directionsRenderer;
+        if (!renderer) {
+            renderer = new window.google.maps.DirectionsRenderer();
+            renderer.setMap(mapRef);
+            setDirectionsRenderer(renderer);
+        } else {
+            renderer.setMap(mapRef);
+        }
+        const directionsService = new window.google.maps.DirectionsService();
+        directionsService.route({
+            origin,
+            destination,
+            travelMode: window.google.maps.TravelMode.DRIVING
+        }, (result, status) => {
+            if (status === "OK" && result) {
+                renderer.setDirections(result);
+            } else {
+                console.error("Directions request failed:", status);
+            }
+        })
+    }
+
+    const clearDirections = () => {
+        setDetailedView(false);
+        if (directionsRenderer) {
+            directionsRenderer.set('directions', null);
+        }
+    }
     
     return (
         <>
@@ -125,19 +234,12 @@ const ThriftPage = () => {
             <div className="map-info-container-wrapper">  {/* Wrapper for sidebar and map, side by side */}
                 <div className="sidebar-container">  {/* Sidebar listing nearby thrift stores */}
                     <h3>Nearby Thrift Stores</h3>
-                    <ul className="thrift-store-list">
-                        {places.map(place => (
-                            <li
-                                key={place.place_id}
-                                className="thrift-list-item"
-                                onClick={() => handleSidebarClick(place)}
-                            >
-                                <strong>{place.name}</strong>
-                                <br />
-                                <span>{place.vicinity || place.formatted_address}</span>
-                            </li>
-                        ))}
-                    </ul>
+                        {detailedView ? (
+                            <DetailedView place={detailedPlace} onBack={() => clearDirections()} />
+                        ) : (
+                        <ul className="thrift-store-list">
+                            {fetchPlaceBasicDetails(places)}
+                        </ul>)}
                 </div>
                 <div className="map-container">   {/* Google Map display */}
                     <ThriftMap 
@@ -146,6 +248,8 @@ const ThriftPage = () => {
                         onMapLoad={onMapLoad}
                         setSelectedPlace={setSelectedPlace}
                         pinkStarMarker={pinkStarMarker}
+                        goldStarMarker={goldStarMarker}
+                        selectedPlace={selectedPlace}
                     />
                 </div>
             </div>
