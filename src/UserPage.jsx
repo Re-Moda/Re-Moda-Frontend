@@ -47,7 +47,7 @@ const UserPage = () => {
         });
         // Use response.data.data for the items array
         setClosetItems(Array.isArray(response.data.data) ? response.data.data : []);
-      } catch (error) {
+    } catch (error) {
         setClosetItems([]);
       }
       setLoading(false);
@@ -105,7 +105,7 @@ const UserPage = () => {
             <img
               src={avatarUrl}
               alt="Avatar"
-              style={{
+                  style={{ 
                 width: 180,
                 height: 180,
                 borderRadius: "50%",
@@ -113,8 +113,8 @@ const UserPage = () => {
                 boxShadow: "0 2px 12px #e3f6fd44",
                 marginBottom: 16
               }}
-            />
-          ) : (
+                />
+              ) : (
             <div style={{
               width: 180,
               height: 180,
@@ -149,7 +149,7 @@ const UserPage = () => {
           marginRight: 32
         }}>
           {closetCategories.map(cat => (
-            <button
+              <button
               key={cat.key}
               onClick={() => setSelectedCategory(cat.key)}
               style={{
@@ -167,9 +167,9 @@ const UserPage = () => {
               }}
             >
               {cat.label}
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
         {/* Closet Grid */}
         <div style={{
           flex: 1,
@@ -181,7 +181,7 @@ const UserPage = () => {
           {filteredItems.length === 0 && <div>No items in this category.</div>}
           {filteredItems.map(item => (
             <div
-              key={item.id}
+                  key={item.id}
               style={{
                 background: "#fff",
                 borderRadius: 16,
@@ -208,10 +208,10 @@ const UserPage = () => {
               <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{item.label || item.title}</div>
               <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>{item.category || item.tag}</div>
               <div style={{ color: "#444", fontSize: 15 }}>{item.description}</div>
-            </div>
-          ))}
+                    </div>
+                  ))}
           {/* Add (+) button */}
-          <button
+              <button 
             onClick={() => window.location.href = "/uploads"}
             style={{
               width: 120,
@@ -229,7 +229,7 @@ const UserPage = () => {
             }}
             title="Add new item"
           >+</button>
-        </div>
+          </div>
       </div>
       {/* Bottom Buttons */}
       <div style={{
