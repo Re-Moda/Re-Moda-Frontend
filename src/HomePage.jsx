@@ -39,7 +39,7 @@ const HomePage = (props) => {
           </div>
           <div className="nav-buttons">
             <button onClick={scrollToMission}>About Us</button>
-            <button onClick={handleLogin}>Log In</button>
+            <button onClick={handleLogin}>Sign In</button>
             <button onClick={props.onSignUp}>Sign Up</button>
           </div>
         </div>

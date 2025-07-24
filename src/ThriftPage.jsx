@@ -3,6 +3,11 @@ import { useEffect, useState } from "react";
 import { GoogleMap, LoadScript, Marker } from'@react-google-maps/api';
 import pinkStarMarker from "./assets/pink-star-marker.png";
 import goldStarMarker from "./assets/gold-star-marker.png";
+import aiBlueJeans from "./assets/place-holder-clothing/ai-blue-jeans.png";
+import aiBlueShirt from "./assets/place-holder-clothing/ai-blue-shirt.png";
+import aiPaolaJacket from "./assets/place-holder-clothing/ai-paola-jacket.png";
+import aiYellowPants from "./assets/place-holder-clothing/ai-yellow-pants.png";
+
 
 // Google Maps libraries to load (Places API is needed for place search)
 const libraries = ["places"];
@@ -107,6 +112,12 @@ const ThriftPage = () => {
     const [isLoading, setIsLoading] = useState(false);  // State for loading state (reusable)
     const [mapRef, setMapRef] = useState(null);  // State to store a reference to the Google Map instance
     const [directionsRenderer, setDirectionsRenderer] = useState(null);  // State to store a reference to the DirectionsRenderer instance (dont have to render it every time)
+    const [unusedItems, setUnusedItems] = useState([
+        { id: 1, name: "blue jeans", image: aiBlueJeans },
+        { id: 2, name: "blue shirt", image: aiBlueShirt },
+        { id: 3, name: "paola jacket", image: aiPaolaJacket },
+        { id: 4, name: "yellow pants", image: aiYellowPants }
+    ]);
 
     // On mount, get user's current location using browser geolocation
     useEffect(() => {
@@ -222,10 +233,19 @@ const ThriftPage = () => {
 
     const clearDirections = () => {
         setDetailedView(false);
+        setSelectedPlace(null);
         if (directionsRenderer) {
             directionsRenderer.set('directions', null);
         }
     }
+
+    const handleBackToCloset = () => {
+        window.location.href = "/user";
+    }
+
+    const handleDonate = () => {  // TEMPORARY FUNCTION TO CLEAR THE LIST
+        setUnusedItems([]); // This will clear the list
+    };
     
     return (
         <>
@@ -254,7 +274,27 @@ const ThriftPage = () => {
                 </div>
             </div>
             <div className="unused-items-container">  {/* Placeholder for user's items to donate */}
-                <h3>Items to Donate!</h3>
+                <div className="unused-items-header">
+                    <h3>Items to Donate!</h3>
+                    <button className="back-to-closet-btn" onClick={handleBackToCloset}>← Back to Closet</button>
+                </div>
+                <div className="unused-items-list">
+                    {unusedItems.length === 0 ? (
+                        <p>Thank you for donating!</p>
+                    ) : (
+                        <ul>
+                            {unusedItems.map(item => (
+                                <li key={item.id} className="unused-item">
+                                    <img src={item.image} alt={item.name} />
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+                {unusedItems.length > 0 &&(
+                <div className="unused-items-footer">
+                    <button className="donate-btn" onClick={handleDonate}>Donate</button>
+                </div>)}
             </div>
         </div>
     </>
