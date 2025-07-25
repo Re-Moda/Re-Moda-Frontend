@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { GoogleMap, LoadScript, Marker } from'@react-google-maps/api';
 import pinkStarMarker from "./assets/pink-star-marker.png";
 import goldStarMarker from "./assets/gold-star-marker.png";
+import coinRemoda from "./assets/coin-re-moda.png";
 import aiBlueJeans from "./assets/place-holder-clothing/ai-blue-jeans.png";
 import aiBlueShirt from "./assets/place-holder-clothing/ai-blue-shirt.png";
 import aiPaolaJacket from "./assets/place-holder-clothing/ai-paola-jacket.png";
@@ -14,7 +15,7 @@ const libraries = ["places"];
 
 // ThriftMap component renders the Google Map and its markers
 // Receives coordinates, places, and callbacks as props
-const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker, goldStarMarker, selectedPlace }) => {  // passing as props 
+const ThriftMap = ({ coords, places, onMapLoad, handleSidebarClick, pinkStarMarker, goldStarMarker, selectedPlace }) => {  // passing as props 
     return (
         <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={libraries}>
             {/* Only render the map if coordinates are available */}
@@ -26,7 +27,7 @@ const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker
                     onLoad={onMapLoad}  // loads places array into state
                 >
                     {/* Render custom markers for each place */}
-                    {renderMarkers(places, setSelectedPlace, pinkStarMarker, goldStarMarker, selectedPlace, coords)}
+                    {renderMarkers(places, handleSidebarClick, pinkStarMarker, goldStarMarker, selectedPlace, coords)}
                 </GoogleMap>
               )}
         </LoadScript>
@@ -35,7 +36,7 @@ const ThriftMap = ({ coords, places, onMapLoad, setSelectedPlace, pinkStarMarker
 
 // Helper function to render a Marker for each place
 // Uses a custom icon and sets up click handler
-const renderMarkers = (places, setSelectedPlace, pinkStarMarker, goldStarMarker, selectedPlace, coords) => {
+const renderMarkers = (places, handleSidebarClick, pinkStarMarker, goldStarMarker, selectedPlace, coords) => {
     const allMarkers = [];
     if (coords) {
         allMarkers.push(
@@ -68,7 +69,7 @@ const renderMarkers = (places, setSelectedPlace, pinkStarMarker, goldStarMarker,
                         url: markerIcon,
                         scaledSize: new window.google.maps.Size(30,30)
                     }}
-                    onClick={() => setSelectedPlace(place)}
+                    onClick={() => handleSidebarClick(place)}
                 />
             )
         });
@@ -76,13 +77,19 @@ const renderMarkers = (places, setSelectedPlace, pinkStarMarker, goldStarMarker,
     return allMarkers;
 }
 
-const DetailedView = ({ place, onBack}) => {
+const DetailedView = ({ place, onBack, routeDuration, routeDistance}) => {
     if(!place) return <div>Loading...</div>;
     return (
         <div>
             <button className="back-button" onClick={onBack}>← Back to List</button>
             <h4>{place.name}</h4>
             <p>{place.formatted_address}</p>
+            {routeDuration && routeDistance &&(
+                <>
+                <p>🚗 Travel time: {routeDuration}</p>
+                <p>🚗 Travel distance: {routeDistance}</p>
+                </>
+            )}
             <p>Contact:</p>
             <a href={`tel:${place.formatted_phone_number}`}>{place.formatted_phone_number}</a>
             <br />
@@ -112,6 +119,8 @@ const ThriftPage = () => {
     const [isLoading, setIsLoading] = useState(false);  // State for loading state (reusable)
     const [mapRef, setMapRef] = useState(null);  // State to store a reference to the Google Map instance
     const [directionsRenderer, setDirectionsRenderer] = useState(null);  // State to store a reference to the DirectionsRenderer instance (dont have to render it every time)
+    const [routeDuration, setRouteDuration] = useState(null);  // State to store the travel duration
+    const [routeDistance, setRouteDistance] = useState(null);  // Stores travel distance in miles
     const [unusedItems, setUnusedItems] = useState([
         { id: 1, name: "blue jeans", image: aiBlueJeans },
         { id: 2, name: "blue shirt", image: aiBlueShirt },
@@ -211,7 +220,9 @@ const ThriftPage = () => {
         if (!mapRef) return;
         let renderer = directionsRenderer;
         if (!renderer) {
-            renderer = new window.google.maps.DirectionsRenderer();
+            renderer = new window.google.maps.DirectionsRenderer({
+                suppressMarkers: true
+            });
             renderer.setMap(mapRef);
             setDirectionsRenderer(renderer);
         } else {
@@ -225,8 +236,19 @@ const ThriftPage = () => {
         }, (result, status) => {
             if (status === "OK" && result) {
                 renderer.setDirections(result);
+                
+                // Extract duration from the directions response
+                const duration = result.routes[0]?.legs[0]?.duration;
+                const distance = result.routes[0]?.legs[0]?.distance;
+                if (duration && distance) {
+                    console.log('Travel duration:', duration.text);
+                    setRouteDuration(duration.text);
+                    setRouteDistance(distance.text);
+                }
             } else {
                 console.error("Directions request failed:", status);
+                setRouteDuration(null);
+                setRouteDistance(null);
             }
         })
     }
@@ -234,6 +256,8 @@ const ThriftPage = () => {
     const clearDirections = () => {
         setDetailedView(false);
         setSelectedPlace(null);
+        setRouteDuration(null);  // Clear the duration when directions are cleared
+        setRouteDistance(null);
         if (directionsRenderer) {
             directionsRenderer.set('directions', null);
         }
@@ -255,7 +279,7 @@ const ThriftPage = () => {
                 <div className="sidebar-container">  {/* Sidebar listing nearby thrift stores */}
                     <h3>Nearby Thrift Stores</h3>
                         {detailedView ? (
-                            <DetailedView place={detailedPlace} onBack={() => clearDirections()} />
+                            <DetailedView place={detailedPlace} onBack={() => clearDirections()} routeDuration={routeDuration} routeDistance={routeDistance} />
                         ) : (
                         <ul className="thrift-store-list">
                             {fetchPlaceBasicDetails(places)}
@@ -266,7 +290,7 @@ const ThriftPage = () => {
                         coords={coords}
                         places={places}
                         onMapLoad={onMapLoad}
-                        setSelectedPlace={setSelectedPlace}
+                        handleSidebarClick={handleSidebarClick}
                         pinkStarMarker={pinkStarMarker}
                         goldStarMarker={goldStarMarker}
                         selectedPlace={selectedPlace}
@@ -276,7 +300,10 @@ const ThriftPage = () => {
             <div className="unused-items-container">  {/* Placeholder for user's items to donate */}
                 <div className="unused-items-header">
                     <h3>Items to Donate!</h3>
-                    <button className="back-to-closet-btn" onClick={handleBackToCloset}>← Back to Closet</button>
+                    <div className="unused-header-right">
+                        <h4><img src={coinRemoda} alt="coin" />: 0</h4>
+                        <button className="back-to-closet-btn" onClick={handleBackToCloset}>← Back to Closet</button>
+                    </div>
                 </div>
                 <div className="unused-items-list">
                     {unusedItems.length === 0 ? (

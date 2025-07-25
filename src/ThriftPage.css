@@ -82,6 +82,12 @@ body {
     justify-content: space-between;
     align-items: center;
 }
+.unused-header-right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
 .unused-items-list ul {
     display: flex;
     flex-direction: row;
