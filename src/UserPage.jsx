@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import logo from './assets/logo.png';
+import API_BASE_URL from './config.js';
 
 const closetCategories = [
   { key: "all", label: "All" },
@@ -77,20 +79,21 @@ const UserPage = () => {
   const [selectedBottomId, setSelectedBottomId] = useState(null);
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
   const [loadingTryOn, setLoadingTryOn] = useState(false);
+  const [currentOutfitId, setCurrentOutfitId] = useState(null); // Only declare once
 
   // For storing all outfits (if you have an outfits endpoint)
   const [outfits, setOutfits] = useState([]);
-  const [currentOutfitId, setCurrentOutfitId] = useState(null); // Track the current try-on outfit ID
 
   useEffect(() => {
     if (!sessionStorage.getItem("token")) {
       window.location.href = "/signin";
     }
+    // Removed any upload-count-based redirect or restriction here
   }, []);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    axios.get("http://localhost:3000/users/me", {
+    axios.get(`${API_BASE_URL}/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => {
       if (res.data && res.data.success && res.data.data) {
@@ -102,7 +105,7 @@ const UserPage = () => {
 
   useEffect(() => {
     const jwtToken = sessionStorage.getItem("token");
-    axios.get("http://localhost:3000/clothing-items", {
+    axios.get(`${API_BASE_URL}/clothing-items`, {
       headers: { Authorization: `Bearer ${jwtToken}` }
     }).then(response => {
       setClosetItems(Array.isArray(response.data.data) ? response.data.data : []);
@@ -116,7 +119,7 @@ const UserPage = () => {
   // Fetch outfits (if you have an endpoint)
   useEffect(() => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    axios.get("http://localhost:3000/outfits", {
+    axios.get(`${API_BASE_URL}/outfits`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => {
       if (res.data && Array.isArray(res.data.data)) {
@@ -134,11 +137,11 @@ const UserPage = () => {
     const formData = new FormData();
     formData.append('avatar', file);
     try {
-      await axios.post("http://localhost:3000/users/me/avatar", formData, {
+      await axios.post(`${API_BASE_URL}/users/me/avatar`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refresh avatar
-      const res = await axios.get("http://localhost:3000/users/me", {
+      const res = await axios.get(`${API_BASE_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data && res.data.success && res.data.data) {
@@ -157,12 +160,13 @@ const UserPage = () => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
       const res = await axios.post(
-        "http://localhost:3000/outfits/generate-avatar",
+        `${API_BASE_URL}/outfits/generate-avatar`,
         { topId: selectedTopId, bottomId: selectedBottomId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setGeneratedAvatarUrl(res.data.generated_avatar_url);
-      setCurrentOutfitId(res.data.outfit_id); // Save the generated outfit ID
+      // Optionally, store the outfit ID if your backend returns it:
+      // setCurrentOutfitId(res.data.outfit_id);
     } catch (err) {
       alert("Failed to generate try-on image.");
     }
@@ -173,7 +177,7 @@ const UserPage = () => {
   const handleFavorite = async () => {
     if (!currentOutfitId) return;
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    await axios.patch(`http://localhost:3000/outfits/${currentOutfitId}`,
+    await axios.patch(`${API_BASE_URL}/outfits/${currentOutfitId}`,
       { is_favorite: true },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -182,7 +186,7 @@ const UserPage = () => {
   const handleRecurring = async () => {
     if (!currentOutfitId) return;
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    await axios.patch(`http://localhost:3000/outfits/${currentOutfitId}`,
+    await axios.patch(`${API_BASE_URL}/outfits/${currentOutfitId}`,
       { is_recurring: true },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -208,189 +212,112 @@ const UserPage = () => {
   const tops = closetItems.filter(item => (item.category || item.tag)?.toLowerCase() === 'top');
   const bottoms = closetItems.filter(item => (item.category || item.tag)?.toLowerCase() === 'bottom');
 
+  // Add the moving text animation CSS to the page head if not present
+  useEffect(() => {
+    if (!document.getElementById('moveTextKeyframes')) {
+      const style = document.createElement('style');
+      style.id = 'moveTextKeyframes';
+      style.innerHTML = `@keyframes moveText { 0% { transform: translateX(100%);} 100% { transform: translateX(-100%);} }`;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   if (loading) return <div>Loading your closet...</div>;
 
   return (
     <div style={{
+      fontFamily: "'EB Garamond', serif",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       minHeight: "100vh",
-      background: "inherit"
+      background: "inherit",
+      position: "relative"
     }}>
+      {/* Logo in top left purple space */}
+      <img
+        src={logo}
+        alt="ReModa Logo"
+        style={{
+          position: 'fixed',
+          top: 16,
+          left: 120,
+          width: 140,
+          height: 'auto',
+          zIndex: 101,
+          background: 'transparent',
+          borderRadius: 18,
+          boxShadow: '0 2px 16px #a78bfa22',
+          objectFit: 'contain',
+        }}
+      />
+      {/* Selected Top/Bottom display in purple area, right side */}
       <div style={{
-        display: "flex",
-        flexDirection: "row",
-        width: "90vw",
-        maxWidth: 1100,
-        margin: "40px auto 0 auto",
-        background: "#fff",
-        borderRadius: 32,
-        boxShadow: "0 4px 32px #e3f6fd44",
-        padding: 32,
-        minHeight: 600
+        position: 'fixed',
+        top: 40,
+        right: 40,
+        zIndex: 100,
+        background: '#ede9fe',
+        border: '2px solid #a78bfa',
+        borderRadius: 18,
+        padding: '24px 32px',
+        minWidth: 220,
+        boxShadow: '0 2px 16px #a78bfa22',
+        fontFamily: "'EB Garamond', serif",
+        color: '#7c3aed',
+        fontWeight: 700,
+        fontSize: 20,
+        textAlign: 'left',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12
       }}>
-        {/* Avatar Section */}
-        <div style={{
-          flex: "0 0 260px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginRight: 32,
-          position: "relative"
-        }}>
-          {/* Heart icon */}
-          <span
-            style={{
-              position: "absolute",
-              top: 12,
-              left: 24,
-              fontSize: 32,
-              color: "#e25555",
-              cursor: "pointer"
-            }}
-            onClick={handleFavorite}
-            title="Add to Favourites"
-          >❤️</span>
-          <UserAvatar
-            generatedAvatarUrl={generatedAvatarUrl}
-            avatarUrl={avatarUrl}
-            username={username}
-            uploading={uploading}
-            handleAvatarChange={handleAvatarChange}
-            fileInputRef={fileInputRef}
-          />
-          <div style={{
-            marginTop: 16,
-            color: "#7c3aed",
-            fontWeight: 600,
-            fontSize: 18,
-            textAlign: "center"
-          }}>
-            Add to Worn
-          </div>
-          <button
-            style={{
-              marginTop: 8,
-              background: "#e0e7ff",
-              color: "#7c3aed",
-              border: "none",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 16,
-              padding: "6px 18px",
-              cursor: "pointer"
-            }}
-            onClick={handleRecurring}
-          >
-            Add to Recurring
-          </button>
+        <div>
+          Selected Top:<br/>
+          <span style={{ color: '#232323', fontWeight: 600, fontSize: 18 }}>
+            {selectedTopId ? closetItems.find(i => i.id === selectedTopId)?.label || closetItems.find(i => i.id === selectedTopId)?.title : 'None'}
+          </span>
         </div>
-        {/* Closet Category Filter */}
-        <div style={{
-          flex: "0 0 120px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "stretch",
-          marginRight: 32
-        }}>
-          {closetCategories.map(cat => (
+        <div>
+          Selected Bottom:<br/>
+          <span style={{ color: '#232323', fontWeight: 600, fontSize: 18 }}>
+            {selectedBottomId ? closetItems.find(i => i.id === selectedBottomId)?.label || closetItems.find(i => i.id === selectedBottomId)?.title : 'None'}
+          </span>
+        </div>
+        {/* Try On and Cancel buttons, only in buildMode */}
+        {buildMode && (
+          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <button
-              key={cat.key}
-              onClick={() => setSelectedCategory(cat.key)}
-              style={{
-                background: selectedCategory === cat.key ? "#e0e7ff" : "transparent",
-                color: "#232323",
-                border: "none",
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 18,
-                padding: "10px 0",
-                marginBottom: 4,
-                cursor: "pointer",
-                outline: selectedCategory === cat.key ? "2px solid #7c3aed" : "none",
-                transition: "background 0.18s"
-              }}
+              onClick={handleTryOn}
+              disabled={!selectedTopId || !selectedBottomId || loadingTryOn}
+              style={{ fontWeight: 600, fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#7c3aed', color: '#fff', border: 'none', cursor: (!selectedTopId || !selectedBottomId || loadingTryOn) ? 'not-allowed' : 'pointer', marginBottom: 6 }}
             >
-              {cat.label}
+              {loadingTryOn ? "Generating outfit..." : "Try On"}
             </button>
-          ))}
-        </div>
-        {/* Closet Grid */}
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 32,
-          alignContent: "flex-start"
-        }}>
-          {filteredItems.length === 0 && <div>No items in this category.</div>}
-          {filteredItems.map(item => (
-            <div
-              key={item.id}
-              style={{
-                background: "#fff",
-                borderRadius: 16,
-                boxShadow: "0 2px 12px #e3f6fd44",
-                padding: 16,
-                width: 200,
-                textAlign: "center",
-                border: buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? '3px solid #7c3aed' : 'none',
-                cursor: buildMode ? 'pointer' : 'default',
-                opacity: buildMode && ((item.category || item.tag)?.toLowerCase() === 'top' || (item.category || item.tag)?.toLowerCase() === 'bottom') ? 1 : buildMode ? 0.5 : 1
-              }}
+            <button
               onClick={() => {
-                if (!buildMode) return;
-                if ((item.category || item.tag)?.toLowerCase() === 'top') setSelectedTopId(item.id);
-                if ((item.category || item.tag)?.toLowerCase() === 'bottom') setSelectedBottomId(item.id);
+                setBuildMode(false);
+                setSelectedTopId(null);
+                setSelectedBottomId(null);
+                setGeneratedAvatarUrl(null); // This will revert to the original avatar
               }}
+              style={{ fontWeight: 600, fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#eee', color: '#232323', border: 'none', cursor: 'pointer' }}
             >
-              {/* AI-generated image */}
-              <img
-                src={item.generatedImageUrl}
-                alt={item.label || item.title}
-                style={{ width: 120, height: 120, objectFit: "contain", borderRadius: 12, marginBottom: 8 }}
-              />
-              {/* Original image (optional) */}
-              {item.originalImageUrl && (
-                <img
-                  src={item.originalImageUrl}
-                  alt="Original"
-                  style={{ width: 60, height: 60, objectFit: "contain", borderRadius: 8, marginBottom: 8, border: "1px solid #eee" }}
-                />
-              )}
-              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{item.label || item.title}</div>
-              <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>{item.category || item.tag}</div>
-              <div style={{ color: "#444", fontSize: 15 }}>{item.description}</div>
-            </div>
-          ))}
-          {/* Add (+) button */}
-          <button
-            onClick={() => window.location.href = "/uploads"}
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: "50%",
-              background: "#b3d1f7",
-              color: "#fff",
-              fontSize: 48,
-              fontWeight: 700,
-              border: "none",
-              boxShadow: "0 2px 12px #e3f6fd44",
-              cursor: "pointer",
-              alignSelf: "center",
-              justifySelf: "center"
-            }}
-            title="Add new item"
-          >+</button>
-        </div>
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
-      {/* Bottom Buttons */}
+      {/* Top-center button row */}
       <div style={{
         display: "flex",
         flexDirection: "row",
         gap: 24,
-        marginTop: 32
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        maxWidth: 1400,
+        margin: "32px auto 0 auto"
       }}>
         <button
           style={{
@@ -443,36 +370,183 @@ const UserPage = () => {
           Chat w/ ur stylist
         </button>
       </div>
-      {/* AI Try-On Controls */}
-      {buildMode && (
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <h4 style={{ color: '#7c3aed', fontWeight: 700 }}>Select a Top and a Bottom to try on!</h4>
-          <div style={{ margin: '12px 0' }}>
-            <span style={{ color: '#7c3aed', fontWeight: 600 }}>Selected Top: </span>
-            {selectedTopId ? closetItems.find(i => i.id === selectedTopId)?.label || closetItems.find(i => i.id === selectedTopId)?.title : 'None'}
-            <span style={{ marginLeft: 24, color: '#7c3aed', fontWeight: 600 }}>Selected Bottom: </span>
-            {selectedBottomId ? closetItems.find(i => i.id === selectedBottomId)?.label || closetItems.find(i => i.id === selectedBottomId)?.title : 'None'}
-          </div>
-          <button
-            onClick={handleTryOn}
-            disabled={!selectedTopId || !selectedBottomId || loadingTryOn}
-            style={{ marginTop: 8, fontWeight: 600, fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#7c3aed', color: '#fff', border: 'none', cursor: (!selectedTopId || !selectedBottomId || loadingTryOn) ? 'not-allowed' : 'pointer' }}
-          >
-            {loadingTryOn ? "Generating outfit..." : "Try On"}
-          </button>
-          <button
-            onClick={() => {
-              setBuildMode(false);
-              setSelectedTopId(null);
-              setSelectedBottomId(null);
-              setGeneratedAvatarUrl(null);
+      {/* Main white card */}
+      <div style={{
+        display: "flex",
+        flexDirection: "row",
+        width: "95vw",
+        maxWidth: 1400,
+        margin: "32px auto 0 auto",
+        background: "#fff",
+        borderRadius: 32,
+        boxShadow: "0 4px 32px #e3f6fd44",
+        padding: 32,
+        minHeight: 600
+      }}>
+        {/* Avatar Section */}
+        <div style={{
+          flex: "0 0 260px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginRight: 32,
+          position: "relative"
+        }}>
+          {/* Heart icon */}
+          <span
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 24,
+              fontSize: 32,
+              color: "#e25555",
+              cursor: "pointer"
             }}
-            style={{ marginLeft: 16, fontWeight: 600, fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#eee', color: '#232323', border: 'none', cursor: 'pointer' }}
-          >
-            Cancel
-          </button>
+            onClick={handleFavorite}
+            title="Add to Favourites"
+          >❤️</span>
+          <UserAvatar
+            generatedAvatarUrl={generatedAvatarUrl}
+            avatarUrl={avatarUrl}
+            username={username}
+            uploading={uploading}
+            handleAvatarChange={handleAvatarChange}
+            fileInputRef={fileInputRef}
+          />
+          {/* Animated moving text under avatar */}
+          <div style={{
+            marginTop: 24,
+            width: '100%',
+            textAlign: 'center',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            fontWeight: 700,
+            fontSize: 22,
+            color: '#7c3aed',
+            letterSpacing: 1,
+            position: 'relative',
+            fontFamily: "'EB Garamond', serif"
+          }}>
+            <span className="moving-beautiful-text" style={{
+              display: 'inline-block',
+              animation: 'moveText 7s linear infinite'
+            }}>
+              No matter what you wear you are beautiful
+            </span>
+          </div>
         </div>
-      )}
+        {/* Closet Category Filter */}
+        <div style={{
+          flex: "0 0 120px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          marginRight: 32
+        }}>
+          {closetCategories.map(cat => (
+            <button
+              key={cat.key}
+              onClick={() => setSelectedCategory(cat.key)}
+              style={{
+                background: selectedCategory === cat.key ? "#e0e7ff" : "transparent",
+                color: "#232323",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 18,
+                padding: "10px 0",
+                marginBottom: 4,
+                cursor: "pointer",
+                outline: selectedCategory === cat.key ? "2px solid #7c3aed" : "none",
+                transition: "background 0.18s"
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+        {/* Closet Grid: 2 items per row */}
+        <div style={{
+          flex: 1,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 32,
+          alignContent: "flex-start"
+        }}>
+          {filteredItems.length === 0 && <div>No items in this category.</div>}
+          {filteredItems.map(item => (
+            <div
+              key={item.id}
+              style={{
+                background: "#fff",
+                borderRadius: 16,
+                boxShadow: "0 2px 12px #e3f6fd44",
+                padding: 16,
+                width: 200,
+                textAlign: "center",
+                border: buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? '3px solid #7c3aed' : 'none',
+                cursor: buildMode ? 'pointer' : 'default',
+                opacity: buildMode && ((item.category || item.tag)?.toLowerCase() === 'top' || (item.category || item.tag)?.toLowerCase() === 'bottom') ? 1 : buildMode ? 0.5 : 1
+              }}
+              onClick={() => {
+                if (!buildMode) return;
+                if ((item.category || item.tag)?.toLowerCase() === 'top') setSelectedTopId(item.id);
+                if ((item.category || item.tag)?.toLowerCase() === 'bottom') setSelectedBottomId(item.id);
+              }}
+            >
+              {/* AI-generated image */}
+              <img
+                src={item.generatedImageUrl}
+                alt={item.label || item.title}
+                style={{ width: 120, height: 120, objectFit: "contain", borderRadius: 12, marginBottom: 8 }}
+              />
+              {/* Original image (optional) */}
+              {item.originalImageUrl && (
+                <img
+                  src={item.originalImageUrl}
+                  alt="Original"
+                  style={{ width: 60, height: 60, objectFit: "contain", borderRadius: 8, marginBottom: 8, border: "1px solid #eee" }}
+                />
+              )}
+              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{item.label || item.title}</div>
+              <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>{item.category || item.tag}</div>
+              <div style={{ color: "#444", fontSize: 15 }}>{item.description}</div>
+            </div>
+          ))}
+          {/* Add (+) button with label */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
+            <button
+              onClick={() => window.location.href = "/uploads"}
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: "50%",
+                background: "#b3d1f7",
+                color: "#fff",
+                fontSize: 48,
+                fontWeight: 700,
+                border: "none",
+                boxShadow: "0 2px 12px #e3f6fd44",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+              title="Add more clothes"
+            >+</button>
+            <div style={{
+              marginTop: 10,
+              color: "#7c3aed",
+              fontWeight: 600,
+              fontSize: 20,
+              fontFamily: "'EB Garamond', serif"
+            }}>
+              Add more clothes
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* AI Try-On Controls removed from bottom, now in right box */}
     </div>
   );
 };

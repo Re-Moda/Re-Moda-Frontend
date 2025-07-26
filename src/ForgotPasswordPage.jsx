@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./SignUpPage.css";
 import axios from "axios";
+import API_BASE_URL from './config.js';
 
 const ForgotPasswordPage = () => {
   const [form, setForm] = useState({
@@ -23,7 +24,7 @@ const ForgotPasswordPage = () => {
     setSuccessMsg("");
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/auth/forgot-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: form.username })
@@ -47,7 +48,7 @@ const ForgotPasswordPage = () => {
     setSuccessMsg("");
     setLoading(true);
     try {
-      await axios.post("http://localhost:3000/auth/reset-password", {
+      await axios.post(`${API_BASE_URL}/auth/reset-password`, {
         username: form.username,
         security_answer: form.securityAnswer,
         new_password: form.newPassword

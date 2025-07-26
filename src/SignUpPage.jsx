@@ -5,6 +5,7 @@ import logo from "./assets/logo.png";
 import axios from "axios";
 import pic from "./assets/pic.jpg";
 import favStar from "./assets/fav-star.webp";
+import API_BASE_URL from './config.js';
 
 // Use Vite's import.meta.glob to import all avatar images
 const avatarModules = import.meta.glob('./assets/avatars/*.{png,jpg,jpeg,webp}', { eager: true });
@@ -109,7 +110,7 @@ const uploadAvatar = async (avatarFile, jwtToken) => {
   const formData = new FormData();
   formData.append('avatar', avatarFile);
 
-  await axios.post('http://localhost:3000/users/me/avatar', formData, {
+  await axios.post(`${API_BASE_URL}/users/me/avatar`, formData, {
     headers: {
       'Authorization': `Bearer ${jwtToken}`,
       'Content-Type': 'multipart/form-data'
@@ -188,7 +189,7 @@ const SignUpPage = () => {
 
     try {
       // 1. Sign up the user
-      const signupResponse = await axios.post("http://localhost:3000/auth/signup", {
+      const signupResponse = await axios.post(`${API_BASE_URL}/auth/signup`, {
         username: form.username,
         email: form.email,
         password: form.password,
@@ -197,7 +198,7 @@ const SignUpPage = () => {
       });
 
       // 2. Log in to get JWT token (if signup doesn't return it)
-      const loginResponse = await axios.post("http://localhost:3000/auth/signin", {
+      const loginResponse = await axios.post(`${API_BASE_URL}/auth/signin`, {
         username: form.username,
         password: form.password,
       });
