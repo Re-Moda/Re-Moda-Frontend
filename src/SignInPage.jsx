@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import "./SignUpPage.css";
 import logo from "./assets/logo.png";
 import axios from "axios";
+import API_BASE_URL from './config.js';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -80,7 +81,7 @@ const SignInPage = () => {
     setErrorMsg("");
 
     try {
-      const response = await axios.post("http://localhost:3000/auth/signin", {
+      const response = await axios.post(`${API_BASE_URL}/auth/signin`, {
         username: form.username,  // payload to send to backend
         password: form.password
       })

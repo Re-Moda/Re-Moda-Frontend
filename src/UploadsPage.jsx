@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import axios from "axios";
 import favStar from "./assets/fav-star.webp";
 import "./UploadsPage.css";
+import API_BASE_URL from './config.js';
 
 const CATEGORY_OPTIONS = ["Top", "Bottom", "Shoe"];
 
@@ -77,7 +78,7 @@ export default function UploadsPage() {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('category', img.category);
-      await axios.post('http://localhost:3000/clothing-items/upload', formData, {
+      await axios.post(`${API_BASE_URL}/clothing-items/upload`, formData, {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       // Only update the status of the uploaded image, do NOT reset or replace the array
@@ -149,19 +150,78 @@ export default function UploadsPage() {
       {/* Animated star background, always behind content */}
       <div className="star-bg">{stars}</div>
       {/* Main content, always above stars */}
-      <div className="uploads-bg" style={{ minHeight: '100vh', fontFamily: 'Crimson Text, serif', position: 'relative', zIndex: 2 }}>
-        {/* Decorative stars */}
-        {/* Top bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1100, margin: '0 auto', padding: '32px 0 0 0' }}>
-          <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 28, letterSpacing: 0.5 }}>Build Your Digital Wardrobe</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ background: '#f3e8ff', color: '#a78bfa', borderRadius: 16, padding: '4px 16px', fontWeight: 600, fontSize: 16 }}>{images.filter(img => img.status === 'success').length} items processed</div>
-            <div style={{ background: '#fee2e2', color: '#d72660', borderRadius: 16, padding: '4px 16px', fontWeight: 600, fontSize: 16 }}>Need {Math.max(0, 4 - (categoryCounts.Top + categoryCounts.Bottom))} more items</div>
-            <button onClick={handleContinue} disabled={!canContinue} style={{ background: canContinue ? '#a78bfa' : '#ede9fe', color: canContinue ? '#fff' : '#a78bfa', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 18, padding: '10px 32px', cursor: canContinue ? 'pointer' : 'not-allowed', transition: 'background 0.18s' }}>Continue to Closet</button>
+      <div style={{
+        fontFamily: "'EB Garamond', serif",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        minHeight: "100vh",
+        background: "inherit"
+      }}>
+        {/* Top-right button row - replace with Continue to Closet and progress/status */}
+        <div style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          width: "100%",
+          maxWidth: 1400,
+          margin: "32px auto 0 auto",
+          gap: 18
+        }}>
+          <div style={{ fontWeight: 700, fontSize: 28, color: '#a78bfa', flex: 1, textAlign: 'left', letterSpacing: 1 }}>
+            Build Your Digital Wardrobe
           </div>
+          <div style={{
+            background: '#ede9fe',
+            color: '#7c3aed',
+            borderRadius: 18,
+            fontWeight: 700,
+            fontSize: 18,
+            padding: '8px 22px',
+            marginRight: 8
+          }}>{images.filter(img => img.status === 'success').length} items processed</div>
+          <div style={{
+            background: '#fee2e2',
+            color: '#d72660',
+            borderRadius: 18,
+            fontWeight: 700,
+            fontSize: 18,
+            padding: '8px 22px',
+            marginRight: 8
+          }}>Need {Math.max(0, 4 - (categoryCounts.Top + categoryCounts.Bottom))} more items</div>
+          <button
+            style={{
+              background: canContinue ? '#a78bfa' : '#ede9fe',
+              color: canContinue ? '#fff' : '#a78bfa',
+              border: 'none',
+              borderRadius: 18,
+              fontWeight: 700,
+              fontSize: 20,
+              padding: '12px 32px',
+              cursor: canContinue ? 'pointer' : 'not-allowed',
+              boxShadow: '0 2px 8px #e3f6fd44',
+              transition: 'background 0.2s, color 0.2s'
+            }}
+            disabled={!canContinue}
+            onClick={handleContinue}
+          >
+            Continue to Closet
+          </button>
         </div>
-        {/* Main content */}
-        <div className="uploads-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: 40, maxWidth: 1100, margin: '32px auto' }}>
+        {/* Main white card */}
+        <div style={{
+          display: "flex",
+          flexDirection: "row",
+          width: "100%",
+          maxWidth: 1100,
+          margin: "40px auto 0 auto",
+          background: "#fff",
+          borderRadius: 32,
+          boxShadow: "0 4px 32px #e3f6fd44",
+          padding: 32,
+          minHeight: 600
+        }}>
           {/* Main card */}
           <div className="uploads-main-card" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 4px 32px #e3f6fd44', padding: 40, flex: 1, minWidth: 420, maxWidth: 540 }}>
             <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Initialize Your Digital Closet</div>
