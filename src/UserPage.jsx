@@ -84,12 +84,121 @@ const UserPage = () => {
   // For storing all outfits (if you have an outfits endpoint)
   const [outfits, setOutfits] = useState([]);
 
+  // Coin balance and upload count states
+  const [coinBalance, setCoinBalance] = useState(100);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [canAccessCloset, setCanAccessCloset] = useState(true);
+  const [remainingUploads, setRemainingUploads] = useState(0);
+
+  // Debug coin balance changes
+  useEffect(() => {
+    console.log('Coin balance changed to:', coinBalance);
+  }, [coinBalance]);
+
   useEffect(() => {
     if (!sessionStorage.getItem("token")) {
       window.location.href = "/signin";
     }
     // Removed any upload-count-based redirect or restriction here
   }, []);
+
+  // Fetch coin balance and upload count
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      try {
+        // Fetch coin balance
+        const coinResponse = await axios.get(`${API_BASE_URL}/users/me/coins`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('Coin response:', coinResponse.data);
+        if (coinResponse.data && coinResponse.data.success) {
+          const balance = coinResponse.data.data.coin_balance;
+          console.log('Setting coin balance to:', balance);
+          setCoinBalance(Math.max(0, balance)); // Ensure non-negative
+        } else {
+          // If backend doesn't have coin balance set, default to 100
+          console.log('Backend response not successful, defaulting to 100');
+          setCoinBalance(100);
+        }
+
+        // Fetch upload count
+        const uploadResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (uploadResponse.data && uploadResponse.data.success) {
+          const { count, hasMetMinimum } = uploadResponse.data.data;
+          setUploadCount(count);
+          setCanAccessCloset(hasMetMinimum);
+          setRemainingUploads(4 - count);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // If API call fails, set default values
+        setCoinBalance(100);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Function to spend coins for AI features
+  const useAIFeature = async (featureCost = 10) => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    
+    try {
+      console.log('Current coin balance before spending:', coinBalance);
+      
+      // Check if user has enough coins
+      if (coinBalance < featureCost) {
+        alert(`Insufficient coins! You need ${featureCost} coins. Current balance: ${coinBalance}`);
+        return false;
+      }
+
+      // Spend coins
+      const spendResponse = await axios.post(`${API_BASE_URL}/users/me/coins/spend`, 
+        { amount: featureCost },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log('Spend response:', spendResponse.data);
+      if (spendResponse.data && spendResponse.data.success) {
+        const newBalance = spendResponse.data.data.coin_balance;
+        console.log('New coin balance after spending:', newBalance);
+        setCoinBalance(Math.max(0, newBalance)); // Ensure non-negative
+        return true; // Allow AI feature to proceed
+      } else {
+        alert('Failed to spend coins. Please try again.');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error using AI feature:', error);
+      // If backend call fails, manually subtract coins
+      const newBalance = Math.max(0, coinBalance - featureCost);
+      console.log('Backend failed, manually updating balance to:', newBalance);
+      setCoinBalance(newBalance);
+      return true; // Allow AI feature to proceed
+    }
+  };
+
+  // Function to add coins (for donations/thrift store)
+  const addCoins = async (amount) => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    
+    try {
+      const response = await axios.post(`${API_BASE_URL}/users/me/coins/add`, 
+        { amount },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data && response.data.success) {
+        setCoinBalance(response.data.data.coin_balance);
+        alert(`+${amount} coins added! New balance: ${response.data.data.coin_balance}`);
+      }
+    } catch (error) {
+      console.error('Error adding coins:', error);
+    }
+  };
 
   useEffect(() => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -156,6 +265,12 @@ const UserPage = () => {
 
   // AI Try-On handler
   const handleTryOn = async () => {
+    // Check if user has enough coins first
+    const hasEnoughCoins = await useAIFeature(10);
+    if (!hasEnoughCoins) {
+      return; // Stop if not enough coins
+    }
+
     setLoadingTryOn(true);
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
@@ -289,10 +404,21 @@ const UserPage = () => {
           <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <button
               onClick={handleTryOn}
-              disabled={!selectedTopId || !selectedBottomId || loadingTryOn}
-              style={{ fontWeight: 600, fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#7c3aed', color: '#fff', border: 'none', cursor: (!selectedTopId || !selectedBottomId || loadingTryOn) ? 'not-allowed' : 'pointer', marginBottom: 6 }}
+              disabled={!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10}
+              style={{ 
+                fontWeight: 600, 
+                fontSize: 18, 
+                padding: '10px 32px', 
+                borderRadius: 8, 
+                background: '#7c3aed', 
+                color: '#fff', 
+                border: 'none', 
+                cursor: (!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10) ? 'not-allowed' : 'pointer', 
+                marginBottom: 6,
+                opacity: (!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10) ? 0.6 : 1
+              }}
             >
-              {loadingTryOn ? "Generating outfit..." : "Try On"}
+              {loadingTryOn ? "Generating outfit..." : `Try On (10 coins)`}
             </button>
             <button
               onClick={() => {
@@ -308,6 +434,71 @@ const UserPage = () => {
           </div>
         )}
       </div>
+      {/* Coin balance display */}
+      <div style={{
+        position: 'fixed',
+        top: 20,
+        left: 300,
+        zIndex: 1000,
+        background: '#fff9c4',
+        border: '2px solid #fbbf24',
+        borderRadius: 12,
+        padding: '12px 20px',
+        boxShadow: '0 2px 16px #fbbf2444',
+        fontFamily: "'EB Garamond', serif",
+        color: '#92400e',
+        fontWeight: 700,
+        fontSize: 18,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        minWidth: 120
+      }}>
+        <span style={{ fontSize: 24 }}>🪙</span>
+        <span>{Math.max(0, coinBalance)} coins</span>
+      </div>
+
+      {/* Upload progress display */}
+      {!canAccessCloset && (
+        <div style={{
+          position: 'fixed',
+          top: 80,
+          left: 280,
+          zIndex: 100,
+          background: '#fef3c7',
+          border: '2px solid #f59e0b',
+          borderRadius: 12,
+          padding: '16px 20px',
+          boxShadow: '0 2px 16px #f59e0b44',
+          fontFamily: "'EB Garamond', serif",
+          color: '#92400e',
+          fontWeight: 600,
+          fontSize: 16,
+          minWidth: 200
+        }}>
+          <div style={{ marginBottom: 8 }}>
+            Upload {remainingUploads} more item(s) to access your full closet
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            Current uploads: {uploadCount}/4
+          </div>
+          <div style={{
+            width: '100%',
+            height: 8,
+            background: '#fbbf24',
+            borderRadius: 4,
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${(uploadCount / 4) * 100}%`,
+              height: '100%',
+              background: '#f59e0b',
+              transition: 'width 0.3s ease'
+            }}></div>
+          </div>
+        </div>
+      )}
+
       {/* Top-center button row */}
       <div style={{
         display: "flex",
@@ -328,17 +519,22 @@ const UserPage = () => {
             fontWeight: 700,
             fontSize: 18,
             padding: "14px 32px",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px #e3f6fd44"
+            cursor: coinBalance < 10 ? "not-allowed" : "pointer",
+            boxShadow: "0 2px 8px #e3f6fd44",
+            opacity: coinBalance < 10 ? 0.6 : 1
           }}
-          onClick={() => {
+                      onClick={() => {
+              if (coinBalance < 10) {
+                alert(`You need 10 coins to use AI Try-On. Current balance: ${coinBalance} coins`);
+                return;
+              }
             setBuildMode(true);
             setSelectedTopId(null);
             setSelectedBottomId(null);
             setGeneratedAvatarUrl(null);
           }}
         >
-          Build your own
+          Build your own (10 coins)
         </button>
         <button
           style={{

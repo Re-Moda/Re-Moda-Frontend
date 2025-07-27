@@ -35,6 +35,34 @@ export default function UploadsPage() {
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Upload count states
+  const [uploadCount, setUploadCount] = useState(0);
+  const [canAccessCloset, setCanAccessCloset] = useState(false);
+  const [remainingUploads, setRemainingUploads] = useState(4);
+
+  // Fetch current upload count on component mount
+  React.useEffect(() => {
+    const fetchUploadCount = async () => {
+      try {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data && response.data.success) {
+          const { count, hasMetMinimum } = response.data.data;
+          setUploadCount(count);
+          setCanAccessCloset(hasMetMinimum);
+          setRemainingUploads(Math.max(0, 4 - count));
+        }
+      } catch (error) {
+        console.error('Error fetching upload count:', error);
+      }
+    };
+
+    fetchUploadCount();
+  }, []);
+
   // Count successful uploads by category
   const categoryCounts = images.reduce((acc, img) => {
     if (img.status === 'success') {
@@ -43,8 +71,8 @@ export default function UploadsPage() {
     return acc;
   }, { Top: 0, Bottom: 0, Shoe: 0 });
 
-  // Minimum requirements
-  const canContinue = categoryCounts.Top >= 2 && categoryCounts.Bottom >= 2;
+  // Updated minimum requirements - now based on backend upload count
+  const canContinue = canAccessCloset || (uploadCount + images.filter(img => img.status === 'success').length >= 4);
 
   // Handle file selection
   const handleFiles = (files) => {
@@ -84,6 +112,18 @@ export default function UploadsPage() {
       // Only update the status of the uploaded image, do NOT reset or replace the array
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'success' } : item));
       setNotification({ type: 'success', message: 'File uploaded successfully! 1 item added to your wardrobe.' });
+      
+      // Refresh upload count after successful upload
+      const uploadCountResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+        headers: { Authorization: `Bearer ${jwtToken}` }
+      });
+      
+      if (uploadCountResponse.data && uploadCountResponse.data.success) {
+        const { count, hasMetMinimum } = uploadCountResponse.data.data;
+        setUploadCount(count);
+        setCanAccessCloset(hasMetMinimum);
+        setRemainingUploads(Math.max(0, 4 - count));
+      }
     } catch (error) {
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', errorMsg: 'Upload failed.' } : item));
       setNotification({ type: 'error', message: 'Upload failed. Please try again.' });
@@ -170,7 +210,7 @@ export default function UploadsPage() {
           gap: 18
         }}>
           <div style={{ fontWeight: 700, fontSize: 28, color: '#a78bfa', flex: 1, textAlign: 'left', letterSpacing: 1 }}>
-            Build Your Digital Wardrobe
+            {canAccessCloset ? 'Add to Your Wardrobe' : 'Build Your Digital Wardrobe'}
           </div>
           <div style={{
             background: '#ede9fe',
@@ -180,16 +220,18 @@ export default function UploadsPage() {
             fontSize: 18,
             padding: '8px 22px',
             marginRight: 8
-          }}>{images.filter(img => img.status === 'success').length} items processed</div>
-          <div style={{
-            background: '#fee2e2',
-            color: '#d72660',
-            borderRadius: 18,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: '8px 22px',
-            marginRight: 8
-          }}>Need {Math.max(0, 4 - (categoryCounts.Top + categoryCounts.Bottom))} more items</div>
+          }}>{uploadCount} items processed</div>
+          {!canAccessCloset && (
+            <div style={{
+              background: '#fee2e2',
+              color: '#d72660',
+              borderRadius: 18,
+              fontWeight: 700,
+              fontSize: 18,
+              padding: '8px 22px',
+              marginRight: 8
+            }}>Need {Math.max(0, 4 - uploadCount)} more items</div>
+          )}
           <button
             style={{
               background: canContinue ? '#a78bfa' : '#ede9fe',
@@ -224,12 +266,21 @@ export default function UploadsPage() {
         }}>
           {/* Main card */}
           <div className="uploads-main-card" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 4px 32px #e3f6fd44', padding: 40, flex: 1, minWidth: 420, maxWidth: 540 }}>
-            <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Initialize Your Digital Closet</div>
-            <div style={{ color: '#444', fontSize: 17, marginBottom: 18 }}>Upload high-quality images of your garments to build your personalized style analytics profile.</div>
-            <div style={{ background: '#f3e8ff', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18 }}>Minimum Upload Requirements</span>
-              <span style={{ color: '#444', fontSize: 15 }}>Upload at least <b>2 tops</b> and <b>2 bottoms</b> to unlock advanced AI styling recommendations and personalized wardrobe analytics.</span>
+            <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>
+              {canAccessCloset ? 'Add to Your Digital Closet' : 'Initialize Your Digital Closet'}
             </div>
+            <div style={{ color: '#444', fontSize: 17, marginBottom: 18 }}>
+              {canAccessCloset 
+                ? 'Continue building your personalized wardrobe with high-quality garment images.'
+                : 'Upload high-quality images of your garments to build your personalized style analytics profile.'
+              }
+            </div>
+            {!canAccessCloset && (
+              <div style={{ background: '#f3e8ff', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18 }}>Minimum Upload Requirements</span>
+                <span style={{ color: '#444', fontSize: 15 }}>Upload at least <b>2 tops</b> and <b>2 bottoms</b> to unlock advanced AI styling recommendations and personalized wardrobe analytics.</span>
+              </div>
+            )}
             {/* Upload area */}
             <div
               className="uploads-dropzone"
@@ -284,30 +335,46 @@ export default function UploadsPage() {
           </div>
           {/* Sidebar */}
           <div className="uploads-sidebar" style={{ minWidth: 320, maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 28 }}>
-            {/* Category Analysis */}
-            <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24, marginBottom: 8 }}>
-              <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Category Analysis</div>
-              <div style={{ color: '#444', fontSize: 15, marginBottom: 4 }}>Organize items for optimal AI recommendations</div>
-              <div style={{ marginTop: 10 }}>
-                <div style={{ fontWeight: 600, color: '#232323', fontSize: 15 }}>Tops <span style={{ float: 'right' }}>{categoryCounts.Top}/2</span></div>
-                <ProgressBar value={categoryCounts.Top} max={2} />
-                <div style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Shirts, blouses, sweaters</div>
-                <div style={{ fontWeight: 600, color: '#232323', fontSize: 15 }}>Bottoms <span style={{ float: 'right' }}>{categoryCounts.Bottom}/2</span></div>
-                <ProgressBar value={categoryCounts.Bottom} max={2} />
-                <div style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Jeans, pants, skirts</div>
-                <div style={{ fontWeight: 600, color: '#232323', fontSize: 15 }}>Shoes <span style={{ float: 'right' }}>{categoryCounts.Shoe}/2</span></div>
-                <ProgressBar value={categoryCounts.Shoe} max={2} />
-                <div style={{ color: '#888', fontSize: 13 }}>Sneakers, heels, boots</div>
-              </div>
-            </div>
-            {/* Setup Progress */}
-            <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24, marginBottom: 8 }}>
-              <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Setup Progress</div>
-              <div style={{ fontWeight: 600, color: '#232323', fontSize: 15, marginBottom: 4 }}>Overall Progress <span style={{ float: 'right' }}>{categoryCounts.Top + categoryCounts.Bottom}/4</span></div>
-              <ProgressBar value={categoryCounts.Top + categoryCounts.Bottom} max={4} />
-              <div style={{ color: '#888', fontSize: 13, marginTop: 8 }}>Almost there! Upload {Math.max(0, 4 - (categoryCounts.Top + categoryCounts.Bottom))} more items to complete your wardrobe initialization.</div>
-            </div>
-            {/* Optimization Tips */}
+            {!canAccessCloset ? (
+              <>
+                {/* Category Analysis - Only show during initial setup */}
+                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24, marginBottom: 8 }}>
+                  <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Category Analysis</div>
+                  <div style={{ color: '#444', fontSize: 15, marginBottom: 4 }}>Organize items for optimal AI recommendations</div>
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontWeight: 600, color: '#232323', fontSize: 15 }}>Tops <span style={{ float: 'right' }}>{categoryCounts.Top}/2</span></div>
+                    <ProgressBar value={categoryCounts.Top} max={2} />
+                    <div style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Shirts, blouses, sweaters</div>
+                    <div style={{ fontWeight: 600, color: '#232323', fontSize: 15 }}>Bottoms <span style={{ float: 'right' }}>{categoryCounts.Bottom}/2</span></div>
+                    <ProgressBar value={categoryCounts.Bottom} max={2} />
+                    <div style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Jeans, pants, skirts</div>
+                    <div style={{ fontWeight: 600, color: '#232323', fontSize: 15 }}>Shoes <span style={{ float: 'right' }}>{categoryCounts.Shoe}/2</span></div>
+                    <ProgressBar value={categoryCounts.Shoe} max={2} />
+                    <div style={{ color: '#888', fontSize: 13 }}>Sneakers, heels, boots</div>
+                  </div>
+                </div>
+                {/* Setup Progress - Only show during initial setup */}
+                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24, marginBottom: 8 }}>
+                  <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Setup Progress</div>
+                  <div style={{ fontWeight: 600, color: '#232323', fontSize: 15, marginBottom: 4 }}>Overall Progress <span style={{ float: 'right' }}>{categoryCounts.Top + categoryCounts.Bottom}/4</span></div>
+                  <ProgressBar value={categoryCounts.Top + categoryCounts.Bottom} max={4} />
+                  <div style={{ color: '#888', fontSize: 13, marginTop: 8 }}>Almost there! Upload {Math.max(0, 4 - (categoryCounts.Top + categoryCounts.Bottom))} more items to complete your wardrobe initialization.</div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* AI Recognition Tips - Show after 4 uploads */}
+                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24, marginBottom: 8 }}>
+                  <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>AI Recognition Tips</div>
+                  <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0 }}>
+                    <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Use clean, well-lit backgrounds for optimal AI recognition accuracy</li>
+                    <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Include multiple angles and lighting conditions for comprehensive analysis</li>
+                    <li><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Focus on frequently worn items for personalized recommendations</li>
+                  </ul>
+                </div>
+              </>
+            )}
+            {/* Optimization Tips - Always show */}
             <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24 }}>
               <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Optimization Tips</div>
               <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0 }}>
