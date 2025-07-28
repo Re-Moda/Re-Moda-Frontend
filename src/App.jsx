@@ -8,6 +8,7 @@ import SignInPage from "./SignInPage.jsx";
 import ForgotPasswordPage from "./ForgotPasswordPage.jsx";
 import ErrorBoundary from "./ErrorBoundary.jsx";
 import ThriftPage from "./ThriftPage.jsx";
+import StylistChatPage from "./StylistChatPage.jsx";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/upload" element={<Navigate to="/uploads" replace />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/thrift" element={<ThriftPage />} />
+        <Route path="/stylist-chat" element={<StylistChatPage />} />
       </Routes>
     </BrowserRouter>
   );
