@@ -218,27 +218,27 @@ const SignUpPage = () => {
       }
 
       // ...rest of your animation and UI logic
-      setShowAnimation(true);
-      // If a photo was uploaded, wait for photoPreview to be set before showing the card
-      if (photo && !photoPreview) {
-        await new Promise((resolve) => {
-          const check = () => {
-            if (photoPreview) resolve();
-            else setTimeout(check, 50);
-          };
-          check();
-        });
-      }
-      setTimeout(() => {
-        setShowIdCard(true);
-        setBgClass("idcard-bg");
-        setStartCardAnim(true);
-      }, 700);
-      setTimeout(() => {
-        setShowAnimation(false);
-        setStep(2);
-        setSubmitted(true);
-      }, 1100);
+    setShowAnimation(true);
+    // If a photo was uploaded, wait for photoPreview to be set before showing the card
+    if (photo && !photoPreview) {
+      await new Promise((resolve) => {
+        const check = () => {
+          if (photoPreview) resolve();
+          else setTimeout(check, 50);
+        };
+        check();
+      });
+    }
+    setTimeout(() => {
+      setShowIdCard(true);
+      setBgClass("idcard-bg");
+      setStartCardAnim(true);
+    }, 700);
+    setTimeout(() => {
+      setShowAnimation(false);
+      setStep(2);
+      setSubmitted(true);
+    }, 1100);
     } catch (error) {
       if (error.response && error.response.status === 409) {
         setAvatarError("That username or email is already taken. Please choose another.");
@@ -427,24 +427,24 @@ const SignUpPage = () => {
                           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M14.7 2.29a1 1 0 0 1 1.42 0l1.59 1.59a1 1 0 0 1 0 1.42l-9.3 9.3-2.12.71.71-2.12 9.3-9.3zM3 17h14v2H3v-2z" fill="#7c3aed"/>
                           </svg>
-                          <input
+                  <input
                             id="photo-upload-inline"
-                            type="file"
-                            accept="image/*"
+                    type="file"
+                    accept="image/*"
                             style={{ display: 'none' }}
-                            onChange={handlePhotoChange}
-                          />
-                        </label>
-                      </div>
+                    onChange={handlePhotoChange}
+                  />
+                </label>
+              </div>
                     </label>
                     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 220, maxWidth: '100%', marginTop: 0 }}>
                       <label className="magazine-label" style={{ marginTop: 12 }}>Username</label>
-                      <input
-                        type="text"
-                        name="username"
-                        placeholder="Your Username"
-                        value={form.username}
-                        onChange={handleChange}
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Your Username"
+                  value={form.username}
+                  onChange={handleChange}
                         className="magazine-signup-input"
                         required
                         autoComplete="username"
@@ -458,47 +458,47 @@ const SignUpPage = () => {
                         value={form.password}
                         onChange={handleChange}
                         className="magazine-signup-input"
-                        required
+                  required
                         autoComplete="new-password"
                         style={{ minWidth: 120, maxWidth: 260, width: '100%' }}
-                      />
+                />
                     </div>
                   </div>
-                  <label className="magazine-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="you@moda.com"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                  />
+                <label className="magazine-label">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="you@moda.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
                   <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'flex-end', marginBottom: 8 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <label className="magazine-label">Security Question</label>
-                      <select
-                        name="securityQuestion"
-                        value={form.securityQuestion}
-                        onChange={handleChange}
-                        className="magazine-signup-select"
-                        required
+                <label className="magazine-label">Security Question</label>
+                <select
+                  name="securityQuestion"
+                  value={form.securityQuestion}
+                  onChange={handleChange}
+                  className="magazine-signup-select"
+                  required
                         style={{ width: '100%' }}
-                      >
-                        {securityQuestions.map((q, i) => (
-                          <option key={i} value={q}>{q}</option>
-                        ))}
-                      </select>
+                >
+                  {securityQuestions.map((q, i) => (
+                    <option key={i} value={q}>{q}</option>
+                  ))}
+                </select>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <label className="magazine-label">Security Answer</label>
-                      <input
-                        type="text"
-                        name="securityAnswer"
-                        placeholder="Your Answer"
-                        value={form.securityAnswer}
-                        onChange={handleChange}
+                <label className="magazine-label">Security Answer</label>
+                <input
+                  type="text"
+                  name="securityAnswer"
+                  placeholder="Your Answer"
+                  value={form.securityAnswer}
+                  onChange={handleChange}
                         className="magazine-signup-input"
-                        required
+                  required
                         style={{ marginLeft: 12, flex: 1, maxWidth: 260, minWidth: 120 }}
                       />
                     </div>
@@ -560,7 +560,7 @@ const SignUpPage = () => {
                       `}</style>
                     </span>
                   </div>
-                </form>
+              </form>
               </div>
             </div>
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 18 }}>
