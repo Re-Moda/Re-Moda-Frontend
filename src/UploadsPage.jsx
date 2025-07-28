@@ -57,6 +57,25 @@ export default function UploadsPage() {
         }
       } catch (error) {
         console.error('Error fetching upload count:', error);
+        // Fallback: Get upload count from clothing items endpoint
+        try {
+          const clothingResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (clothingResponse.data && clothingResponse.data.success) {
+            const count = clothingResponse.data.data.length;
+            setUploadCount(count);
+            setCanAccessCloset(count >= 4);
+            setRemainingUploads(Math.max(0, 4 - count));
+          }
+        } catch (fallbackError) {
+          console.error('Fallback upload count fetch also failed:', fallbackError);
+          // Set default values
+          setUploadCount(0);
+          setCanAccessCloset(false);
+          setRemainingUploads(4);
+        }
       }
     };
 
@@ -106,7 +125,8 @@ export default function UploadsPage() {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('category', img.category);
-      await axios.post(`${API_BASE_URL}/clothing-items/upload`, formData, {
+      formData.append('label', img.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as label
+      await axios.post(`${API_BASE_URL}/clothing-items`, formData, {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       // Only update the status of the uploaded image, do NOT reset or replace the array
@@ -114,19 +134,48 @@ export default function UploadsPage() {
       setNotification({ type: 'success', message: 'File uploaded successfully! 1 item added to your wardrobe.' });
       
       // Refresh upload count after successful upload
-      const uploadCountResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
-        headers: { Authorization: `Bearer ${jwtToken}` }
-      });
-      
-      if (uploadCountResponse.data && uploadCountResponse.data.success) {
-        const { count, hasMetMinimum } = uploadCountResponse.data.data;
-        setUploadCount(count);
-        setCanAccessCloset(hasMetMinimum);
-        setRemainingUploads(Math.max(0, 4 - count));
+      try {
+        const uploadCountResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+          headers: { Authorization: `Bearer ${jwtToken}` }
+        });
+        
+        if (uploadCountResponse.data && uploadCountResponse.data.success) {
+          const { count, hasMetMinimum } = uploadCountResponse.data.data;
+          setUploadCount(count);
+          setCanAccessCloset(hasMetMinimum);
+          setRemainingUploads(Math.max(0, 4 - count));
+        }
+      } catch (error) {
+        console.error('Error refreshing upload count:', error);
+        // Fallback: Get count from clothing items
+        try {
+          const clothingResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
+            headers: { Authorization: `Bearer ${jwtToken}` }
+          });
+          
+          if (clothingResponse.data && clothingResponse.data.success) {
+            const count = clothingResponse.data.data.length;
+            setUploadCount(count);
+            setCanAccessCloset(count >= 4);
+            setRemainingUploads(Math.max(0, 4 - count));
+          }
+        } catch (fallbackError) {
+          console.error('Fallback upload count refresh also failed:', fallbackError);
+        }
       }
     } catch (error) {
-      setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', errorMsg: 'Upload failed.' } : item));
-      setNotification({ type: 'error', message: 'Upload failed. Please try again.' });
+      console.error('Upload error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      let errorMessage = 'Upload failed. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', errorMsg: errorMessage } : item));
+      setNotification({ type: 'error', message: errorMessage });
     }
   };
 
