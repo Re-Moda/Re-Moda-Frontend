@@ -45,6 +45,37 @@ export default function UploadsPage() {
     const fetchUploadCount = async () => {
       try {
         const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        
+        // Debug: Test available endpoints
+        console.log('Testing available endpoints...');
+        try {
+          const testResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('✅ /clothing-items GET endpoint works');
+        } catch (testError) {
+          console.log('❌ /clothing-items GET endpoint failed:', testError.response?.status);
+        }
+        
+        // Test other possible endpoints
+        const endpointsToTest = [
+          '/items',
+          '/clothing',
+          '/wardrobe',
+          '/clothes'
+        ];
+        
+        for (const endpoint of endpointsToTest) {
+          try {
+            const testResponse = await axios.get(`${API_BASE_URL}${endpoint}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log(`✅ ${endpoint} GET endpoint works`);
+          } catch (testError) {
+            console.log(`❌ ${endpoint} GET endpoint failed:`, testError.response?.status);
+          }
+        }
+        
         const response = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -126,9 +157,33 @@ export default function UploadsPage() {
       formData.append('image', file);
       formData.append('category', img.category);
       formData.append('label', img.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as label
-      await axios.post(`${API_BASE_URL}/clothing-items`, formData, {
-        headers: { Authorization: `Bearer ${jwtToken}` }
-      });
+      // Try different possible upload endpoints
+      let uploadResponse;
+      try {
+        // Try the main clothing-items endpoint first
+        uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items`, formData, {
+          headers: { Authorization: `Bearer ${jwtToken}` }
+        });
+      } catch (error) {
+        console.log('First attempt failed, trying alternative endpoint...');
+        try {
+          // Try with /upload suffix
+          uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items/upload`, formData, {
+            headers: { Authorization: `Bearer ${jwtToken}` }
+          });
+        } catch (secondError) {
+          console.log('Second attempt failed, trying /items endpoint...');
+          try {
+            // Try /items endpoint
+            uploadResponse = await axios.post(`${API_BASE_URL}/items`, formData, {
+              headers: { Authorization: `Bearer ${jwtToken}` }
+            });
+          } catch (thirdError) {
+            // All attempts failed, throw the original error
+            throw error;
+          }
+        }
+      }
       // Only update the status of the uploaded image, do NOT reset or replace the array
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'success' } : item));
       setNotification({ type: 'success', message: 'File uploaded successfully! 1 item added to your wardrobe.' });
@@ -298,6 +353,52 @@ export default function UploadsPage() {
             onClick={handleContinue}
           >
             Continue to Closet
+          </button>
+          <button
+            onClick={async () => {
+              const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+              console.log('Testing upload endpoints...');
+              
+              const testEndpoints = [
+                '/clothing-items',
+                '/clothing-items/upload', 
+                '/items',
+                '/clothing',
+                '/wardrobe'
+              ];
+              
+              for (const endpoint of testEndpoints) {
+                try {
+                  const formData = new FormData();
+                  formData.append('test', 'test');
+                  formData.append('category', 'Top');
+                  formData.append('label', 'test');
+                  
+                  const response = await axios.post(`${API_BASE_URL}${endpoint}`, formData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  console.log(`✅ ${endpoint} POST endpoint works`);
+                  alert(`Found working upload endpoint: ${endpoint}`);
+                  return;
+                } catch (error) {
+                  console.log(`❌ ${endpoint} POST endpoint failed:`, error.response?.status);
+                }
+              }
+              alert('No working upload endpoints found. Check console for details.');
+            }}
+            style={{
+              background: "#ff6b6b",
+              color: "white",
+              border: "none",
+              borderRadius: 12,
+              fontWeight: 700,
+              fontSize: 18,
+              padding: "14px 32px",
+              cursor: "pointer",
+              marginLeft: 12
+            }}
+          >
+            Test Upload Endpoints
           </button>
         </div>
         {/* Main white card */}
