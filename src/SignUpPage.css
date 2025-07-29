@@ -990,9 +990,12 @@
   100% { width: 100%; }
 }
 
-.download-btn:hover {
-  color: #7c4dff;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
+
+
 
 .carousel-avatar-picker, .carousel-avatar-list {
   height: 100%;
