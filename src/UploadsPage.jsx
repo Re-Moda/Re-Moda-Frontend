@@ -133,14 +133,70 @@ export default function UploadsPage() {
     try {
       const file = dataURLtoFile(img.url, img.name);
       const jwtToken = sessionStorage.getItem("token");
+      
+      // First check if backend is reachable
+      try {
+        const healthCheck = await axios.get(`${API_BASE_URL}/health`, {
+          headers: { Authorization: `Bearer ${jwtToken}` }
+        });
+        console.log('Backend health check passed');
+      } catch (healthError) {
+        console.log('Backend health check failed, but continuing with upload...');
+      }
+      
+      console.log('Uploading file:', {
+        name: img.name,
+        size: file.size,
+        type: file.type,
+        category: img.category
+      });
+      
       const formData = new FormData();
       formData.append('image', file);
       formData.append('category', img.category);
       formData.append('label', img.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as label
-      // Use the correct upload endpoint
-      const uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items/upload`, formData, {
-        headers: { Authorization: `Bearer ${jwtToken}` }
-      });
+      formData.append('description', `A ${img.category.toLowerCase()} item uploaded by user`); // Add description
+      formData.append('tag', img.category.toLowerCase()); // Add tag field as backup
+      
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      console.log('Making request to:', `${API_BASE_URL}/clothing-items/upload`);
+      console.log('Token available:', !!jwtToken);
+      
+      // Try the upload with current FormData
+      let uploadResponse;
+      try {
+        uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items/upload`, formData, {
+          headers: { 
+            Authorization: `Bearer ${jwtToken}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } catch (firstError) {
+        console.log('First attempt failed, trying with alternative field names...');
+        
+        // Try with alternative field names
+        const alternativeFormData = new FormData();
+        alternativeFormData.append('image', file);
+        alternativeFormData.append('category', img.category);
+        alternativeFormData.append('title', img.name.replace(/\.[^/.]+$/, "")); // Try 'title' instead of 'label'
+        alternativeFormData.append('description', `A ${img.category.toLowerCase()} item uploaded by user`);
+        
+        console.log('Trying alternative FormData:');
+        for (let [key, value] of alternativeFormData.entries()) {
+          console.log(`${key}:`, value);
+        }
+        
+        uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items/upload`, alternativeFormData, {
+          headers: { 
+            Authorization: `Bearer ${jwtToken}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
       // Only update the status of the uploaded image, do NOT reset or replace the array
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'success' } : item));
       setNotification({ type: 'success', message: 'File uploaded successfully! 1 item added to your wardrobe.' });
@@ -178,16 +234,39 @@ export default function UploadsPage() {
     } catch (error) {
       console.error('Upload error:', error);
       console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
       
       let errorMessage = 'Upload failed. Please try again.';
-      if (error.response?.data?.message) {
+      
+      if (error.response?.status === 500) {
+        errorMessage = 'Server error (500). Backend may be down or overloaded. Please try again later.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (error.response?.status === 413) {
+        errorMessage = 'File too large. Please choose a smaller image.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Invalid request. Please check your file and try again.';
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
       
+      console.error('Final error message:', errorMessage);
+      
+      // If it's a 500 error, suggest backend might be down
+      if (error.response?.status === 500) {
+        console.log('Backend appears to be down. You may need to check the server status.');
+        setNotification({ 
+          type: 'error', 
+          message: 'Server error (500). Backend may be down or overloaded. Please try again later or contact support.' 
+        });
+      } else {
+        setNotification({ type: 'error', message: errorMessage });
+      }
+      
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', errorMsg: errorMessage } : item));
-      setNotification({ type: 'error', message: errorMessage });
     }
   };
 
