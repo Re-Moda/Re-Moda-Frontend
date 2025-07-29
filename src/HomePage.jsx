@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom"; // Removed
 import "./HomePage.css";
 import logo from "./assets/logo.png";
@@ -19,6 +19,13 @@ const HomePage = (props) => {
   // const navigate = useNavigate(); // Removed
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication status on component mount
+  useEffect(() => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
 
   const scrollToMission = () => {
     const missionSection = document.getElementById('mission-section');
@@ -35,6 +42,22 @@ const HomePage = (props) => {
 
   const handleSignUp = () => {
     props.onSignUp();
+    setIsMobileMenuOpen(false); // Close mobile menu after clicking
+  };
+
+  const handleMyCloset = () => {
+    window.location.href = "/user";
+    setIsMobileMenuOpen(false); // Close mobile menu after clicking
+  };
+
+  const handleLogout = () => {
+    // Clear authentication tokens
+    sessionStorage.removeItem('token');
+    localStorage.removeItem('token');
+    // Update authentication state
+    setIsAuthenticated(false);
+    // Redirect to home page
+    window.location.href = "/";
     setIsMobileMenuOpen(false); // Close mobile menu after clicking
   };
 
@@ -92,8 +115,17 @@ const HomePage = (props) => {
           {/* Desktop navigation */}
           <div className="nav-buttons">
             <button onClick={scrollToMission}>About Us</button>
-            <button onClick={handleLogin}>Sign In</button>
-            <button onClick={handleSignUp}>Sign Up</button>
+            {isAuthenticated ? (
+              <>
+                <button onClick={handleMyCloset}>My Closet</button>
+                <button onClick={handleLogout}>Logout</button>
+              </>
+            ) : (
+              <>
+                <button onClick={handleLogin}>Sign In</button>
+                <button onClick={handleSignUp}>Sign Up</button>
+              </>
+            )}
           </div>
         </div>
         
@@ -115,8 +147,17 @@ const HomePage = (props) => {
         <div className={`mobile-menu ${isMobileMenuOpen ? 'active' : ''}`}>
           <div className="nav-buttons">
             <button onClick={scrollToMission}>About Us</button>
-            <button onClick={handleLogin}>Sign In</button>
-            <button onClick={handleSignUp}>Sign Up</button>
+            {isAuthenticated ? (
+              <>
+                <button onClick={handleMyCloset}>My Closet</button>
+                <button onClick={handleLogout}>Logout</button>
+              </>
+            ) : (
+              <>
+                <button onClick={handleLogin}>Sign In</button>
+                <button onClick={handleSignUp}>Sign Up</button>
+              </>
+            )}
           </div>
         </div>
       </nav>
