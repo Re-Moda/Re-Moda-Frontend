@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import "./SignUpPage.css";
+import "./SignInPage.css";
 import logo from "./assets/logo.png";
 import axios from "axios";
 import API_BASE_URL from './config.js';
@@ -174,6 +175,7 @@ const SignInPage = () => {
                     boxShadow: '0 2px 8px #e3f6fd44',
                     cursor: 'pointer',
                     transition: 'background 0.18s',
+                    marginBottom: 10,
                   }}
                   onClick={() => window.location.href = '/signup'}
                 >

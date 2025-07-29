@@ -12,6 +12,32 @@ body {
     margin: 0;
     padding: 20px;
 }
+.thrift-page-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0;
+    position: relative; /* Container for absolute positioning */
+}
+.logo {
+    width: 180px;
+    position: absolute; /* Makes it an overlay */
+    left: 0px; /* Distance from left */
+    z-index: 1000; /* Ensures it appears above other content */
+    pointer-events: none; /* Allows clicks to pass through to content below */
+    padding-bottom: 10px;
+}
+.back-to-closet-btn {
+    background-color: #f3e5f5;
+    border-radius: 20px;
+    padding: 10px;
+    cursor: pointer;
+}
+.back-to-closet-btn:hover {
+    transform: scale(1.05);
+    background-color: #e792f4;
+}
 .map-info-container-wrapper {
     display: flex;
     justify-content: space-between;
@@ -37,10 +63,85 @@ body {
 .back-button:hover {
     transform: scale(1.05);
 }
+.detailed-view-title {
+    display: flex;
+    justify-content: center;
+    font-size: 20px;
+    background-color: #eff9d5;
+    padding: 10px;
+    border-radius: 20px;
+}
+.detailed-view-text {
+    font-weight: bold;
+}
+.detailed-address-text p {
+    background-color: #e5ecf5;
+    border-radius: 20px;
+    padding: 5px 10px 5px 10px;
+}
+.travel-info {
+    font-weight: bold;
+    background-color: #e5ecf5;
+    border-radius: 20px;
+    padding: 5px 10px 5px 10px;
+}
+.detailed-contact-info {
+    background-color: #f3e5f5;
+    border-radius: 20px;
+    padding: 10px 15px 10px 15px;
+}
+.detailed-contact-info:hover {
+    background-color: #edaef7;
+    transition: 0.3s;
+}
+
+/* Center single contact info */
+.detailed-contact-info.phone-only,
+.detailed-contact-info.website-only {
+    text-align: center;
+}
+
+/* Style for no contact info message */
+.detailed-contact-info.no-contact {
+    text-align: center;
+    background-color: #f5f5f5;
+}
+
+.detailed-contact-info.no-contact p {
+    margin: 0;
+    padding: 5px 0;
+}
+.detailed-hours-text {
+    background-color: #e5ecf5;
+    border-radius: 20px;
+    padding: 5px 10px 5px 10px;
+}
+.rating-text {
+    background-color: #fef7c9;
+    border-radius: 20px;
+    padding: 5px 10px 5px 10px;
+}
+.photo-gallery {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    overflow-x: auto;
+}
+.photo-gallery img {
+    width: 200px;
+    height: 250px;
+    border-radius: 20px;
+}
 .thrift-store-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
+}
+
+/* Make URLs wrap within the sidebar */
+.sidebar-container a {
+    word-wrap: break-word;
+    word-break: break-all;
 }
 .thrift-list-item {
     margin-bottom: 16px;
@@ -72,7 +173,8 @@ body {
     display: flex;
     flex-direction: column;
     margin-top: 20px;
-    height: 50vh;
+    height: auto; /* Changed from 50vh to auto */
+    min-height: fit-content; /* Only as tall as needed */
     background-color: white;
     border-radius: 20px;
     padding: 20px;
@@ -87,6 +189,16 @@ body {
     flex-direction: row;
     align-items: center;
     gap: 10px;
+}
+.back-to-top-btn {
+    background-color: #f3e5f5;
+    border-radius: 20px;
+    padding: 10px;
+    cursor: pointer;
+}
+.back-to-top-btn:hover {
+    transform: scale(1.05);
+    background-color: #e792f4;
 }
 .unused-items-list ul {
     display: flex;
@@ -106,12 +218,7 @@ body {
 .unused-items-container button:hover {
     transform: scale(1.05);
 }
-.back-to-closet-btn {
-    background-color: #f3e5f5;
-    border-radius: 10px;
-    padding: 5px;
-    cursor: pointer;
-}
+
 .unused-items-footer {
     display: flex;
     justify-content: center;
@@ -123,6 +230,53 @@ body {
     font-weight: bold;
     background-color: #f3e5f5;
     border-radius: 30px;
-    padding: 20px 30px 20px 30px;
+    padding: 15px 30px 15px 30px;
     cursor: pointer;
+}
+.donate-btn:hover {
+    transform: scale(1.05);
+    background-color: #e792f4;
+}
+@media (max-width: 600px) {
+    .thrift-page-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px; /* Add back padding to keep content away from edges */
+    }
+    .thrift-page-header {
+        width: 100%;
+    }
+    .logo {
+        margin-top: 5px;
+        width: 120px; /* Smaller on mobile */
+    }
+    .map-info-container-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px; /* Add back gap for spacing */
+        width: 100%; /* Ensure full width usage */
+    }
+    .map-container {
+        width: 100%;
+        height: 50vh;
+        order: 1;
+    }
+    .sidebar-container {
+        width: 90%;
+        height: 50vh;
+        order: 2;
+    }
+    .unused-items-container {
+        width: 90%;
+        height: auto; /* Changed from 50vh to auto */
+        min-height: fit-content; /* Only as tall as needed */
+        order: 3;
+    }
+    .unused-items-list ul {
+        overflow-x: auto;
+    }
 }
