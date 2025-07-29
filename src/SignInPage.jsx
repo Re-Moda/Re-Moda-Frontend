@@ -110,6 +110,26 @@ const SignInPage = () => {
         {!showIdCard ? (
           <div className="desktop-window">
             <div className="desktop-titlebar">
+            <button
+                  onClick={() => window.location.href = '/'}
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 5,
+                    zIndex: 20,
+                    background: '#e3f0ff',
+                    color: '#3a5a8c',
+                    border: '2px solid #b0b0ff',
+                    borderRadius: '1.2rem',
+                    fontWeight: 600,
+                    fontSize: '0.98rem',
+                    padding: '6px 18px',
+                    boxShadow: '0 1.5px 6px #b0b0ff33',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    transition: 'background 0.18s, color 0.18s',
+                  }}
+                >Go Back Home</button>
               <div className="window-controls">
                 <span className="window-dot red"></span>
                 <span className="window-dot yellow"></span>
