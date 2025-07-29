@@ -110,7 +110,7 @@ const SignInPage = () => {
         {!showIdCard ? (
           <div className="desktop-window">
             <div className="desktop-titlebar">
-            <button
+            <button className="go-back-home-btn"
                   onClick={() => window.location.href = '/'}
                   style={{
                     position: 'absolute',
@@ -129,7 +129,7 @@ const SignInPage = () => {
                     outline: 'none',
                     transition: 'background 0.18s, color 0.18s',
                   }}
-                >Go Back Home</button>
+                >Home</button>
               <div className="window-controls">
                 <span className="window-dot red"></span>
                 <span className="window-dot yellow"></span>
