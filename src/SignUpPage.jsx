@@ -98,6 +98,18 @@ function copyComputedStyles(src, dest) {
   }
 }
 
+// Star animation helper functions
+const animationNames = ['moveX', 'moveY', 'moveXY'];
+function getRandomAnimation() {
+  const name = animationNames[Math.floor(Math.random() * animationNames.length)];
+  const duration = 8 + Math.random() * 12; // 8s to 20s
+  const delay = Math.random() * 10; // 0-10s
+  return {
+    animation: `${name} ${duration}s linear infinite`,
+    animationDelay: `${delay}s`
+  };
+}
+
 // Helper: Convert asset avatar URL to File
 const fetchAvatarAsFile = async (avatarUrl) => {
   const response = await fetch(avatarUrl);
@@ -141,6 +153,32 @@ const SignUpPage = () => {
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [avatarLocked, setAvatarLocked] = useState(false);
+
+  // Generate animated stars for background
+  const stars = Array.from({ length: 60 }).map((_, i) => {
+    const top = Math.random() * 100;
+    const left = Math.random() * 100;
+    const size = 18 + Math.random() * 52; // 18px to 70px
+    const opacity = 0.18 + Math.random() * 0.45; // 0.18 to 0.63
+    const anim = getRandomAnimation();
+    const style = {
+      position: 'absolute',
+      zIndex: 10,
+      pointerEvents: 'none',
+      opacity,
+      width: size,
+      height: size,
+      top: `${top}%`,
+      left: `${left}%`,
+      filter: 'drop-shadow(0 2px 8px #b7e6e0)',
+      ...anim
+    };
+    return <img src={favStar} alt="star" key={i} style={style} onError={(e) => console.error('Star image failed to load:', e)} />;
+  });
+
+  // Debug: Log star generation
+  console.log('Stars generated:', stars.length);
+  console.log('FavStar path:', favStar);
 
   // Arrow handlers for horizontal avatar carousel (with animation)
   const handlePrevAvatar = (e) => {
@@ -303,8 +341,26 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh' }}>
-      <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <>
+      {/* Animated star background, always behind content */}
+      <div 
+        className="star-bg" 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          zIndex: 1, 
+          pointerEvents: 'none',
+          background: 'transparent'
+        }}
+      >
+        {stars}
+      </div>
+      {/* Main content, always above stars */}
+      <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh', zIndex: 2, background: 'transparent' }}>
+        <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         {step === 1 && (
           <div className={`desktop-window${showAnimation ? " window-slide-out" : ""}`} style={{ zIndex: 2, opacity: showIdCard ? 0.5 : 1, transition: 'opacity 0.5s' }}>
             <div className="desktop-titlebar">
@@ -397,15 +453,15 @@ const SignUpPage = () => {
                 </div>
               </div>
               {/* Right: Form fields */}
-              <div className="form-scrollable" style={{ flex: '1 1 0', minWidth: 320, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%' }}>
+              <div className="form-scrollable" style={{ flex: '1 1 0', minWidth: 0, maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%' }}>
                 <form className="magazine-signup-form" onSubmit={handleSubmit}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
-                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16 }}>
-                      <div style={{ position: 'relative', width: 140, height: 140 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap', width: '100%' }}>
+                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16, flexShrink: 0 }}>
+                      <div style={{ position: 'relative', width: 120, height: 120 }}>
                         <img
                           src={photoPreview || pic}
                           alt="Profile"
-                          style={{ width: 140, height: 140, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
+                          style={{ width: 120, height: 120, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
                         />
                         <label htmlFor="photo-upload-inline" style={{
                           position: 'absolute',
@@ -437,7 +493,7 @@ const SignUpPage = () => {
                 </label>
               </div>
                     </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 220, maxWidth: '100%', marginTop: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, maxWidth: '100%', marginTop: 0 }}>
                       <label className="magazine-label" style={{ marginTop: 12 }}>Username</label>
                 <input
                   type="text"
@@ -448,7 +504,7 @@ const SignUpPage = () => {
                         className="magazine-signup-input"
                         required
                         autoComplete="username"
-                        style={{ marginBottom: 8, minWidth: 120, maxWidth: 260, width: '100%' }}
+                        style={{ marginBottom: 8, width: '100%' }}
                       />
                       <label className="magazine-label">Password</label>
                       <input
@@ -460,7 +516,7 @@ const SignUpPage = () => {
                         className="magazine-signup-input"
                   required
                         autoComplete="new-password"
-                        style={{ minWidth: 120, maxWidth: 260, width: '100%' }}
+                        style={{ width: '100%' }}
                 />
                     </div>
                   </div>
@@ -473,7 +529,7 @@ const SignUpPage = () => {
                   onChange={handleChange}
                   required
                 />
-                  <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'flex-end', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginBottom: 8, width: '100%' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                 <label className="magazine-label">Security Question</label>
                 <select
@@ -499,7 +555,7 @@ const SignUpPage = () => {
                   onChange={handleChange}
                         className="magazine-signup-input"
                   required
-                        style={{ marginLeft: 12, flex: 1, maxWidth: 260, minWidth: 120 }}
+                        style={{ width: '100%' }}
                       />
                     </div>
                   </div>
@@ -585,6 +641,7 @@ const SignUpPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
