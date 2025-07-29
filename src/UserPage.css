@@ -1,5 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Playfair+Display:wght@700&display=swap');
 
+/* Star Animation Keyframes */
+@keyframes moveX {
+  0% { transform: translateX(-100px); }
+  100% { transform: translateX(calc(100vw + 100px)); }
+}
+
+@keyframes moveY {
+  0% { transform: translateY(-100px); }
+  100% { transform: translateY(calc(100vh + 100px)); }
+}
+
+@keyframes moveXY {
+  0% { transform: translateX(-100px) translateY(-100px); }
+  100% { transform: translateX(calc(100vw + 100px)) translateY(calc(100vh + 100px)); }
+}
+
 body, .scrapbook-user-page {
   font-family: 'Montserrat', Arial, sans-serif;
   background: #faf7f4;

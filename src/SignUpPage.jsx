@@ -85,18 +85,7 @@ const securityQuestions = [
   "What is your favorite food?"
 ];
 
-// Helper to copy computed styles from src to dest recursively
-function copyComputedStyles(src, dest) {
-  const computed = window.getComputedStyle(src);
-  for (let key of computed) {
-    dest.style[key] = computed.getPropertyValue(key);
-  }
-  for (let i = 0; i < src.children.length; i++) {
-    if (dest.children[i]) {
-      copyComputedStyles(src.children[i], dest.children[i]);
-    }
-  }
-}
+
 
 // Helper: Convert asset avatar URL to File
 const fetchAvatarAsFile = async (avatarUrl) => {
@@ -135,12 +124,12 @@ const SignUpPage = () => {
   const [showIdCard, setShowIdCard] = useState(false);
   const [bgClass, setBgClass] = useState("");
   const [startCardAnim, setStartCardAnim] = useState(false);
-  const idCardRef = useRef(null);
   const [selectedAvatarIdx, setSelectedAvatarIdx] = useState(null); // avatar is required
   const [avatarError, setAvatarError] = useState("");
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [avatarLocked, setAvatarLocked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Arrow handlers for horizontal avatar carousel (with animation)
   const handlePrevAvatar = (e) => {
@@ -186,6 +175,9 @@ const SignUpPage = () => {
       return;
     }
     setAvatarError("");
+
+    // Show loading modal immediately
+    setIsLoading(true);
 
     try {
       // 1. Sign up the user
@@ -245,57 +237,13 @@ const SignUpPage = () => {
       } else {
         setAvatarError("An unexpected error occurred. Please try again.");
       }
+    } finally {
+      // Hide loading modal
+      setIsLoading(false);
     }
   };
 
-  const handleSaveCard = async () => {
-    if (!idCardRef.current) return;
 
-    // Clone the card and append to body for a clean capture
-    const clone = idCardRef.current.cloneNode(true);
-    copyComputedStyles(idCardRef.current, clone); // <-- Copy styles!
-    clone.style.position = 'fixed';
-    clone.style.left = '-9999px';
-    clone.style.top = '0';
-    clone.style.opacity = '1';
-    clone.style.transform = 'none';
-    clone.style.boxShadow = 'none';
-    clone.style.display = 'block';
-    document.body.appendChild(clone);
-
-    // Wait for all images in the clone to load
-    const images = clone.querySelectorAll('img');
-    await Promise.all(Array.from(images).map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise(resolve => {
-        img.onload = img.onerror = resolve;
-      });
-    }));
-
-    // Wait a short time for rendering
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    // Capture the clone
-    const canvas = await window.html2canvas
-      ? window.html2canvas(clone, { backgroundColor: null, useCORS: true })
-      : await import('html2canvas').then(m => m.default(clone, { backgroundColor: null, useCORS: true }));
-
-    document.body.removeChild(clone);
-
-    if (!canvas) {
-      alert('Failed to capture the card.');
-      return;
-    }
-    const dataUrl = canvas.toDataURL('image/png');
-    if (!dataUrl || dataUrl.length < 100) {
-      alert('The downloaded image is empty. Please make sure your card is visible and try again.');
-      return;
-    }
-    const link = document.createElement('a');
-    link.download = 'remoda-id-card.png';
-    link.href = dataUrl;
-    link.click();
-  };
 
   const goToProfile = () => {
     // Redirect to sign in page after card creation
@@ -304,6 +252,62 @@ const SignUpPage = () => {
 
   return (
     <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh' }}>
+      {/* Loading Modal */}
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(5px)'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '20px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            maxWidth: '400px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <div style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#2c3e50',
+              marginBottom: '8px'
+            }}>
+              Creating Your Account...
+            </div>
+            <div style={{
+              fontSize: '16px',
+              color: '#7f8c8d',
+              lineHeight: '1.5'
+            }}>
+              Please wait while we set up your Re:Moda profile and upload your avatar.
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         {step === 1 && (
           <div className={`desktop-window${showAnimation ? " window-slide-out" : ""}`} style={{ zIndex: 2, opacity: showIdCard ? 0.5 : 1, transition: 'opacity 0.5s' }}>
@@ -571,14 +575,8 @@ const SignUpPage = () => {
         {/* Removed avatar carousel section */}
         {showIdCard && (
           <div className={startCardAnim ? "idcard-twirl-in" : ""} style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-            <IdCard ref={idCardRef} username={form.username} email={form.email} photo={photoPreview} avatarType={selectedAvatarIdx} />
+            <IdCard username={form.username} email={form.email} photo={photoPreview} avatarType={selectedAvatarIdx} />
             <div style={{ display: 'flex', gap: '1.2rem', marginTop: '1.2rem' }}>
-              <button className="magazine-signup-btn download-btn" onClick={handleSaveCard} aria-label="Download ID Card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px' }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <rect x="4" y="17" width="16" height="4" rx="2" fill="currentColor"/>
-                </svg>
-              </button>
               <button className="magazine-signup-btn" onClick={goToProfile}>Sign In</button>
             </div>
           </div>

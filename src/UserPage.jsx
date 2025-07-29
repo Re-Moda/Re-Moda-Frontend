@@ -9,30 +9,84 @@ const closetCategories = [
   { key: "bottom", label: "Bottom" },
   { key: "shoes", label: "Shoes" },
   { key: "favourites", label: "Favourites" },
-  { key: "recurring", label: "Recurring" }
+  { key: "recurring", label: "Recurring" },
+  { key: "unused", label: "Unused" }
 ];
 
-function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef }) {
-  // Prioritize user's actual avatar over generated avatar
-  const displayAvatarUrl = avatarUrl || generatedAvatarUrl;
+function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef, setGeneratedAvatarUrl, handleFavorite, handleMarkAsWorn }) {
+  // Show generated avatar if it exists, otherwise show real avatar
+  const displayAvatarUrl = generatedAvatarUrl || avatarUrl;
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
       {displayAvatarUrl ? (
-        <img
-          src={displayAvatarUrl}
-          alt="User Avatar"
-          style={{
-            width: 350,
-            height: 700, // much taller
-            borderRadius: 24,
-            objectFit: 'cover',
-            border: '3px solid #a78bfa',
-            marginBottom: 12,
-            background: '#ede9fe',
-            display: 'block'
-          }}
-        />
+        <div style={{ position: 'relative' }}>
+          <img
+            src={displayAvatarUrl}
+            alt="User Avatar"
+            style={{
+              width: 350,
+              height: 700, // much taller
+              borderRadius: 24,
+              objectFit: 'cover',
+              border: '3px solid #a78bfa',
+              marginBottom: 12,
+              background: '#ede9fe',
+              display: 'block'
+            }}
+          />
+          {/* Heart and Worn buttons on generated avatar */}
+          {generatedAvatarUrl && (
+            <div style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              display: 'flex',
+              gap: 8
+            }}>
+              <button
+                onClick={handleFavorite}
+                style={{
+                  background: '#ff6b6b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                }}
+                title="Add to Favorites"
+              >
+                ❤️
+              </button>
+              <button
+                onClick={handleMarkAsWorn}
+                style={{
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                }}
+                title="Mark as Worn"
+              >
+                ✓
+              </button>
+            </div>
+          )}
+        </div>
       ) : (
         <div style={{
           width: 350,
@@ -52,18 +106,22 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
         </div>
       )}
       <div style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: 20 }}>{username}</div>
-      <label style={{ marginTop: 12, color: '#7c3aed', fontWeight: 600, cursor: 'pointer', fontSize: 16 }}>
-        {uploading ? "Uploading..." : "Change Avatar"}
-        <input
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          ref={fileInputRef}
-          onChange={handleAvatarChange}
-          disabled={uploading}
-        />
-      </label>
-      {generatedAvatarUrl && !avatarUrl && (
+      {generatedAvatarUrl && (
+        <div style={{ 
+          color: '#22c55e', 
+          fontWeight: 600, 
+          fontSize: 14, 
+          marginTop: 4,
+          background: '#f0fdf4',
+          padding: '4px 8px',
+          borderRadius: 6,
+          border: '1px solid #22c55e'
+        }}>
+          ✨ AI Generated Outfit
+        </div>
+      )}
+
+      {generatedAvatarUrl && (
         <button
           onClick={() => {
             setGeneratedAvatarUrl(null);
@@ -109,6 +167,15 @@ const UserPage = () => {
 
   // Coin balance and upload count states
   const [coinBalance, setCoinBalance] = useState(100);
+  
+  // Load generated avatar URL from localStorage on mount (only if user doesn't have a real avatar)
+  useEffect(() => {
+    const savedGeneratedAvatarUrl = localStorage.getItem('generatedAvatarUrl');
+    if (savedGeneratedAvatarUrl && !generatedAvatarUrl && !avatarUrl) {
+      console.log('Loading saved generated avatar URL:', savedGeneratedAvatarUrl);
+      setGeneratedAvatarUrl(savedGeneratedAvatarUrl);
+    }
+  }, [generatedAvatarUrl, avatarUrl]);
   const [uploadCount, setUploadCount] = useState(0);
   const [canAccessCloset, setCanAccessCloset] = useState(true);
   const [remainingUploads, setRemainingUploads] = useState(0);
@@ -302,15 +369,29 @@ const UserPage = () => {
     setLoadingTryOn(true);
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
+      console.log('Starting try-on with:', { selectedTopId, selectedBottomId });
+      
       const res = await axios.post(
         `${API_BASE_URL}/outfits/generate-avatar`,
         { topId: selectedTopId, bottomId: selectedBottomId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setGeneratedAvatarUrl(res.data.generated_avatar_url);
+      
+      console.log('Try-on response:', res.data);
+      const generatedUrl = res.data.generated_avatar_url;
+      console.log('Setting generated avatar URL:', generatedUrl);
+      
+      setGeneratedAvatarUrl(generatedUrl);
+      
+      // Store in localStorage for persistence
+      if (generatedUrl) {
+        localStorage.setItem('generatedAvatarUrl', generatedUrl);
+      }
+      
       // Optionally, store the outfit ID if your backend returns it:
       // setCurrentOutfitId(res.data.outfit_id);
     } catch (err) {
+      console.error('Try-on error:', err);
       alert("Failed to generate try-on image.");
     }
     setLoadingTryOn(false);
@@ -452,6 +533,12 @@ const UserPage = () => {
     }, 100);
   }, []);
 
+  // Load closet items when component mounts
+  useEffect(() => {
+    console.log('Component mounted, loading closet items...');
+    fetchClosetItems();
+  }, []);
+
   // Check for generated avatar from chat (but don't override user's actual avatar)
   useEffect(() => {
     const savedAvatarUrl = localStorage.getItem('generatedAvatarUrl');
@@ -513,11 +600,75 @@ const UserPage = () => {
     }
   };
 
+  const fetchClosetItems = async () => {
+    const jwtToken = sessionStorage.getItem("token");
+    try {
+      const response = await axios.get(`${API_BASE_URL}/clothing-items`, {
+        headers: { Authorization: `Bearer ${jwtToken}` }
+      });
+      setClosetItems(Array.isArray(response.data.data) ? response.data.data : []);
+    } catch (error) {
+      console.error('Error fetching closet items:', error);
+      setClosetItems([]);
+    }
+  };
+
+  const moveToUnused = async (itemId) => {
+    console.log('moveToUnused called with itemId:', itemId);
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    console.log('Token available:', !!token);
+    console.log('API_BASE_URL:', API_BASE_URL);
+    
+    try {
+      console.log('Making request to:', `${API_BASE_URL}/clothing-items/${itemId}/unused`);
+      const response = await axios.patch(`${API_BASE_URL}/clothing-items/${itemId}/unused`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Response received:', response.data);
+      
+      if (response.data && response.data.success) {
+        console.log('Item moved to unused successfully:', response.data.message);
+        // Refresh closet items from backend
+        await fetchClosetItems();
+        console.log('Closet items refreshed');
+      } else {
+        console.error('Failed to move item to unused:', response.data);
+        alert('Failed to move item to unused. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error moving to unused:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      // Temporary fallback while backend endpoint is being set up
+      if (error.response?.status === 404 || error.response?.status === 501 || error.response?.status === 500) {
+        console.log('Backend endpoint not ready, using frontend fallback');
+        // Update frontend state immediately
+        setClosetItems(prevItems => {
+          const updatedItems = prevItems.map(item => 
+            item.id === itemId 
+              ? { ...item, is_unused: true, category: 'unused', tag: 'unused' }
+              : item
+          );
+          console.log('Updated closet items:', updatedItems);
+          return updatedItems;
+        });
+        console.log('Item moved to unused (frontend fallback)');
+        alert('Item moved to unused! (Note: Backend endpoint not ready yet)');
+      } else if (error.response?.status === 401) {
+        alert('Please log in again to continue.');
+      } else {
+        alert('Failed to move item to unused. Please try again.');
+      }
+    }
+  };
+
   // Update closet filter logic
   const filteredItems = (() => {
     console.log('Current selectedCategory:', selectedCategory);
-    console.log('All outfits:', outfits);
     console.log('All closetItems:', closetItems);
+    console.log('Items with is_unused flag:', closetItems.filter(item => item.is_unused === true));
     
     if (selectedCategory === "favourites") {
       const favoriteOutfits = outfits.filter(o => o.is_favorite);
@@ -529,11 +680,18 @@ const UserPage = () => {
       console.log('Recurring outfits:', recurringOutfits);
       return recurringOutfits;
     }
-    return closetItems.filter(item =>
+    if (selectedCategory === "unused") {
+      const unusedItems = closetItems.filter(item => item.is_unused === true);
+      console.log('Unused items found:', unusedItems.length, unusedItems);
+      return unusedItems;
+    }
+    const allItems = closetItems.filter(item =>
       selectedCategory === "all"
-        ? true
+        ? !item.is_unused // Exclude unused items from "All" category
         : (item.category || item.tag)?.toLowerCase() === selectedCategory
     );
+    console.log('Filtered items for category', selectedCategory, ':', allItems.length);
+    return allItems;
   })();
   
   // Top and bottom items for try-on
@@ -560,31 +718,30 @@ const UserPage = () => {
       alignItems: "center",
       minHeight: "100vh",
       background: "inherit",
-      position: "relative"
+      position: "relative",
+      overflow: "hidden"
     }}>
+
       {/* Logo in top left purple space */}
       <img
         src={logo}
         alt="ReModa Logo"
-                  style={{ 
+        style={{ 
           position: 'fixed',
           top: 16,
           left: 120,
           width: 140,
           height: 'auto',
           zIndex: 101,
-          background: 'transparent',
-          borderRadius: 18,
-          boxShadow: '0 2px 16px #a78bfa22',
           objectFit: 'contain',
         }}
       />
-      {/* Selected Top/Bottom display in purple area, right side */}
+      {/* Selected Top/Bottom display - moved inside white content area */}
       <div style={{
-        position: 'fixed',
-        top: 40,
-        right: 40,
-        zIndex: 100,
+        position: 'absolute',
+        top: 120,
+        right: 32,
+        zIndex: 10,
         background: '#ede9fe',
         border: '2px solid #a78bfa',
         borderRadius: 18,
@@ -633,7 +790,7 @@ const UserPage = () => {
             >
               {loadingTryOn ? "Generating outfit..." : `Try On (10 coins)`}
               </button>
-                              <button
+                  <button 
               onClick={() => {
                 setBuildMode(false);
                 setSelectedTopId(null);
@@ -644,58 +801,166 @@ const UserPage = () => {
               style={{ fontWeight: 600, fontSize: 18, padding: '10px 32px', borderRadius: 8, background: '#eee', color: '#232323', border: 'none', cursor: 'pointer' }}
             >
               Cancel
-            </button>
+                    </button>
                           </div>
                         )}
                       </div>
-      {/* Coin balance display */}
+      {/* Redesigned Navigation Bar */}
       <div style={{
         position: 'fixed',
-        top: 20,
-        left: 300,
+        top: 0,
+        left: 0,
+        right: 0,
+        background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+        padding: '16px 32px',
         zIndex: 1000,
-        background: '#fff9c4',
-        border: '2px solid #fbbf24',
-        borderRadius: 12,
-        padding: '12px 20px',
-        boxShadow: '0 2px 16px #fbbf2444',
-        fontFamily: "'EB Garamond', serif",
-        color: '#92400e',
-        fontWeight: 700,
-        fontSize: 18,
+        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
         display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        minWidth: 120
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
-        <span style={{ fontSize: 24 }}>🪙</span>
-        <span>{Math.max(0, coinBalance)} coins</span>
-            </div>
-            
-      {/* Upload progress display */}
+        {/* Left side - Logo */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img
+            src={logo}
+            alt="ReModa Logo"
+            style={{ 
+              width: 120,
+              height: 'auto',
+              objectFit: 'contain',
+            }}
+          />
+        </div>
+
+        {/* Center - Navigation Buttons */}
+        <div style={{
+          display: 'flex',
+          gap: 16,
+          alignItems: 'center'
+        }}>
+          <button 
+            style={{
+              background: coinBalance < 10 ? "#cbd5e1" : "#fef3c7",
+              color: coinBalance < 10 ? "#64748b" : "#92400e",
+              border: "none",
+              borderRadius: 20,
+              fontWeight: 600,
+              fontSize: 16,
+              padding: "12px 24px",
+              cursor: coinBalance < 10 ? "not-allowed" : "pointer",
+              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.2s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+            onClick={() => {
+              if (coinBalance < 10) {
+                alert(`You need 10 coins to use AI Try-On. Current balance: ${coinBalance} coins`);
+                return;
+              }
+              setBuildMode(true);
+              setSelectedTopId(null);
+              setSelectedBottomId(null);
+              setGeneratedAvatarUrl(null);
+            }}
+          >
+            <span style={{ fontSize: 18 }}>✨</span>
+            Build your own (10 coins)
+          </button>
+          
+          <button
+            style={{
+              background: "#fbbf24",
+              color: "#92400e",
+              border: "none",
+              borderRadius: 20,
+              fontWeight: 600,
+              fontSize: 16,
+              padding: "12px 24px",
+              cursor: "pointer",
+              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.2s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+            onClick={() => window.location.href = "/thrift"}
+          >
+            <span style={{ fontSize: 18 }}>🪙</span>
+            Get More Coins
+          </button>
+          
+          <button
+            onClick={() => window.location.href = '/stylist-chat'}
+            style={{
+              background: "#e0e7ff",
+              color: "#3730a3",
+              border: "none",
+              borderRadius: 20,
+              fontWeight: 600,
+              fontSize: 16,
+              padding: "12px 24px",
+              cursor: "pointer",
+              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.2s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            <span style={{ fontSize: 18 }}>💬</span>
+            Chat w/ ur stylist
+          </button>
+        </div>
+
+        {/* Right side - Coin Balance */}
+        <div style={{
+          background: '#fef3c7',
+          border: '2px solid #f59e0b',
+          borderRadius: 20,
+          padding: '12px 20px',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+          fontFamily: "'EB Garamond', serif",
+          color: '#92400e',
+          fontWeight: 700,
+          fontSize: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          minWidth: 120
+        }}>
+          <span style={{ fontSize: 20 }}>🪙</span>
+          <span>{Math.max(0, coinBalance)} coins</span>
+        </div>
+      </div>
+
+      {/* Upload progress display - moved below nav bar */}
       {!canAccessCloset && (
         <div style={{
           position: 'fixed',
-          top: 80,
-          left: 280,
+          top: 100,
+          left: '50%',
+          transform: 'translateX(-50%)',
           zIndex: 100,
           background: '#fef3c7',
           border: '2px solid #f59e0b',
-          borderRadius: 12,
-          padding: '16px 20px',
-          boxShadow: '0 2px 16px #f59e0b44',
+          borderRadius: 16,
+          padding: '16px 24px',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
           fontFamily: "'EB Garamond', serif",
           color: '#92400e',
           fontWeight: 600,
-          fontSize: 16,
-          minWidth: 200
+          fontSize: 14,
+          minWidth: 300,
+          textAlign: 'center'
         }}>
           <div style={{ marginBottom: 8 }}>
             Upload {remainingUploads} more item(s) to access your full closet
-                </div>
-          <div style={{ marginBottom: 8 }}>
+          </div>
+          <div style={{ marginBottom: 12 }}>
             Current uploads: {uploadCount}/4
-                  </div>
+          </div>
           <div style={{
             width: '100%',
             height: 8,
@@ -709,139 +974,16 @@ const UserPage = () => {
               background: '#f59e0b',
               transition: 'width 0.3s ease'
             }}></div>
-                </div>
           </div>
-        )}
-        
-      {/* Top-center button row */}
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        gap: 24,
-        justifyContent: "center",
-        alignItems: "center",
-        width: "100%",
-        maxWidth: 1400,
-        margin: "32px auto 0 auto"
-      }}>
-              <button 
-          style={{
-            background: "#e0e7ff",
-            color: "#232323",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: "14px 32px",
-            cursor: coinBalance < 10 ? "not-allowed" : "pointer",
-            boxShadow: "0 2px 8px #e3f6fd44",
-            opacity: coinBalance < 10 ? 0.6 : 1
-          }}
-                      onClick={() => {
-              if (coinBalance < 10) {
-                alert(`You need 10 coins to use AI Try-On. Current balance: ${coinBalance} coins`);
-                return;
-              }
-            setBuildMode(true);
-            setSelectedTopId(null);
-            setSelectedBottomId(null);
-            setGeneratedAvatarUrl(null);
-          }}
-        >
-          Build your own (10 coins)
-        </button>
-        <button
-          style={{
-            background: "#ffe066",
-            color: "#232323",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: "14px 32px",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px #e3f6fd44"
-          }}
-          onClick={() => window.location.href = "/thrift"}
-        >
-          Get More Coins
-        </button>
-                <button
-          onClick={() => window.location.href = '/stylist-chat'}
-          style={{
-            background: "#fff9c4",
-            color: "#232323",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: "14px 32px",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px #e3f6fd44"
-          }}>
-          Chat w/ ur stylist
-        </button>
-        <button
-          onClick={() => {
-            loadOutfits();
-            alert('Outfits refreshed! Check the Favourites category.');
-          }}
-          style={{
-            background: "#e0e7ff",
-            color: "#232323",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: "14px 32px",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px #e3f6fd44"
-          }}>
-          Refresh Outfits
-        </button>
-        <button
-          onClick={async () => {
-            const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-            try {
-              // Create a test favorite outfit
-              const testOutfit = {
-                title: "Test Favorite Outfit",
-                clothingItemIds: [1, 2], // Use first two items
-                is_favorite: true,
-                is_recurring: false
-              };
-              const response = await axios.post(`${API_BASE_URL}/outfits`, testOutfit, {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              console.log('Test outfit created:', response.data);
-              loadOutfits();
-              alert('Test favorite outfit created! Check Favourites.');
-            } catch (error) {
-              console.error('Error creating test outfit:', error);
-              alert('Error creating test outfit: ' + error.message);
-            }
-          }}
-          style={{
-            background: "#ff6b6b",
-            color: "white",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: "14px 32px",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px #e3f6fd44"
-          }}>
-          Test Create Favorite
-        </button>
-            </div>
+        </div>
+      )}
       {/* Main white card */}
       <div style={{
         display: "flex",
         flexDirection: "row",
         width: "95vw",
         maxWidth: 1400,
-        margin: "32px auto 0 auto",
+        margin: "120px auto 0 auto", // Increased top margin for fixed nav bar
         background: "#fff",
         borderRadius: 32,
         boxShadow: "0 4px 32px #e3f6fd44",
@@ -857,8 +999,8 @@ const UserPage = () => {
           marginRight: 32,
           position: "relative"
         }}>
-          {/* Heart icon - only show when there's a generated outfit */}
-          {generatedAvatarUrl && (
+          {/* Heart icon - only show when there's a generated outfit and no real avatar */}
+          {generatedAvatarUrl && !avatarUrl && (
             <span
               style={{
                 position: "absolute",
@@ -872,8 +1014,8 @@ const UserPage = () => {
               title="Add to Favourites"
             >❤️</span>
           )}
-          {/* Add to Worn button - only show when there's a generated outfit */}
-          {generatedAvatarUrl && (
+          {/* Add to Worn button - only show when there's a generated outfit and no real avatar */}
+          {generatedAvatarUrl && !avatarUrl && (
             <span
               style={{
                 position: "absolute",
@@ -898,6 +1040,9 @@ const UserPage = () => {
             uploading={uploading}
             handleAvatarChange={handleAvatarChange}
             fileInputRef={fileInputRef}
+            setGeneratedAvatarUrl={setGeneratedAvatarUrl}
+            handleFavorite={handleFavorite}
+            handleMarkAsWorn={handleMarkAsWorn}
           />
           {/* Animated moving text under avatar */}
           <div style={{
@@ -915,7 +1060,7 @@ const UserPage = () => {
           }}>
             <span className="moving-beautiful-text" style={{
               display: 'inline-block',
-              animation: 'moveText 7s linear infinite'
+              animation: 'moveText 15s linear infinite'
             }}>
               No matter what you wear you are beautiful
             </span>
@@ -974,6 +1119,7 @@ const UserPage = () => {
                   padding: 16,
                   width: 200,
                   textAlign: "center",
+                  position: "relative",
                   border: buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? '3px solid #7c3aed' : 'none',
                   cursor: buildMode ? 'pointer' : 'default',
                   opacity: buildMode && ((item.category || item.tag)?.toLowerCase() === 'top' || (item.category || item.tag)?.toLowerCase() === 'bottom') ? 1 : buildMode ? 0.5 : 1
@@ -1006,7 +1152,7 @@ const UserPage = () => {
                                   alt="Generated Outfit"
                                   style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
                                   onError={(e) => {
-                                    console.error('Failed to load outfit image from localStorage:', parsedOutfit.avatarImage);
+                                    console.log('Failed to load outfit image from localStorage:', parsedOutfit.avatarImage);
                                     e.target.style.display = 'none';
                                   }}
                                 />
@@ -1024,7 +1170,7 @@ const UserPage = () => {
                           alt="Generated Outfit"
                           style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
                           onError={(e) => {
-                            console.error('Failed to load outfit image:', imageUrl);
+                            console.log('Failed to load outfit image:', imageUrl);
                             e.target.style.display = 'none';
                           }}
                         />
@@ -1099,11 +1245,44 @@ const UserPage = () => {
                 ) : (
                   // Render clothing item
                   <>
+                    {/* X button to move to unused */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('X button clicked for item:', item.id, item.label || item.title);
+                        moveToUnused(item.id);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        background: '#ff6b6b',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 24,
+                        height: 24,
+                        fontSize: 12,
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10
+                      }}
+                      title="Move to Unused"
+                    >
+                      ✕
+                    </button>
                     {/* AI-generated image */}
                     <img
                       src={item.generatedImageUrl}
                       alt={item.label || item.title}
                       style={{ width: 120, height: 120, objectFit: "contain", borderRadius: 12, marginBottom: 8 }}
+                      onError={(e) => {
+                        console.log('Failed to load generated image for item:', item.id, item.generatedImageUrl);
+                        e.target.style.display = 'none';
+                      }}
                     />
                     {/* Original image (optional) */}
                     {item.originalImageUrl && (
@@ -1111,6 +1290,10 @@ const UserPage = () => {
                         src={item.originalImageUrl}
                         alt="Original"
                         style={{ width: 60, height: 60, objectFit: "contain", borderRadius: 8, marginBottom: 8, border: "1px solid #eee" }}
+                        onError={(e) => {
+                          console.log('Failed to load original image for item:', item.id, item.originalImageUrl);
+                          e.target.style.display = 'none';
+                        }}
                       />
                     )}
                     <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{item.label || item.title}</div>
