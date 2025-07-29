@@ -1,9 +1,10 @@
 import "./ThriftPage.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { GoogleMap, LoadScript, Marker } from'@react-google-maps/api';
 import pinkStarMarker from "./assets/pink-star-marker.png";
 import goldStarMarker from "./assets/gold-star-marker.png";
 import coinRemoda from "./assets/coin-re-moda.png";
+import logo from "./assets/logo.png";
 import aiBlueJeans from "./assets/place-holder-clothing/ai-blue-jeans.png";
 import aiBlueShirt from "./assets/place-holder-clothing/ai-blue-shirt.png";
 import aiPaolaJacket from "./assets/place-holder-clothing/ai-paola-jacket.png";
@@ -79,28 +80,69 @@ const renderMarkers = (places, handleSidebarClick, pinkStarMarker, goldStarMarke
 
 const DetailedView = ({ place, onBack, routeDuration, routeDistance}) => {
     if(!place) return <div>Loading...</div>;
+
+    // helper to render contact info
+    const renderContactInfo = () => {
+        const hasPhone = place.formatted_phone_number;
+        const hasWebsite = place.website;
+
+        if (!hasPhone && !hasWebsite) {
+            return (
+                <div className="detailed-contact-info no-contact"> 
+                    <p>No contact information available</p>
+                </div>
+            );
+        }
+        if (hasPhone && !hasWebsite) {
+            return (
+                <div className="detailed-contact-info phone-only">
+                    <a href={`tel:${place.formatted_phone_number}`}>{place.formatted_phone_number}</a>
+                </div>
+            );
+        }
+        if (!hasPhone && hasWebsite) {
+            return (
+                <div className="detailed-contact-info website-only">
+                    <a href={place.website} target="_blank" rel="noopener noreferrer">{place.website}</a>
+                </div>
+            );
+        }
+        // if both available
+        return (
+            <div className="detailed-contact-info">
+                <a href={`tel:${place.formatted_phone_number}`}>{place.formatted_phone_number}</a>
+                    <br />
+                <a href={place.website} target="_blank" rel="noopener noreferrer">{place.website}</a>
+            </div>
+        )
+    }
+
     return (
-        <div>
+        <div className="detailed-view">
             <button className="back-button" onClick={onBack}>← Back to List</button>
-            <h4>{place.name}</h4>
-            <p>{place.formatted_address}</p>
+            <h4 className="detailed-view-title">{place.name}</h4>
+            <p className="detailed-view-text">Address:</p>
+            <div className="detailed-address-text">
+                <p>{place.formatted_address}</p>
+            </div>
             {routeDuration && routeDistance &&(
-                <>
-                <p>🚗 Travel time: {routeDuration}</p>
-                <p>🚗 Travel distance: {routeDistance}</p>
-                </>
+                <div className="travel-info">
+                    <p>🚗 Travel time: {routeDuration}</p>
+                    <p>🚗 Travel distance: {routeDistance}</p>
+                </div>
             )}
-            <p>Contact:</p>
-            <a href={`tel:${place.formatted_phone_number}`}>{place.formatted_phone_number}</a>
-            <br />
-            <a href={place.website} target="_blank" rel="noopener noreferrer">{place.website}</a>
-            <p>Hours:</p>
-            {place.opening_hours?.weekday_text?.map((day, index) => (
-                <p key={index}>{day}</p>
-            ))}
-            <p>Rating: {place.rating} stars from {place.user_ratings_total} reviews</p>
-            <p>Photos:</p>
-            <div className="photo-gallergy">
+            <p className="detailed-view-text">Contact:</p>
+            {renderContactInfo()}
+            <p className="detailed-view-text">Hours:</p>
+            <div className="detailed-hours-text">
+                {place.opening_hours?.weekday_text?.map((day, index) => (
+                    <p key={index}>{day}</p>
+                ))}
+            </div>
+            <p className="detailed-view-text">Rating:</p>
+            <p className="rating-text">{place.rating} stars from {place.user_ratings_total} reviews</p>
+            <p className="detailed-view-text">Photos:</p>
+            <div className="photo-gallery">
                 {place.photos?.map((photo, index) => (
                     <img key={index} src={photo.getUrl({maxWidth: 300})} alt={`${place.name} photo`} />
                 ))}
@@ -121,6 +163,7 @@ const ThriftPage = () => {
     const [directionsRenderer, setDirectionsRenderer] = useState(null);  // State to store a reference to the DirectionsRenderer instance (dont have to render it every time)
     const [routeDuration, setRouteDuration] = useState(null);  // State to store the travel duration
     const [routeDistance, setRouteDistance] = useState(null);  // Stores travel distance in miles
+    const refScrollUp = useRef(null);  // Ref for scroll to top functionality
     const [unusedItems, setUnusedItems] = useState([
         { id: 1, name: "blue jeans", image: aiBlueJeans },
         { id: 2, name: "blue shirt", image: aiBlueShirt },
@@ -270,11 +313,19 @@ const ThriftPage = () => {
     const handleDonate = () => {  // TEMPORARY FUNCTION TO CLEAR THE LIST
         setUnusedItems([]); // This will clear the list
     };
+
+    const handleScrollUp = () => {
+        refScrollUp.current.scrollIntoView({ behavior: "smooth" })
+    }
     
     return (
         <>
-        
         <div className="thrift-page-container">  {/* Main container for the thrift page */}
+            <div ref={refScrollUp}></div>
+            <div className="thrift-page-header">
+                <img className="logo" src={logo} alt="logo" />
+                <button className="back-to-closet-btn" onClick={handleBackToCloset}>← Back to Closet</button>
+            </div>
             <div className="map-info-container-wrapper">  {/* Wrapper for sidebar and map, side by side */}
                 <div className="sidebar-container">  {/* Sidebar listing nearby thrift stores */}
                     <h3>Nearby Thrift Stores</h3>
@@ -302,7 +353,8 @@ const ThriftPage = () => {
                     <h3>Items to Donate!</h3>
                     <div className="unused-header-right">
                         <h4><img src={coinRemoda} alt="coin" />: 0</h4>
-                        <button className="back-to-closet-btn" onClick={handleBackToCloset}>← Back to Closet</button>
+                        
+                        <button className="back-to-top-btn" onClick={handleScrollUp}>Back to Top</button>
                     </div>
                 </div>
                 <div className="unused-items-list">
