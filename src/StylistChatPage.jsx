@@ -61,17 +61,7 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
           ✨ AI Generated Outfit
         </div>
       )}
-      <label style={{ marginTop: 12, color: '#7c3aed', fontWeight: 600, cursor: 'pointer', fontSize: 16 }}>
-        {uploading ? "Uploading..." : "Change Avatar"}
-        <input
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          ref={fileInputRef}
-          onChange={handleAvatarChange}
-          disabled={uploading}
-        />
-      </label>
+
       {generatedAvatarUrl && !avatarUrl && (
         <button
           onClick={() => {

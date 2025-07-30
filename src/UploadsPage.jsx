@@ -162,7 +162,7 @@ export default function UploadsPage() {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('category', img.category);
-      formData.append('label', img.name.replace(/\.[^/.]+$/, "")); // Use filename without extension as label
+      // Don't send label - let backend generate it from description
       formData.append('description', `A ${img.category.toLowerCase()} item uploaded by user`); // Add description
       formData.append('tag', img.category.toLowerCase()); // Add tag field as backup
       
@@ -498,7 +498,7 @@ export default function UploadsPage() {
                 {/* AI Recognition Tips - Show after 4 uploads */}
                 <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24, marginBottom: 8 }}>
                   <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>AI Recognition Tips</div>
-                  <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0 }}>
+                  <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0, listStyle: 'none' }}>
                     <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Use clean, well-lit backgrounds for optimal AI recognition accuracy</li>
                     <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Include multiple angles and lighting conditions for comprehensive analysis</li>
                     <li><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Focus on frequently worn items for personalized recommendations</li>
@@ -509,7 +509,7 @@ export default function UploadsPage() {
             {/* Optimization Tips - Always show */}
             <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px #e3f6fd44', padding: 24 }}>
               <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Optimization Tips</div>
-              <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0 }}>
+              <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0, listStyle: 'none' }}>
                 <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Use clean, well-lit backgrounds for optimal AI recognition accuracy</li>
                 <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Include multiple angles and lighting conditions for comprehensive analysis</li>
                 <li><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Focus on frequently worn items for personalized recommendations</li>

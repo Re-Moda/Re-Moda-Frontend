@@ -13,7 +13,7 @@
 
 @keyframes moveXY {
   0% { transform: translateX(-100px) translateY(-100px); }
-  100% { transform: translateX(calc(100vw + 100px)) translateY(calc(100vh + 100px)); }
+  100% { transform: translateX(calc(100vw + 100px)) translateY(calc(100vh + 100pxgit )); }
 }
 
 body, .scrapbook-user-page {
