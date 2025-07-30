@@ -3,6 +3,7 @@ import axios from "axios";
 import favStar from "./assets/fav-star.webp";
 import "./UploadsPage.css";
 import API_BASE_URL from './config.js';
+import logo from "./assets/logo.png";
 
 const CATEGORY_OPTIONS = ["Top", "Bottom", "Shoe"];
 
@@ -39,6 +40,13 @@ export default function UploadsPage() {
   const [uploadCount, setUploadCount] = useState(0);
   const [canAccessCloset, setCanAccessCloset] = useState(false);
   const [remainingUploads, setRemainingUploads] = useState(4);
+
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   // Fetch current upload count on component mount
   React.useEffect(() => {
@@ -327,6 +335,42 @@ export default function UploadsPage() {
 
   return (
     <>
+      {/* Logo overlay */}
+      <div className="logo-overlay" onClick={() => window.location.href = '/'} style={{ cursor: 'pointer' }}>
+        <img src={logo} alt="Re:Moda Logo" className="site-logo" />
+      </div>
+
+      {/* Navbar */}
+      <nav className="navbar">
+        <div className="navbar-content">
+          {/* Hamburger menu button */}
+          <div className="hamburger-menu" onClick={toggleMobileMenu}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          
+          {/* Page title in navbar */}
+          <div className="navbar-title">Build Your Digital Wardrobe</div>
+          
+          {/* Desktop navigation */}
+          <div className="nav-buttons">
+            <div className="nav-status">{uploadCount} items processed</div>
+            <div className="nav-status">Need {Math.max(0, 4 - uploadCount)} more items</div>
+            <button onClick={handleContinue} disabled={!canContinue}>Continue to Closet ⏎</button>
+          </div>
+        </div>
+        
+        {/* Mobile menu */}
+        <div className={`mobile-menu ${isMobileMenuOpen ? 'active' : ''}`}>
+          <div className="nav-buttons">
+            <div className="nav-status">{uploadCount} items processed</div>
+            <div className="nav-status">Need {Math.max(0, 4 - uploadCount)} more items</div>
+            <button onClick={handleContinue} disabled={!canContinue}>Continue to Closet ⏎</button>
+          </div>
+        </div>
+      </nav>
+
       {/* Animated star background, always behind content */}
       <div className="star-bg">{stars}</div>
       {/* Main content, always above stars */}
@@ -338,60 +382,7 @@ export default function UploadsPage() {
         minHeight: "100vh",
         background: "inherit"
       }}>
-        {/* Top-right button row - replace with Continue to Closet and progress/status */}
-        <div style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          width: "100%",
-          maxWidth: 1400,
-          margin: "32px auto 0 auto",
-          gap: 18
-        }}>
-          <div style={{ fontWeight: 700, fontSize: 28, color: '#a78bfa', flex: 1, textAlign: 'left', letterSpacing: 1 }}>
-            {canAccessCloset ? 'Add to Your Wardrobe' : 'Build Your Digital Wardrobe'}
-          </div>
-          <div style={{
-            background: '#ede9fe',
-            color: '#7c3aed',
-            borderRadius: 18,
-            fontWeight: 700,
-            fontSize: 18,
-            padding: '8px 22px',
-            marginRight: 8
-          }}>{uploadCount} items processed</div>
-          {!canAccessCloset && (
-            <div style={{
-              background: '#fee2e2',
-              color: '#d72660',
-              borderRadius: 18,
-              fontWeight: 700,
-              fontSize: 18,
-              padding: '8px 22px',
-              marginRight: 8
-            }}>Need {Math.max(0, 4 - uploadCount)} more items</div>
-          )}
-          <button
-            style={{
-              background: canContinue ? '#a78bfa' : '#ede9fe',
-              color: canContinue ? '#fff' : '#a78bfa',
-              border: 'none',
-              borderRadius: 18,
-              fontWeight: 700,
-              fontSize: 20,
-              padding: '12px 32px',
-              cursor: canContinue ? 'pointer' : 'not-allowed',
-              boxShadow: '0 2px 8px #e3f6fd44',
-              transition: 'background 0.2s, color 0.2s'
-            }}
-            disabled={!canContinue}
-            onClick={handleContinue}
-          >
-            Continue to Closet
-          </button>
 
-        </div>
         {/* Main white card */}
         <div style={{
           display: "flex",
@@ -438,7 +429,7 @@ export default function UploadsPage() {
                 style={{ display: 'none' }}
                 onChange={e => handleFiles(e.target.files)}
               />
-              <div style={{ fontSize: 48, color: '#a78bfa', marginBottom: 8 }}>⬆️</div>
+              <div className="upload-icon" style={{ marginBottom: 8 }}></div>
               <div style={{ fontWeight: 700, fontSize: 20, color: '#232323', marginBottom: 4 }}>Upload Garment Images</div>
               <div style={{ color: '#444', fontSize: 15, marginBottom: 8 }}>Drag and drop your photos here, or click to browse your files</div>
               <div style={{ color: '#a78bfa', fontWeight: 600, fontSize: 15 }}>Browse Files &bull; JPG, PNG, JPEG</div>
