@@ -85,7 +85,30 @@ const securityQuestions = [
   "What is your favorite food?"
 ];
 
+// Helper to copy computed styles from src to dest recursively
+function copyComputedStyles(src, dest) {
+  const computed = window.getComputedStyle(src);
+  for (let key of computed) {
+    dest.style[key] = computed.getPropertyValue(key);
+  }
+  for (let i = 0; i < src.children.length; i++) {
+    if (dest.children[i]) {
+      copyComputedStyles(src.children[i], dest.children[i]);
+    }
+  }
+}
 
+// Star animation helper functions
+const animationNames = ['moveX', 'moveY', 'moveXY'];
+function getRandomAnimation() {
+  const name = animationNames[Math.floor(Math.random() * animationNames.length)];
+  const duration = 8 + Math.random() * 12; // 8s to 20s
+  const delay = Math.random() * 10; // 0-10s
+  return {
+    animation: `${name} ${duration}s linear infinite`,
+    animationDelay: `${delay}s`
+  };
+}
 
 // Helper: Convert asset avatar URL to File
 const fetchAvatarAsFile = async (avatarUrl) => {
@@ -93,6 +116,7 @@ const fetchAvatarAsFile = async (avatarUrl) => {
   const blob = await response.blob();
   return new File([blob], "avatar.png", { type: blob.type });
 };
+
 
 // Helper: Upload avatar to backend
 const uploadAvatar = async (avatarFile, jwtToken) => {
@@ -124,12 +148,39 @@ const SignUpPage = () => {
   const [showIdCard, setShowIdCard] = useState(false);
   const [bgClass, setBgClass] = useState("");
   const [startCardAnim, setStartCardAnim] = useState(false);
+  const idCardRef = useRef(null);
   const [selectedAvatarIdx, setSelectedAvatarIdx] = useState(null); // avatar is required
   const [avatarError, setAvatarError] = useState("");
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [avatarLocked, setAvatarLocked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Generate animated stars for background
+  const stars = Array.from({ length: 60 }).map((_, i) => {
+    const top = Math.random() * 100;
+    const left = Math.random() * 100;
+    const size = 18 + Math.random() * 52; // 18px to 70px
+    const opacity = 0.18 + Math.random() * 0.45; // 0.18 to 0.63
+    const anim = getRandomAnimation();
+    const style = {
+      position: 'absolute',
+      zIndex: 10,
+      pointerEvents: 'none',
+      opacity,
+      width: size,
+      height: size,
+      top: `${top}%`,
+      left: `${left}%`,
+      filter: 'drop-shadow(0 2px 8px #b7e6e0)',
+      ...anim
+    };
+    return <img src={favStar} alt="star" key={i} style={style} onError={(e) => console.error('Star image failed to load:', e)} />;
+  });
+
+  // Debug: Log star generation
+  console.log('Stars generated:', stars.length);
+  console.log('FavStar path:', favStar);
 
   // Arrow handlers for horizontal avatar carousel (with animation)
   const handlePrevAvatar = (e) => {
@@ -175,9 +226,6 @@ const SignUpPage = () => {
       return;
     }
     setAvatarError("");
-
-    // Show loading modal immediately
-    setIsLoading(true);
 
     try {
       // 1. Sign up the user
@@ -237,13 +285,57 @@ const SignUpPage = () => {
       } else {
         setAvatarError("An unexpected error occurred. Please try again.");
       }
-    } finally {
-      // Hide loading modal
-      setIsLoading(false);
     }
   };
 
+  const handleSaveCard = async () => {
+    if (!idCardRef.current) return;
 
+    // Clone the card and append to body for a clean capture
+    const clone = idCardRef.current.cloneNode(true);
+    copyComputedStyles(idCardRef.current, clone); // <-- Copy styles!
+    clone.style.position = 'fixed';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.opacity = '1';
+    clone.style.transform = 'none';
+    clone.style.boxShadow = 'none';
+    clone.style.display = 'block';
+    document.body.appendChild(clone);
+
+    // Wait for all images in the clone to load
+    const images = clone.querySelectorAll('img');
+    await Promise.all(Array.from(images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = img.onerror = resolve;
+      });
+    }));
+
+    // Wait a short time for rendering
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Capture the clone
+    const canvas = await window.html2canvas
+      ? window.html2canvas(clone, { backgroundColor: null, useCORS: true })
+      : await import('html2canvas').then(m => m.default(clone, { backgroundColor: null, useCORS: true }));
+
+    document.body.removeChild(clone);
+
+    if (!canvas) {
+      alert('Failed to capture the card.');
+      return;
+    }
+    const dataUrl = canvas.toDataURL('image/png');
+    if (!dataUrl || dataUrl.length < 100) {
+      alert('The downloaded image is empty. Please make sure your card is visible and try again.');
+      return;
+    }
+    const link = document.createElement('a');
+    link.download = 'remoda-id-card.png';
+    link.href = dataUrl;
+    link.click();
+  };
 
   const goToProfile = () => {
     // Redirect to sign in page after card creation
@@ -251,64 +343,82 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh' }}>
-      {/* Loading Modal */}
-      {isLoading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(5px)'
-        }}>
+    <>
+      {/* Animated star background, always behind content */}
+      <div 
+        className="star-bg" 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          zIndex: 1, 
+          pointerEvents: 'none',
+          background: 'transparent'
+        }}
+      >
+        {stars}
+      </div>
+      {/* Main content, always above stars */}
+      <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh', zIndex: 2, background: 'transparent' }}>
+        {/* Loading Modal */}
+        {isLoading && (
           <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '32px',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
             display: 'flex',
-            flexDirection: 'column',
+            justifyContent: 'center',
             alignItems: 'center',
-            gap: '20px',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-            maxWidth: '400px',
-            textAlign: 'center'
+            zIndex: 9999,
+            backdropFilter: 'blur(5px)'
           }}>
             <div style={{
-              width: '60px',
-              height: '60px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            <div style={{
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#2c3e50',
-              marginBottom: '8px'
+              background: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              maxWidth: '400px',
+              textAlign: 'center'
             }}>
-              Creating Your Account...
-            </div>
-            <div style={{
-              fontSize: '16px',
-              color: '#7f8c8d',
-              lineHeight: '1.5'
-            }}>
-              Please wait while we set up your Re:Moda profile and upload your avatar.
+              <div style={{
+                width: '60px',
+                height: '60px',
+                border: '4px solid #f3f3f3',
+                borderTop: '4px solid #667eea',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              <div style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#2c3e50',
+                marginBottom: '8px'
+              }}>
+                Creating Your Account...
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#7f8c8d',
+                lineHeight: '1.5'
+              }}>
+                Please wait while we set up your Re:Moda profile and upload your avatar.
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      
-      <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        )}
+        
+        <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         {step === 1 && (
           <div className={`desktop-window${showAnimation ? " window-slide-out" : ""}`} style={{ zIndex: 2, opacity: showIdCard ? 0.5 : 1, transition: 'opacity 0.5s' }}>
             <div className="desktop-titlebar">
@@ -401,15 +511,15 @@ const SignUpPage = () => {
                 </div>
               </div>
               {/* Right: Form fields */}
-              <div className="form-scrollable" style={{ flex: '1 1 0', minWidth: 320, maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%' }}>
+              <div className="form-scrollable" style={{ flex: '1 1 0', minWidth: 0, maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', height: '100%' }}>
                 <form className="magazine-signup-form" onSubmit={handleSubmit}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
-                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16 }}>
-                      <div style={{ position: 'relative', width: 140, height: 140 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap', width: '100%' }}>
+                    <label htmlFor="photo-upload-inline" style={{ cursor: 'pointer', marginRight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16, flexShrink: 0 }}>
+                      <div style={{ position: 'relative', width: 120, height: 120 }}>
                         <img
                           src={photoPreview || pic}
                           alt="Profile"
-                          style={{ width: 140, height: 140, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
+                          style={{ width: 120, height: 120, borderRadius: '22px', objectFit: 'cover', border: '2.5px solid #bfaeec', background: '#fff', boxShadow: '0 1px 8px #e6d6fa44', transition: 'box-shadow 0.2s' }}
                         />
                         <label htmlFor="photo-upload-inline" style={{
                           position: 'absolute',
@@ -441,7 +551,7 @@ const SignUpPage = () => {
                 </label>
               </div>
                     </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 220, maxWidth: '100%', marginTop: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, maxWidth: '100%', marginTop: 0 }}>
                       <label className="magazine-label" style={{ marginTop: 12 }}>Username</label>
                 <input
                   type="text"
@@ -452,7 +562,7 @@ const SignUpPage = () => {
                         className="magazine-signup-input"
                         required
                         autoComplete="username"
-                        style={{ marginBottom: 8, minWidth: 120, maxWidth: 260, width: '100%' }}
+                        style={{ marginBottom: 8, width: '100%' }}
                       />
                       <label className="magazine-label">Password</label>
                       <input
@@ -464,7 +574,7 @@ const SignUpPage = () => {
                         className="magazine-signup-input"
                   required
                         autoComplete="new-password"
-                        style={{ minWidth: 120, maxWidth: 260, width: '100%' }}
+                        style={{ width: '100%' }}
                 />
                     </div>
                   </div>
@@ -477,7 +587,7 @@ const SignUpPage = () => {
                   onChange={handleChange}
                   required
                 />
-                  <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'flex-end', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: 8, alignItems: 'flex-end', marginBottom: 8, width: '100%' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                 <label className="magazine-label">Security Question</label>
                 <select
@@ -503,7 +613,7 @@ const SignUpPage = () => {
                   onChange={handleChange}
                         className="magazine-signup-input"
                   required
-                        style={{ marginLeft: 12, flex: 1, maxWidth: 260, minWidth: 120 }}
+                        style={{ width: '100%' }}
                       />
                     </div>
                   </div>
@@ -575,14 +685,21 @@ const SignUpPage = () => {
         {/* Removed avatar carousel section */}
         {showIdCard && (
           <div className={startCardAnim ? "idcard-twirl-in" : ""} style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-            <IdCard username={form.username} email={form.email} photo={photoPreview} avatarType={selectedAvatarIdx} />
+            <IdCard ref={idCardRef} username={form.username} email={form.email} photo={photoPreview} avatarType={selectedAvatarIdx} />
             <div style={{ display: 'flex', gap: '1.2rem', marginTop: '1.2rem' }}>
+              <button className="magazine-signup-btn download-btn" onClick={handleSaveCard} aria-label="Download ID Card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="4" y="17" width="16" height="4" rx="2" fill="currentColor"/>
+                </svg>
+              </button>
               <button className="magazine-signup-btn" onClick={goToProfile}>Sign In</button>
             </div>
           </div>
         )}
       </div>
     </div>
+    </>
   );
 };
 
