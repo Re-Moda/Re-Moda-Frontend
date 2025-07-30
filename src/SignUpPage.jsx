@@ -117,6 +117,7 @@ const fetchAvatarAsFile = async (avatarUrl) => {
   return new File([blob], "avatar.png", { type: blob.type });
 };
 
+
 // Helper: Upload avatar to backend
 const uploadAvatar = async (avatarFile, jwtToken) => {
   const formData = new FormData();
@@ -153,6 +154,7 @@ const SignUpPage = () => {
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [carouselAnimating, setCarouselAnimating] = useState(false);
   const [avatarLocked, setAvatarLocked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Generate animated stars for background
   const stars = Array.from({ length: 60 }).map((_, i) => {
@@ -360,6 +362,62 @@ const SignUpPage = () => {
       </div>
       {/* Main content, always above stars */}
       <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh', zIndex: 2, background: 'transparent' }}>
+        {/* Loading Modal */}
+        {isLoading && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(5px)'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              maxWidth: '400px',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                border: '4px solid #f3f3f3',
+                borderTop: '4px solid #667eea',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              <div style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#2c3e50',
+                marginBottom: '8px'
+              }}>
+                Creating Your Account...
+              </div>
+              <div style={{
+                fontSize: '16px',
+                color: '#7f8c8d',
+                lineHeight: '1.5'
+              }}>
+                Please wait while we set up your Re:Moda profile and upload your avatar.
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div style={{ width: '100vw', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         {step === 1 && (
           <div className={`desktop-window${showAnimation ? " window-slide-out" : ""}`} style={{ zIndex: 2, opacity: showIdCard ? 0.5 : 1, transition: 'opacity 0.5s' }}>
