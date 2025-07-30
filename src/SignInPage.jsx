@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import "./SignUpPage.css";
 import "./SignInPage.css";
 import logo from "./assets/logo.png";
+import favStar from "./assets/fav-star.webp";
 import axios from "axios";
 import API_BASE_URL from './config.js';
 
@@ -58,11 +59,46 @@ const IdCard = React.forwardRef(({ username, photo, avatarType }, ref) => (
   </div>
 ));
 
+// Star animation helper functions
+const animationNames = ['moveX', 'moveY', 'moveXY'];
+function getRandomAnimation() {
+  const name = animationNames[Math.floor(Math.random() * animationNames.length)];
+  const duration = 8 + Math.random() * 12; // 8s to 20s
+  const delay = Math.random() * 10; // 0-10s
+  return {
+    animation: `${name} ${duration}s linear infinite`,
+    animationDelay: `${delay}s`
+  };
+}
+
 const SignInPage = () => {
   const [form, setForm] = useState({ username: "", password: "" });
   const [showIdCard, setShowIdCard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+   // Generate animated stars for background
+   const stars = Array.from({ length: 60 }).map((_, i) => {
+    const top = Math.random() * 100;
+    const left = Math.random() * 100;
+    const size = 18 + Math.random() * 52; // 18px to 70px
+    const opacity = 0.18 + Math.random() * 0.45; // 0.18 to 0.63
+    const anim = getRandomAnimation();
+    const style = {
+      position: 'absolute',
+      zIndex: 10,
+      pointerEvents: 'none',
+      opacity,
+      width: size,
+      height: size,
+      top: `${top}%`,
+      left: `${left}%`,
+      filter: 'drop-shadow(0 2px 8px #b7e6e0)',
+      ...anim
+    };
+    return <img src={favStar} alt="star" key={i} style={style} onError={(e) => console.error('Star image failed to load:', e)} />;
+  });
+
   // Placeholder user data for demo
   const userData = {
     name: "Jane Doe",
@@ -105,7 +141,24 @@ const SignInPage = () => {
   };
 
   return (
-    <div className="magazine-signup-bg" style={{ position: 'relative', minHeight: '100vh' }}>
+    <>
+     {/* Animated star background, always behind content */}
+    <div 
+        className="star-bg" 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          zIndex: 1, 
+          pointerEvents: 'none',
+          background: 'transparent'
+        }}
+      >
+        {stars}
+    </div>
+    <div className="magazine-signup-bg" style={{ position: 'relative', minHeight: '100vh', zIndex: 2, background: 'transparent' }}>
       <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         {!showIdCard ? (
           <div className="desktop-window">
@@ -219,6 +272,7 @@ const SignInPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

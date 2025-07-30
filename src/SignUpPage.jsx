@@ -604,20 +604,20 @@ const SignUpPage = () => {
                 </select>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                <label className="magazine-label">Security Answer</label>
-                <input
-                  type="text"
-                  name="securityAnswer"
-                  placeholder="Your Answer"
-                  value={form.securityAnswer}
-                  onChange={handleChange}
-                        className="magazine-signup-input"
-                  required
-                        style={{ width: '100%' }}
-                      />
+                      <label className="magazine-label">Security Answer</label>
+                      <input
+                        type="text"
+                        name="securityAnswer"
+                        placeholder="Your Answer"
+                        value={form.securityAnswer}
+                        onChange={handleChange}
+                              className="magazine-signup-input"
+                        required
+                              style={{ width: '100%', marginBottom: 0 }}
+                            />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'row', gap: 12, marginTop: 18, width: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: 12, marginTop: 18, width: '100%', justifyContent: 'center' }}>
                     <button type="submit" className="magazine-signup-btn" style={{
                       flex: 0.6,
                       marginTop: 0,
@@ -635,7 +635,7 @@ const SignUpPage = () => {
                       outline: 'none',
                       cursor: 'pointer',
                     }}>Sign Up</button>
-                    <button
+                    {/* <button
                       type="button"
                       className="google-auth-btn"
                       style={{
@@ -662,7 +662,7 @@ const SignUpPage = () => {
                     >
                       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: 22, height: 22, marginRight: 8 }} />
                       <span style={{ fontWeight: 700, fontSize: '1.08rem' }}>Sign Up with Google</span>
-                    </button>
+                    </button> */}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 18 }}>
                     <span style={{ fontSize: '1rem', color: '#7c3aed', textAlign: 'center', width: '100%' }}>
@@ -687,12 +687,12 @@ const SignUpPage = () => {
           <div className={startCardAnim ? "idcard-twirl-in" : ""} style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
             <IdCard ref={idCardRef} username={form.username} email={form.email} photo={photoPreview} avatarType={selectedAvatarIdx} />
             <div style={{ display: 'flex', gap: '1.2rem', marginTop: '1.2rem' }}>
-              <button className="magazine-signup-btn download-btn" onClick={handleSaveCard} aria-label="Download ID Card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px' }}>
+              {/* <button className="magazine-signup-btn download-btn" onClick={handleSaveCard} aria-label="Download ID Card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px' }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <rect x="4" y="17" width="16" height="4" rx="2" fill="currentColor"/>
                 </svg>
-              </button>
+              </button> */}
               <button className="magazine-signup-btn" onClick={goToProfile}>Sign In</button>
             </div>
           </div>
