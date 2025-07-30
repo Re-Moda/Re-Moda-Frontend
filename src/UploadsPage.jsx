@@ -275,7 +275,7 @@ export default function UploadsPage() {
           <div className="navbar-title">Build Your Digital Wardrobe</div>
           
           {/* Desktop navigation */}
-          <div className="nav-buttons">
+          <div className="uploads-nav-buttons">
             <div className="nav-status">{uploadCount} items processed</div>
             <div className="nav-status">Need {Math.max(0, 4 - uploadCount)} more items</div>
             <button onClick={handleContinue} disabled={!canContinue}>Continue to Closet ⏎</button>
@@ -284,7 +284,7 @@ export default function UploadsPage() {
         
         {/* Mobile menu */}
         <div className={`mobile-menu ${isMobileMenuOpen ? 'active' : ''}`}>
-          <div className="nav-buttons">
+          <div className="uploads-nav-buttons">
             <div className="nav-status">{uploadCount} items processed</div>
             <div className="nav-status">Need {Math.max(0, 4 - uploadCount)} more items</div>
             <button onClick={handleContinue} disabled={!canContinue}>Continue to Closet ⏎</button>

@@ -2,6 +2,18 @@ body, .uploads-bg {
   font-family: 'Crimson Text', serif;
   background: linear-gradient(120deg, #e3d0fa 0%, #e5d6f7 100%);
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 .uploads-container {
@@ -143,25 +155,30 @@ body, .uploads-bg {
   border-bottom: 1px solid rgba(139, 92, 246, 0.1);
   z-index: 1000;
   padding: 12px 0;
+  width: 100%;
 }
 
 .navbar-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 20px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.nav-buttons {
+/* UploadsPage specific navbar styles */
+.uploads-nav-buttons {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   align-items: center;
+  margin-left: auto;
+  margin-right: 0;
 }
 
-.nav-buttons button {
-  padding: 10px 48px;
+.uploads-nav-buttons button {
+  padding: 10px 16px;
   border: 2px solid #e0d4c3;
   border-radius: 6px;
   background-color: #fffdf7;
@@ -169,29 +186,23 @@ body, .uploads-bg {
   font-weight: bold;
   font-family: 'Courier New', Courier, monospace;
   cursor: pointer;
-  transition: all 0.2s ease;
   position: relative;
-  box-shadow: 2px 2px 0 #d6c4af;
 }
 
 
 
-.nav-buttons button:hover:not(:disabled) {
-  background-color: #f8f1e8;
-  box-shadow: 1px 1px 0 #d6c4af;
-  transform: translate(1px, 1px);
+.uploads-nav-buttons button:hover:not(:disabled) {
+  background-color: #fffdf7;
 }
 
-.nav-buttons button:disabled {
+.uploads-nav-buttons button:disabled {
   background-color: #f5f5f5;
   color: #a0a0a0;
   border-color: #d0d0d0;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: 1px 1px 0 #c0c0c0;
 }
 
-.nav-buttons button:disabled::after {
+.uploads-nav-buttons button:disabled::after {
   opacity: 0.5;
 }
 
@@ -294,7 +305,7 @@ body, .uploads-bg {
   font-weight: 600;
   font-size: 18px;
   letter-spacing: 0.5px;
-  margin-left: 100px;
+  margin-left: 60px;
 }
 
 /* Mobile responsive styles */
