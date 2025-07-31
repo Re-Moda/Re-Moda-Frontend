@@ -451,6 +451,8 @@ export default function UploadsPage() {
             <span></span>
           </div> */}
           
+          {/* Re:Moda Logo in navbar - removed for desktop */}
+          
           {/* Page title in navbar */}
           <div className="navbar-title">Build Your Digital Wardrobe</div>
           
@@ -583,8 +585,20 @@ export default function UploadsPage() {
           boxShadow: "0 4px 32px #e3f6fd44",
           padding: 32,
           minHeight: 600,
-          gap: 32
+          gap: 32,
+          position: "relative"
         }}>
+          {/* Re:Moda Logo overlay on container */}
+          <div className="uploads-logo-overlay" onClick={() => window.location.href = '/'} style={{ 
+            cursor: 'pointer',
+            position: 'absolute',
+            top: '-60px',
+            left: '-40px',
+            zIndex: 10,
+            transform: 'rotate(-8deg)'
+          }}>
+            <img src={logo} alt="Re:Moda Logo" style={{ maxHeight: '120px' }} />
+          </div>
           {/* Main card */}
           <div className="uploads-main-card" style={{ background: 'transparent', borderRadius: 0, boxShadow: 'none', padding: 0, flex: 1, minWidth: 420 }}>
             <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>

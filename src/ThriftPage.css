@@ -11,6 +11,7 @@ body {
     #b39ddb 40%);  /* pastel purple); */
     margin: 0;
     padding: 20px;
+    padding-bottom: 70px; /* Add extra bottom padding */
 }
 .thrift-page-header {
     display: flex;
@@ -25,8 +26,8 @@ body {
     position: absolute; /* Makes it an overlay */
     left: 0px; /* Distance from left */
     z-index: 1000; /* Ensures it appears above other content */
-    pointer-events: none; /* Allows clicks to pass through to content below */
     padding-bottom: 10px;
+    cursor: pointer; /* Add cursor pointer */
 }
 .back-to-closet-btn {
     background-color: #f3e5f5;
@@ -270,7 +271,7 @@ body {
 .carousel-item {
     flex-shrink: 0;
     width: 280px;
-    height: 400px; /* Fixed height */
+    height: 300px; /* Reduced from 400px to 300px */
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -285,7 +286,7 @@ body {
 
 .carousel-item img {
     width: 100%;
-    height: 280px;
+    height: 100%; /* Changed from 280px to 100% to fill the container */
     object-fit: cover;
     border-radius: 12px 12px 0 0;
     flex-shrink: 0; /* Prevent image from shrinking */
@@ -315,7 +316,7 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     padding: 20px 0;
-    min-height: 400px; /* Maintain minimum height */
+    min-height: 300px; /* Reduced from 400px to 300px */
 }
 
 .grid-item {
@@ -324,7 +325,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     transition: transform 0.3s ease;
-    height: 400px; /* Fixed height */
+    height: 300px; /* Reduced from 400px to 300px */
 }
 
 .grid-item:hover {
@@ -334,7 +335,7 @@ body {
 
 .grid-item img {
     width: 100%;
-    height: 280px;
+    height: 100%; /* Changed from 280px to 100% to fill the container */
     object-fit: cover;
     border-radius: 12px 12px 0 0;
     flex-shrink: 0; /* Prevent image from shrinking */
@@ -398,6 +399,83 @@ body {
 .carousel-item,
 .grid-item {
     position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-item.selected,
+.grid-item.selected {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.3);
+    border: 2px solid #22c55e;
+}
+
+.carousel-item:hover,
+.grid-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Thrift store select dropdown */
+.thrift-store-select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    margin: 12px 0;
+    background: white;
+    color: #374151;
+    transition: border-color 0.2s ease;
+}
+
+.thrift-store-select:focus {
+    outline: none;
+    border-color: #a78bfa;
+}
+
+.thrift-store-select:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Donation confirmation text */
+.donation-confirmation {
+    font-weight: 600;
+    color: #374151;
+    margin: 16px 0 8px 0;
+}
+
+/* Coin notification text */
+.coin-notification {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 16px 0 0 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Active donate button */
+.donate-btn-active {
+    background-color: #dc2626 !important;
+    color: white !important;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.donate-btn:disabled {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.donate-btn:disabled:hover {
+    transform: none;
+    background-color: #f3f4f6 !important;
 }
 
 /* Confirmation Modal */
@@ -508,6 +586,7 @@ body {
     justify-content: center;
     align-items: flex-end;
     padding-top: 20px;
+    gap: 15px; /* Add gap between buttons */
 }
 .donate-btn {
     font-size: 15px;
@@ -520,6 +599,21 @@ body {
 .donate-btn:hover {
     transform: scale(1.05);
     background-color: #e792f4;
+}
+
+.donate-all-btn {
+    font-size: 15px;
+    font-weight: bold;
+    background-color: #e8f5e8; /* Light green background */
+    color: #166534; /* Dark green text */
+    border-radius: 30px;
+    padding: 15px 30px 15px 30px;
+    cursor: pointer;
+    border: 2px solid #22c55e; /* Green border */
+}
+.donate-all-btn:hover {
+    transform: scale(1.05);
+    background-color: #dcfce7; /* Lighter green on hover */
 }
 @media (max-width: 600px) {
     .thrift-page-container {
@@ -564,6 +658,11 @@ body {
         overflow-x: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        /* Enable horizontal scrolling for mobile */
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        padding: 0 10px;
     }
     
     .carousel-container::-webkit-scrollbar {
@@ -573,22 +672,40 @@ body {
     .carousel-track {
         animation: none;
         gap: 15px;
+        /* Change to horizontal layout for mobile */
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
     }
     
     .carousel-item {
         width: 240px;
+        flex-shrink: 0;
+        scroll-snap-align: start;
     }
     
     .carousel-item img {
-        height: 240px;
+        height: 100%;
     }
     
     .grid-container {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        /* Change grid to horizontal scroll for mobile */
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
         gap: 15px;
+        padding: 0 10px;
+        scroll-snap-type: x mandatory;
+    }
+    
+    .grid-item {
+        width: 240px;
+        flex-shrink: 0;
+        scroll-snap-align: start;
     }
     
     .grid-item img {
-        height: 240px;
+        height: 100%;
     }
 }

@@ -162,9 +162,40 @@ const ThriftPage = () => {
     const [routeDuration, setRouteDuration] = useState(null);  // State to store the travel duration
     const [routeDistance, setRouteDistance] = useState(null);  // Stores travel distance in miles
     const refScrollUp = useRef(null);  // Ref for scroll to top functionality
+    // State for unused items and selection
     const [unusedItems, setUnusedItems] = useState([]);
-    const [loadingItems, setLoadingItems] = useState(true);
+    const [selectedItems, setSelectedItems] = useState(new Set());
+    const [selectedThriftStore, setSelectedThriftStore] = useState('');
+    const [loadingItems, setLoadingItems] = useState(false);
+    const [userCoins, setUserCoins] = useState(0); // Add state for user coins
     const carouselRef = useRef(null);
+
+    // Fetch user's coin balance - using the same approach as UserPage
+    const fetchUserCoins = async () => {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        console.log('🔍 Fetching user coins, token present:', !!token);
+        try {
+            // Use the same endpoint as UserPage
+            const coinResponse = await axios.get(`${API_BASE_URL}/users/me/coins`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log('🔍 Coin response:', coinResponse.data);
+            
+            if (coinResponse.data && coinResponse.data.success) {
+                const balance = coinResponse.data.data.coin_balance;
+                console.log('✅ Setting user coins to:', balance);
+                setUserCoins(Math.max(0, balance)); // Ensure non-negative
+            } else {
+                console.log('❌ Backend response not successful, defaulting to 0');
+                setUserCoins(0);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching user coins:', error);
+            console.error('❌ Error response:', error.response?.data);
+            // Set a default value if API fails
+            setUserCoins(0);
+        }
+    };
 
     // Fetch unused items from backend
     const fetchUnusedItems = async () => {
@@ -222,21 +253,37 @@ const ThriftPage = () => {
 
     // On mount, get user's current location using browser geolocation and fetch unused items
     useEffect(() => {
+        console.log('🔍 ThriftPage useEffect running');
+        console.log('🔍 Checking Google Maps API Key:', import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing');
+        console.log('🔍 Checking geolocation support:', navigator.geolocation ? 'Supported' : 'Not supported');
+        
         navigator.geolocation.getCurrentPosition(
             (position) => {
+                console.log('✅ Location obtained:', position.coords.latitude, position.coords.longitude);
                 setCoords({
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 });
-                console.log(position.coords.latitude, position.coords.longitude);
             },
             (error) => {
-                console.error("Error getting location.", error);
+                console.error("❌ Error getting location:", error);
+                console.error("❌ Error code:", error.code);
+                console.error("❌ Error message:", error.message);
+                
+                // Set default coordinates (San Francisco) if geolocation fails
+                console.log('🔄 Setting default coordinates (San Francisco)');
+                setCoords({
+                    lat: 37.7749,
+                    lng: -122.4194
+                });
             }
         );
         
         // Fetch unused items
         fetchUnusedItems();
+        // Fetch user coins
+        console.log('🔍 Calling fetchUserCoins');
+        fetchUserCoins();
     }, []);
 
     // Called when the Google Map is loaded
@@ -369,6 +416,7 @@ const ThriftPage = () => {
 
     // Show confirmation modal
     const showConfirmation = (action, item) => {
+        console.log('🔔 showConfirmation called with action:', action, 'item:', item);
         setConfirmAction(action);
         setSelectedItem(item);
         setShowConfirmModal(true);
@@ -376,17 +424,20 @@ const ThriftPage = () => {
 
     // Handle confirmation
     const handleConfirm = async () => {
-        if (!selectedItem) return;
-
-        if (confirmAction === 'restore') {
-            await restoreToCloset(selectedItem.id);
-        } else if (confirmAction === 'donate') {
-            await donateToThriftStore(selectedItem.id);
+        if (confirmAction === 'donate-multiple') {
+            await donateSelectedItems();
+        } else if (selectedItem) {
+            if (confirmAction === 'restore') {
+                await restoreToCloset(selectedItem.id);
+            } else if (confirmAction === 'donate') {
+                await donateToThriftStore(selectedItem.id);
+            }
         }
 
         setShowConfirmModal(false);
         setConfirmAction(null);
         setSelectedItem(null);
+        setSelectedThriftStore('');
     };
 
     // Cancel confirmation
@@ -394,6 +445,31 @@ const ThriftPage = () => {
         setShowConfirmModal(false);
         setConfirmAction(null);
         setSelectedItem(null);
+        setSelectedThriftStore(''); // Reset thrift store selection
+    };
+
+    // Handle item selection
+    const handleItemSelect = (itemId) => {
+        setSelectedItems(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(itemId)) {
+                newSet.delete(itemId);
+            } else {
+                newSet.add(itemId);
+            }
+            return newSet;
+        });
+    };
+
+    // Handle thrift store selection
+    const handleThriftStoreSelect = (storeName) => {
+        setSelectedThriftStore(storeName);
+    };
+
+    // Select all items for donation
+    const selectAllItems = () => {
+        const allItemIds = unusedItems.map(item => item.id);
+        setSelectedItems(new Set(allItemIds));
     };
 
     // Restore item back to closet
@@ -428,11 +504,76 @@ const ThriftPage = () => {
                 console.log('Item donated to thrift store successfully');
                 // Remove the item from the unused items list with smooth transition
                 setUnusedItems(prevItems => prevItems.filter(item => item.id !== itemId));
+                // Remove from selected items
+                setSelectedItems(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(itemId);
+                    return newSet;
+                });
             } else {
                 console.error('Failed to donate item to thrift store');
             }
         } catch (error) {
             console.error('Error donating item to thrift store:', error);
+        }
+    };
+
+    // Donate multiple selected items
+    const donateSelectedItems = async () => {
+        console.log('🎯 donateSelectedItems called');
+        console.log('🎯 selectedItems:', selectedItems);
+        console.log('🎯 selectedThriftStore:', selectedThriftStore);
+        
+        if (selectedItems.size === 0 || !selectedThriftStore) {
+            console.log('❌ Cannot donate: no items selected or no thrift store selected');
+            return;
+        }
+        
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        console.log('🎯 Token present:', !!token);
+        
+        try {
+            // Donate all selected items using DELETE requests
+            const itemIds = Array.from(selectedItems);
+            console.log('🎯 Donating items:', itemIds);
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            // Delete each item individually
+            for (const itemId of itemIds) {
+                try {
+                    console.log('🎯 Deleting item:', itemId);
+                    const response = await axios.delete(`${API_BASE_URL}/clothing-items/${itemId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    
+                    if (response.data && response.data.success) {
+                        console.log('✅ Item deleted successfully:', itemId);
+                        successCount++;
+                    } else {
+                        console.error('❌ Failed to delete item:', itemId, response.data);
+                        errorCount++;
+                    }
+                } catch (error) {
+                    console.error('❌ Error deleting item:', itemId, error);
+                    errorCount++;
+                }
+            }
+            
+            console.log(`🎯 Donation complete: ${successCount} successful, ${errorCount} failed`);
+            
+            if (successCount > 0) {
+                // Remove successfully donated items from the list
+                setUnusedItems(prevItems => prevItems.filter(item => !selectedItems.has(item.id)));
+                // Clear selected items
+                setSelectedItems(new Set());
+                setSelectedThriftStore('');
+                // You could also add coins here
+                // addCoins(successCount * 5); // 5 coins per item
+            }
+        } catch (error) {
+            console.error('❌ Error in donation process:', error);
         }
     };
 
@@ -474,19 +615,54 @@ const ThriftPage = () => {
                 <div className="modal-content">
                     <div className="modal-header">
                         <h3>
-                            {confirmAction === 'restore' ? 'Move Back to Closet' : 'Donate to Thrift Store'}
+                            {confirmAction === 'restore' ? 'Move Back to Closet' : 
+                             confirmAction === 'donate' ? 'Donate to Thrift Store' :
+                             'Donate Selected Items'}
                         </h3>
                     </div>
                     <div className="modal-body">
-                        <p>
-                            {confirmAction === 'restore' 
-                                ? `Are you sure you want to move "${selectedItem?.label || selectedItem?.name}" back to your closet?`
-                                : `Are you sure you want to donate "${selectedItem?.label || selectedItem?.name}" to the thrift store?`
-                            }
-                        </p>
-                        <p className="modal-warning">
-                            {confirmAction === 'donate' ? 'This action cannot be undone.' : ''}
-                        </p>
+                        {confirmAction === 'donate-multiple' ? (
+                            <>
+                                <p>Select which thrift store you are donating to:</p>
+                                <select 
+                                    value={selectedThriftStore}
+                                    onChange={(e) => handleThriftStoreSelect(e.target.value)}
+                                    className="thrift-store-select"
+                                >
+                                    <option value="">Select a thrift store...</option>
+                                    {places.map(place => (
+                                        <option key={place.place_id} value={place.name}>
+                                            {place.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedThriftStore && (
+                                    <>
+                                        <p className="donation-confirmation">
+                                            Are you sure you want to donate {selectedItems.size} item{selectedItems.size > 1 ? 's' : ''} to {selectedThriftStore}?
+                                        </p>
+                                        <p className="modal-warning">
+                                            This action cannot be undone.
+                                        </p>
+                                        <p className="coin-notification">
+                                            Your coins will be added to your account after the donation is processed and verified.
+                                        </p>
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <p>
+                                    {confirmAction === 'restore' 
+                                        ? `Are you sure you want to move "${selectedItem?.label || selectedItem?.name}" back to your closet?`
+                                        : `Are you sure you want to donate "${selectedItem?.label || selectedItem?.name}" to the thrift store?`
+                                    }
+                                </p>
+                                <p className="modal-warning">
+                                    {confirmAction === 'donate' ? 'This action cannot be undone.' : ''}
+                                </p>
+                            </>
+                        )}
                     </div>
                     <div className="modal-actions">
                         <button 
@@ -498,6 +674,7 @@ const ThriftPage = () => {
                         <button 
                             className={`modal-btn ${confirmAction === 'restore' ? 'restore-btn' : 'donate-btn'}`}
                             onClick={handleConfirm}
+                            disabled={confirmAction === 'donate-multiple' && (!selectedThriftStore || selectedItems.size === 0)}
                         >
                             {confirmAction === 'restore' ? 'Move Back' : 'Donate'}
                         </button>
@@ -509,7 +686,16 @@ const ThriftPage = () => {
         <div className="thrift-page-container">  {/* Main container for the thrift page */}
             <div ref={refScrollUp}></div>
             <div className="thrift-page-header">
-                <img className="logo" src={logo} alt="logo" />
+                <img 
+                    className="logo" 
+                    src={logo} 
+                    alt="logo" 
+                    onClick={() => {
+                        console.log('🏠 Logo clicked, navigating to main page');
+                        window.location.href = '/';
+                    }}
+                    style={{ cursor: 'pointer' }}
+                />
                 <button className="back-to-closet-btn" onClick={handleBackToCloset}>← Back to Closet</button>
             </div>
             <div className="map-info-container-wrapper">  {/* Wrapper for sidebar and map, side by side */}
@@ -536,9 +722,9 @@ const ThriftPage = () => {
             </div>
             <div className="unused-items-container">  {/* Placeholder for user's items to donate */}
                 <div className="unused-items-header">
-                    <h3>Items to Donate!</h3>
+                    <h3>Select Unused Items in your closet to donate</h3>
                     <div className="unused-header-right">
-                        <h4><img src={coinRemoda} alt="coin" />: 0</h4>
+                        <h4><img src={coinRemoda} alt="coin" />: {userCoins}</h4>
                         
                         <button className="back-to-top-btn" onClick={handleScrollUp}>Back to Top</button>
                     </div>
@@ -559,21 +745,21 @@ const ThriftPage = () => {
                         <div className="carousel-container" ref={carouselRef}>
                             <div className="carousel-track">
                                 {unusedItems.map(item => (
-                                    <div key={item.id} className="carousel-item">
+                                    <div 
+                                        key={item.id} 
+                                        className={`carousel-item ${selectedItems.has(item.id) ? 'selected' : ''}`}
+                                        onClick={() => handleItemSelect(item.id)}
+                                    >
                                         <div className="item-buttons">
                                             <button 
                                                 className="restore-button"
-                                                onClick={() => showConfirmation('restore', item)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    showConfirmation('restore', item);
+                                                }}
                                                 title="Move back to closet"
                                             >
                                                 +
-                                            </button>
-                                            <button 
-                                                className="donate-individual-button"
-                                                onClick={() => showConfirmation('donate', item)}
-                                                title="Donate to thrift store"
-                                            >
-                                                🎁
                                             </button>
                                         </div>
                                         <img 
@@ -602,10 +788,6 @@ const ThriftPage = () => {
                                                 }
                                             }}
                                         />
-                                        <div className="item-info">
-                                            <h4>{item.label || item.name || 'Clothing Item'}</h4>
-                                            <p>{item.description || 'Ready to donate'}</p>
-                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -614,21 +796,21 @@ const ThriftPage = () => {
                         // Grid view for 7 or fewer items
                         <div className="grid-container">
                             {unusedItems.map(item => (
-                                <div key={item.id} className="grid-item">
+                                <div 
+                                    key={item.id} 
+                                    className={`grid-item ${selectedItems.has(item.id) ? 'selected' : ''}`}
+                                    onClick={() => handleItemSelect(item.id)}
+                                >
                                     <div className="item-buttons">
                                         <button 
                                             className="restore-button"
-                                            onClick={() => showConfirmation('restore', item)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                showConfirmation('restore', item);
+                                            }}
                                             title="Move back to closet"
                                         >
                                             +
-                                        </button>
-                                        <button 
-                                            className="donate-individual-button"
-                                            onClick={() => showConfirmation('donate', item)}
-                                            title="Donate to thrift store"
-                                        >
-                                            🎁
                                         </button>
                                     </div>
                                     <img 
@@ -657,10 +839,6 @@ const ThriftPage = () => {
                                             }
                                         }}
                                     />
-                                    <div className="item-info">
-                                        <h4>{item.label || item.name || 'Clothing Item'}</h4>
-                                        <p>{item.description || 'Ready to donate'}</p>
-                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -668,7 +846,26 @@ const ThriftPage = () => {
                 </div>
                 {unusedItems.length > 0 &&(
                 <div className="unused-items-footer">
-                    <button className="donate-btn" onClick={handleDonate}>Donate</button>
+                    <button 
+                        className={`donate-btn ${selectedItems.size > 0 ? 'donate-btn-active' : ''}`}
+                        onClick={() => {
+                            if (selectedItems.size > 0) {
+                                showConfirmation('donate-multiple', null);
+                            }
+                        }}
+                        disabled={selectedItems.size === 0}
+                    >
+                        Donate {selectedItems.size > 0 ? `(${selectedItems.size} selected)` : ''}
+                    </button>
+                    {selectedItems.size > 0 && (
+                        <button 
+                            className="donate-all-btn"
+                            onClick={selectAllItems}
+                            title="Select all items for donation"
+                        >
+                            Select All! ({unusedItems.length} items)
+                        </button>
+                    )}
                 </div>)}
             </div>
         </div>
