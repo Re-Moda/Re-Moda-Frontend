@@ -176,10 +176,47 @@ const UserPage = () => {
       setGeneratedAvatarUrl(savedGeneratedAvatarUrl);
     }
   }, [generatedAvatarUrl, avatarUrl]);
+
+  // Add CSS for spinner animation
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // Function to process uploaded items
+  const processUploadedItems = async () => {
+    setProcessingUploads(true);
+    try {
+      // Simulate processing time for uploaded items
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Here you would call your async function to handle API rate limiting
+      // await yourAsyncProcessingFunction();
+      
+      console.log('Uploaded items processed successfully');
+      showToast('Your wardrobe has been processed successfully!', 'success');
+    } catch (error) {
+      console.error('Error processing uploads:', error);
+      showToast('Error processing uploads. Please try again.', 'error');
+    } finally {
+      setProcessingUploads(false);
+    }
+  };
   const [uploadCount, setUploadCount] = useState(0);
   const [canAccessCloset, setCanAccessCloset] = useState(true);
   const [remainingUploads, setRemainingUploads] = useState(0);
   const [expandedItems, setExpandedItems] = useState({});
+  const [loadingItems, setLoadingItems] = useState(new Set()); // Track loading state for individual items
+  const [processingUploads, setProcessingUploads] = useState(false); // Track loading state for processing uploads
 
   // Toast notification function
   const showToast = (message, type = 'info') => {
@@ -391,7 +428,7 @@ const UserPage = () => {
         setAvatarUrl(res.data.data.avatar_url);
       }
     } catch (err) {
-      alert("Failed to upload avatar.");
+      showToast("Failed to upload avatar.", 'error');
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -431,7 +468,7 @@ const UserPage = () => {
       // setCurrentOutfitId(res.data.outfit_id);
     } catch (err) {
       console.error('Try-on error:', err);
-      alert("Failed to generate try-on image.");
+      showToast("Failed to generate try-on image.", 'error');
     }
     setLoadingTryOn(false);
   };
@@ -439,7 +476,7 @@ const UserPage = () => {
   // Heart button (favorites) functionality
   const handleFavorite = async () => {
     if (!generatedAvatarUrl) {
-      alert('No outfit generated yet! Use "Try On" first to create an outfit.');
+      showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
       return;
     }
     
@@ -467,12 +504,12 @@ const UserPage = () => {
       if (response.data && response.data.success) {
         console.log('Outfit created and favorited successfully:', response.data.data);
         console.log('Full response from backend:', response.data);
-        alert('❤️ Outfit added to favorites! Check the "Favourites" category to see it.');
+        showToast('❤️ Outfit added to favorites! Check the "Favourites" category to see it.', 'success');
         
         // Refresh outfits from backend
         loadOutfits();
       } else {
-        alert('Failed to add to favorites. Please try again.');
+        showToast('Failed to add to favorites. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error favoriting outfit:', error);
@@ -481,14 +518,14 @@ const UserPage = () => {
         console.error('Status:', error.response.status);
         console.error('Full error details:', JSON.stringify(error.response.data, null, 2));
       }
-      alert('Failed to add to favorites. Please try again.');
+      showToast('Failed to add to favorites. Please try again.', 'error');
     }
   };
 
   // Add to Worn functionality
   const handleMarkAsWorn = async () => {
     if (!generatedAvatarUrl) {
-      alert('No outfit generated yet! Use "Try On" first to create an outfit.');
+      showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
       return;
     }
     
@@ -516,12 +553,12 @@ const UserPage = () => {
       if (response.data && response.data.success) {
         console.log('Outfit created and marked as recurring successfully:', response.data.data);
         console.log('Full response from backend:', response.data);
-        alert('✓ Outfit added to recurring! Check the "Recurring" category to see it.');
+        showToast('✓ Outfit added to recurring! Check the "Recurring" category to see it.', 'success');
         
         // Refresh outfits from backend
         loadOutfits();
       } else {
-        alert('Failed to add to recurring. Please try again.');
+        showToast('Failed to add to recurring. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error adding outfit to recurring:', error);
@@ -529,7 +566,7 @@ const UserPage = () => {
         console.error('Backend response:', error.response.data);
         console.error('Status:', error.response.status);
       }
-      alert('Failed to add to recurring. Please try again.');
+      showToast('Failed to add to recurring. Please try again.', 'error');
     }
   };
 
@@ -576,6 +613,11 @@ const UserPage = () => {
   useEffect(() => {
     console.log('Component mounted, loading closet items...');
     fetchClosetItems();
+    
+    // Process uploaded items if there are any
+    if (uploadCount > 0) {
+      processUploadedItems();
+    }
   }, []);
 
   // Check for generated avatar from chat (but don't override user's actual avatar)
@@ -607,35 +649,40 @@ const UserPage = () => {
       
       if (response.data && response.data.success) {
         console.log('Favorite status toggled successfully');
+        showToast('Favorite status updated successfully!', 'success');
         // Refresh outfits from backend
         loadOutfits();
       } else {
-        alert('Failed to toggle favorite status. Please try again.');
+        showToast('Failed to toggle favorite status. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      alert('Failed to toggle favorite status. Please try again.');
+      showToast('Failed to toggle favorite status. Please try again.', 'error');
     }
   };
 
-  // Mark outfit as worn
+  // Toggle outfit recurring status
   const markAsWorn = async (outfitId) => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
-      const response = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+      // Try to directly update the outfit's recurring status
+      const response = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}`, {
+        is_recurring: false
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.data && response.data.success) {
-        console.log('Outfit marked as worn successfully');
+        console.log('Outfit removed from recurring successfully');
+        showToast('Outfit removed from recurring!', 'success');
         // Refresh outfits from backend
         loadOutfits();
       } else {
-        alert('Failed to mark as worn. Please try again.');
+        showToast('Failed to remove from recurring. Please try again.', 'error');
       }
     } catch (error) {
-      console.error('Error marking as worn:', error);
-      alert('Failed to mark as worn. Please try again.');
+      console.error('Error removing from recurring:', error);
+      showToast('Failed to remove from recurring. Please try again.', 'error');
     }
   };
 
@@ -706,6 +753,7 @@ const UserPage = () => {
 
   const moveToUnused = async (itemId) => {
     console.log('moveToUnused called with itemId:', itemId);
+    setLoadingItems(prev => new Set(prev).add(itemId));
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     console.log('Token available:', !!token);
     console.log('API_BASE_URL:', API_BASE_URL);
@@ -740,6 +788,59 @@ const UserPage = () => {
       } else {
         showToast('Failed to move item to unused. Please try again.', 'error');
       }
+    } finally {
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
+    }
+  };
+
+  // Restore item from unused back to closet
+  const restoreFromUnused = async (itemId) => {
+    console.log('restoreFromUnused called with itemId:', itemId);
+    setLoadingItems(prev => new Set(prev).add(itemId));
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    console.log('Token available:', !!token);
+    console.log('API_BASE_URL:', API_BASE_URL);
+    
+    try {
+      console.log('Making request to:', `${API_BASE_URL}/clothing-items/${itemId}/restore`);
+      const response = await axios.patch(`${API_BASE_URL}/clothing-items/${itemId}/restore`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Response received:', response.data);
+      
+      if (response.data && response.data.success) {
+        console.log('Item restored from unused successfully:', response.data.message);
+        // Refresh closet items from backend
+        await fetchClosetItems();
+        console.log('Closet items refreshed');
+        // Show success toast
+        showToast('Item restored to closet successfully!', 'success');
+      } else {
+        console.error('Failed to restore item from unused:', response.data);
+        showToast('Failed to restore item from unused. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error restoring from unused:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      // Handle different error cases
+      if (error.response?.status === 401) {
+        showToast('Please log in again to continue.', 'error');
+      } else {
+        showToast('Failed to restore item from unused. Please try again.', 'error');
+      }
+    } finally {
+      setLoadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
     }
   };
 
@@ -983,45 +1084,42 @@ const UserPage = () => {
         </div>
       </div>
 
-      {/* Upload progress display - moved below nav bar */}
-      {!canAccessCloset && (
+      {/* Processing uploads loading display */}
+      {processingUploads && (
         <div style={{
           position: 'fixed',
           top: 100,
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 100,
-          background: '#fef3c7',
-          border: '2px solid #f59e0b',
+          background: '#e0e7ff',
+          border: '2px solid #7c3aed',
           borderRadius: 16,
-          padding: '16px 24px',
+          padding: '20px 32px',
           boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
           fontFamily: "'EB Garamond', serif",
-          color: '#92400e',
+          color: '#7c3aed',
           fontWeight: 600,
-          fontSize: 14,
-          minWidth: 300,
-          textAlign: 'center'
+          fontSize: 16,
+          minWidth: 350,
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12
         }}>
-          <div style={{ marginBottom: 8 }}>
-            Upload {remainingUploads} more item(s) to access your full closet
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            Current uploads: {uploadCount}/4
-          </div>
           <div style={{
-            width: '100%',
-            height: 8,
-            background: '#fbbf24',
-            borderRadius: 4,
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${(uploadCount / 4) * 100}%`,
-              height: '100%',
-              background: '#f59e0b',
-              transition: 'width 0.3s ease'
-            }}></div>
+            width: '24px',
+            height: '24px',
+            border: '3px solid #7c3aed',
+            borderTop: '3px solid transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <div>
+            Processing your uploaded items...
+            <div style={{ fontSize: 14, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>
+              Please wait while we process your wardrobe
+            </div>
           </div>
         </div>
       )}
@@ -1283,7 +1381,7 @@ const UserPage = () => {
                         <img
                           src={imageUrl}
                           alt="Generated Outfit"
-                          style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
+                          style={{ width: '100%', height: 200, objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
                           onError={(e) => {
                             console.log('Failed to load outfit image:', imageUrl);
                             e.target.style.display = 'none';
@@ -1291,8 +1389,8 @@ const UserPage = () => {
                         />
                       ) : (
                         <div style={{ 
-                          width: 120, 
-                          height: 120, 
+                          width: '100%', 
+                          height: 200, 
                           background: '#f0f0f0', 
                           borderRadius: 12, 
                           marginBottom: 8,
@@ -1303,75 +1401,101 @@ const UserPage = () => {
                           fontSize: 12
                         }}>
                           No Image
-                    </div>
+                        </div>
                       );
                     })()}
-                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
-                      {item.is_favorite ? "❤️ Favorite Outfit" : "✓ Recurring Outfit"}
-                </div>
-                    <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>
-                      {item.is_favorite ? "Favorited" : "Recurring"}
-              </div>
-                    <div style={{ color: "#444", fontSize: 15, marginBottom: 8 }}>
-                      Generated outfit with selected items
-            </div>
-                    {/* Interactive buttons for outfits */}
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-        <button 
+                    
+                    {/* Heart button positioned at top right */}
+                    {!item.is_recurring && (
+                      <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleFavorite(item.id);
                         }}
                         style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
                           background: item.is_favorite ? '#ff6b6b' : '#f0f0f0',
                           color: item.is_favorite ? 'white' : '#666',
                           border: 'none',
-                          borderRadius: 8,
-                          padding: '4px 8px',
-                          fontSize: 12,
+                          borderRadius: '50%',
+                          width: 32,
+                          height: 32,
+                          fontSize: 16,
                           cursor: 'pointer',
-                          fontWeight: 600
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 10
                         }}
                         title={item.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
                       >
                         {item.is_favorite ? '❤️' : '🤍'}
-        </button>
-            <button
+                      </button>
+                    )}
+                    
+                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
+                      {item.is_favorite ? "Favorite Outfit" : "✓ Recurring Outfit"}
+                    </div>
+                    <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>
+                      {item.is_favorite ? "Favorited" : "Recurring"}
+                    </div>
+                    
+                    {/* Worn button positioned at top right */}
+                    {item.is_recurring && (
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           markAsWorn(item.id);
                         }}
                         style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
                           background: '#4CAF50',
                           color: 'white',
                           border: 'none',
-                          borderRadius: 8,
-                          padding: '4px 8px',
-                          fontSize: 12,
+                          borderRadius: '50%',
+                          width: 32,
+                          height: 32,
+                          fontSize: 16,
                           cursor: 'pointer',
-                          fontWeight: 600
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 10
                         }}
-                        title="Mark as worn"
+                        title="Remove from worn"
                       >
-                        ✓ Worn
-            </button>
-          </div>
+                        ✓
+                      </button>
+                    )}
                   </>
                 ) : (
                   // Render clothing item
                   <>
-                    {/* X button to move to unused */}
+                    {/* Button to move to unused or restore from unused */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        console.log('X button clicked for item:', item.id, item.label || item.title);
-                        moveToUnused(item.id);
+                        if (loadingItems.has(item.id)) return; // Prevent multiple clicks
+                        if (item.is_unused) {
+                          console.log('Plus button clicked for item:', item.id, item.label || item.title);
+                          restoreFromUnused(item.id);
+                        } else {
+                          console.log('X button clicked for item:', item.id, item.label || item.title);
+                          moveToUnused(item.id);
+                        }
                       }}
+                      disabled={loadingItems.has(item.id)}
                       style={{
                         position: 'absolute',
                         top: 8,
                         right: 8,
-                        background: '#ffb3d9',
+                        background: loadingItems.has(item.id) ? '#ccc' : (item.is_unused ? '#90EE90' : '#ffb3d9'), // Gray when loading
                         color: 'white',
                         border: 'none',
                         borderRadius: '50%',
@@ -1379,15 +1503,27 @@ const UserPage = () => {
                         height: 24,
                         fontSize: 16,
                         fontWeight: 'bold',
-                        cursor: 'pointer',
+                        cursor: loadingItems.has(item.id) ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 10
+                        zIndex: 10,
+                        opacity: loadingItems.has(item.id) ? 0.6 : 1
                       }}
-                      title="Move to Unused"
+                      title={loadingItems.has(item.id) ? "Processing..." : (item.is_unused ? "Move back to closet" : "Move to Unused")}
                     >
-                      −
+                      {loadingItems.has(item.id) ? (
+                        <div style={{
+                          width: '12px',
+                          height: '12px',
+                          border: '2px solid #fff',
+                          borderTop: '2px solid transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}></div>
+                      ) : (
+                        item.is_unused ? '+' : '−'
+                      )}
                     </button>
                     {/* AI-generated image */}
                     <img

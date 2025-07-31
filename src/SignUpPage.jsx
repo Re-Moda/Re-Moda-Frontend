@@ -156,6 +156,21 @@ const SignUpPage = () => {
   const [avatarLocked, setAvatarLocked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Add CSS for spinner animation
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // Generate animated stars for background
   const stars = Array.from({ length: 60 }).map((_, i) => {
     const top = Math.random() * 100;
@@ -226,6 +241,7 @@ const SignUpPage = () => {
       return;
     }
     setAvatarError("");
+    setIsLoading(true);
 
     try {
       // 1. Sign up the user
@@ -258,6 +274,7 @@ const SignUpPage = () => {
       }
 
       // ...rest of your animation and UI logic
+    setIsLoading(false);
     setShowAnimation(true);
     // If a photo was uploaded, wait for photoPreview to be set before showing the card
     if (photo && !photoPreview) {
@@ -280,6 +297,7 @@ const SignUpPage = () => {
       setSubmitted(true);
     }, 1100);
     } catch (error) {
+      setIsLoading(false);
       if (error.response && error.response.status === 409) {
         setAvatarError("That username or email is already taken. Please choose another.");
       } else {
@@ -618,23 +636,48 @@ const SignUpPage = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'row', gap: 12, marginTop: 18, width: '100%', justifyContent: 'center' }}>
-                    <button type="submit" className="magazine-signup-btn" style={{
-                      flex: 0.6,
-                      marginTop: 0,
-                      background: '#e3f0ff',
-                      color: '#3a5a8c',
-                      border: '2px solid #b0b0ff',
-                      borderRadius: '0.7rem',
-                      boxShadow: '0 2px 8px #b0b0ff33, 0 1.5px 0 #fff inset',
-                      fontWeight: 700,
-                      fontFamily: 'Poppins, Arial, sans-serif',
-                      fontSize: '1.08rem',
-                      padding: '10px 0',
-                      letterSpacing: '0.04em',
-                      transition: 'background 0.18s, box-shadow 0.18s',
-                      outline: 'none',
-                      cursor: 'pointer',
-                    }}>Sign Up</button>
+                    <button 
+                      type="submit" 
+                      className="magazine-signup-btn" 
+                      disabled={isLoading}
+                      style={{
+                        flex: 0.6,
+                        marginTop: 0,
+                        background: isLoading ? '#f0f0f0' : '#e3f0ff',
+                        color: isLoading ? '#888' : '#3a5a8c',
+                        border: '2px solid #b0b0ff',
+                        borderRadius: '0.7rem',
+                        boxShadow: '0 2px 8px #b0b0ff33, 0 1.5px 0 #fff inset',
+                        fontWeight: 700,
+                        fontFamily: 'Poppins, Arial, sans-serif',
+                        fontSize: '1.08rem',
+                        padding: '10px 0',
+                        letterSpacing: '0.04em',
+                        transition: 'background 0.18s, box-shadow 0.18s',
+                        outline: 'none',
+                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid #888',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}></div>
+                          Signing Up...
+                        </>
+                      ) : (
+                        'Sign Up'
+                      )}
+                    </button>
                     {/* <button
                       type="button"
                       className="google-auth-btn"

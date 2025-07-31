@@ -98,6 +98,44 @@ const StylistChatPage = () => {
   
   // Chat history states
   const [chatSessions, setChatSessions] = useState([]);
+
+  // Toast notification function
+  const showToast = (message, type = 'info') => {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+      toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      toast.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 300);
+    }, 3000);
+  };
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   
@@ -752,18 +790,27 @@ const StylistChatPage = () => {
             fileInputRef={fileInputRef}
           />
           
-          {/* Heart and Worn buttons - only show when there's a generated outfit and no real avatar */}
-          {generatedAvatarUrl && !avatarUrl && (
+          {/* Heart and Worn buttons - show when there's a generated outfit */}
+          {generatedAvatarUrl && (
             <>
               {/* Heart button */}
-              <span
+              <button
                 style={{
                   position: "absolute",
                   top: 12,
-                  left: 24,
-                  fontSize: 32,
-                  color: "#e25555",
-                  cursor: "pointer",
+                  left: 12,
+                  background: '#ff6b6b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                   zIndex: 10
                 }}
                 onClick={async () => {
@@ -784,29 +831,38 @@ const StylistChatPage = () => {
                     });
                     
                     if (response.data.success) {
-                      alert('❤️ Outfit added to favorites!');
+                      showToast('❤️ Outfit added to favorites!', 'success');
+                    } else {
+                      showToast('Failed to add to favorites. Please try again.', 'error');
                     }
                   } catch (error) {
                     console.error('Error favoriting outfit:', error);
-                    alert('Failed to add to favorites. Please try again.');
+                    showToast('Failed to add to favorites. Please try again.', 'error');
                   }
                 }}
                 title="Add to Favourites"
-              >❤️</span>
+              >
+                ❤️
+              </button>
               
               {/* Add to Worn button */}
-              <span
+              <button
                 style={{
                   position: "absolute",
                   top: 12,
-                  right: 24,
-                  fontSize: 24,
-                  color: "#22c55e",
-                  cursor: "pointer",
-                  background: "#f0fdf4",
-                  borderRadius: 8,
-                  padding: "4px 8px",
-                  border: "1px solid #22c55e",
+                  right: 12,
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                   zIndex: 10
                 }}
                 onClick={async () => {
@@ -827,15 +883,19 @@ const StylistChatPage = () => {
                     });
                     
                     if (response.data.success) {
-                      alert('✓ Outfit added to recurring!');
+                      showToast('✓ Outfit added to recurring!', 'success');
+                    } else {
+                      showToast('Failed to add to recurring. Please try again.', 'error');
                     }
                   } catch (error) {
                     console.error('Error marking outfit as recurring:', error);
-                    alert('Failed to add to recurring. Please try again.');
+                    showToast('Failed to add to recurring. Please try again.', 'error');
                   }
                 }}
                 title="Add to Recurring"
-              >✓ Recurring</span>
+              >
+                ✓
+              </button>
             </>
           )}
         </div>

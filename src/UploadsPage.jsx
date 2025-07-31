@@ -162,9 +162,7 @@ export default function UploadsPage() {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('category', img.category);
-      // Don't send label - let backend generate it from description
-      formData.append('description', `A ${img.category.toLowerCase()} item uploaded by user`); // Add description
-      formData.append('tag', img.category.toLowerCase()); // Add tag field as backup
+      // Don't send description or title - let user control descriptions via the 'i' button
       
       console.log('FormData contents:');
       for (let [key, value] of formData.entries()) {
@@ -186,26 +184,37 @@ export default function UploadsPage() {
       } catch (firstError) {
         console.log('First attempt failed, trying with alternative field names...');
         
-        // Try with alternative field names
-        const alternativeFormData = new FormData();
-        alternativeFormData.append('image', file);
-        alternativeFormData.append('category', img.category);
-        alternativeFormData.append('title', img.name.replace(/\.[^/.]+$/, "")); // Try 'title' instead of 'label'
-        alternativeFormData.append('description', `A ${img.category.toLowerCase()} item uploaded by user`);
-        
-        console.log('Trying alternative FormData:');
-        for (let [key, value] of alternativeFormData.entries()) {
-          console.log(`${key}:`, value);
-        }
-        
-        uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items/upload`, alternativeFormData, {
-          headers: { 
-            Authorization: `Bearer ${jwtToken}`,
-            'Content-Type': 'multipart/form-data'
+        try {
+          // Try with alternative field names
+          const alternativeFormData = new FormData();
+          alternativeFormData.append('image', file);
+          alternativeFormData.append('category', img.category);
+          // Don't send title or description - let user control descriptions via the 'i' button
+          
+          console.log('Trying alternative FormData:');
+          for (let [key, value] of alternativeFormData.entries()) {
+            console.log(`${key}:`, value);
           }
-        });
+          
+          uploadResponse = await axios.post(`${API_BASE_URL}/clothing-items/upload`, alternativeFormData, {
+            headers: { 
+              Authorization: `Bearer ${jwtToken}`,
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        } catch (secondError) {
+          console.log('Second attempt also failed:', secondError);
+          throw secondError; // Re-throw to be caught by the outer catch block
+        }
       }
-      // Only update the status of the uploaded image, do NOT reset or replace the array
+      
+      // Verify the upload was successful
+      console.log('Upload response:', uploadResponse);
+      if (!uploadResponse || !uploadResponse.data) {
+        throw new Error('Upload failed - no response received');
+      }
+      
+      // Only update the status of the uploaded image if the API call succeeded
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'success' } : item));
       setNotification({ type: 'success', message: 'File uploaded successfully! 1 item added to your wardrobe.' });
       

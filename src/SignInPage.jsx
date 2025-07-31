@@ -77,6 +77,21 @@ const SignInPage = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Add CSS for spinner animation
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
    // Generate animated stars for background
    const stars = Array.from({ length: 60 }).map((_, i) => {
     const top = Math.random() * 100;
@@ -211,7 +226,36 @@ const SignInPage = () => {
                   required
                 />
                 {errorMsg && <div style={{ color: '#d72660', fontWeight: 600, margin: '8px 0', textAlign: 'center' }}>{errorMsg}</div>}
-                <button type="submit" className="magazine-signup-btn">Sign In</button>
+                <button 
+                  type="submit" 
+                  className="magazine-signup-btn"
+                  disabled={loading}
+                  style={{
+                    background: loading ? '#f0f0f0' : '#e3f0ff',
+                    color: loading ? '#888' : '#3a5a8c',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid #888',
+                        borderTop: '2px solid transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }}></div>
+                      Signing In...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </button>
                 <button
                   type="button"
                   className="magazine-signup-btn"
