@@ -704,7 +704,7 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  display: flex; /* Show desktop navigation normally */
 }
 
-/* Mobile Responsive Styles for 430px screens */
+ /* Mobile Responsive Styles for 430px screens */
 @media (max-width: 430px) {
  /* Mobile container and general layout */
  body {
@@ -714,6 +714,7 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  padding: 0;
  overflow-x: hidden;
  min-height: 100vh;
+ background: linear-gradient(to right, #dfe7fd, #fef6ff);
  }
 
  /* Fix page margins for mobile */
@@ -903,6 +904,17 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  }
  }
 
+ @keyframes slideDown {
+ from {
+ opacity: 0;
+ transform: translateY(-20px);
+ }
+ to {
+ opacity: 1;
+ transform: translateY(0);
+ }
+ }
+
  /* Show hamburger menu on mobile */
  .hamburger-menu {
  display: flex;
@@ -966,17 +978,18 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  .mobile-menu {
  display: none;
  width: 100%;
- background: transparent;
- backdrop-filter: none;
- border-radius: 12px;
- margin-top: 16px;
- padding: 16px;
- box-shadow: none;
- border: none;
+ background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+ border-bottom: 2px solid #c9b6ff;
+ box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+ padding: 20px;
+ margin: 0;
+ box-sizing: border-box;
+ position: relative;
  }
 
  .mobile-menu.active {
  display: block;
+ animation: slideDown 0.3s ease;
  }
 
  .nav-buttons {
@@ -992,83 +1005,37 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  font-size: 14px;
  padding: 12px 16px;
  border-radius: 6px;
- background: linear-gradient(135deg, #f9dbdf 0%, #ffe6ea 50%, #ffd9df 100%);
- border: 2px solid #ffc0df;
+ background: linear-gradient(135deg, #f8f4ff 0%, #e9d5ff 100%);
+ border: 2px solid #c9b6ff;
  transition: all 0.2s ease;
  width: 100%;
  text-align: center;
  position: relative;
- box-shadow: 
- 0 2px 4px rgba(0, 0, 0, 0.2),
- 0 1px 2px rgba(255, 255, 255, 0.3) inset;
- font-family: 'Courier New', monospace;
- color: #917791;
- font-weight: 600;
- margin-bottom: 4px;
- text-transform: uppercase;
- letter-spacing: 1px;
+ box-shadow: 0 2px 4px rgba(107, 91, 149, 0.15);
+ font-family: 'Poppins', sans-serif;
+ color: #6b5b95;
+ font-weight: 500;
+ margin-bottom: 8px;
+ text-transform: none;
+ letter-spacing: 0.5px;
  }
 
- .nav-buttons button::before {
- content: '';
- position: absolute;
- top: 0;
- left: 0;
- right: 0;
- bottom: 0;
- background: linear-gradient(135deg, #ffc0cb 0%, #ffb6c1 50%, #ffc0cb 100%);
- border-radius: 4px;
- z-index: -1;
- box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
- }
 
- .nav-buttons button::after {
- content: '';
- position: absolute;
- top: 1px;
- left: 1px;
- right: 1px;
- bottom: 1px;
- background: linear-gradient(135deg, #ffb6c1 0%, #ffc0cb 50%, #ffb6c1 100%);
- border-radius: 4px;
- z-index: -1;
- }
 
  .nav-buttons button:hover {
- background: linear-gradient(135deg, #ffc0cb 0%, #ffb6c1 50%, #ffc0cb 100%);
+ background: linear-gradient(135deg, #e9d5ff 0%, #d4b8ff 100%);
  transform: translateY(-1px);
- box-shadow: 
- 0 3px 6px rgba(0, 0, 0, 0.25),
- 0 1px 2px rgba(255, 255, 255, 0.4) inset;
- color: #4b0082;
+ box-shadow: 0 4px 12px rgba(107, 91, 149, 0.25);
+ color: #4a1d95;
  }
 
  .nav-buttons button:active {
  transform: translateY(1px);
- box-shadow: 
- 0 1px 2px rgba(0, 0, 0, 0.2),
- 0 2px 4px rgba(255, 255, 255, 0.3) inset;
- background: linear-gradient(135deg, #ffc0cb 0%, #ffb6c1 50%, #ffc0cb 100%);
+ box-shadow: 0 2px 8px rgba(107, 91, 149, 0.3);
+ background: linear-gradient(135deg, #d4b8ff 0%, #c9b6ff 100%);
  }
 
- /* Add keycap legend styling */
- .nav-buttons button {
- position: relative;
- overflow: hidden;
- }
 
- .nav-buttons button::before {
- content: '';
- position: absolute;
- top: 0;
- left: 0;
- right: 0;
- bottom: 0;
- background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 50%, #4a4a4a 100%);
- border-radius: 4px;
- z-index: -1;
- box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
- }
 
  /* Logo mobile styles */
  .logo-overlay {
@@ -1084,6 +1051,8 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  .banner {
  position: relative;
  margin-bottom: 0;
+ height: auto;
+ min-height: 300px;
  }
 
  .banner-side-img {
@@ -1098,6 +1067,14 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  display: none; /* Hide scrapbook overlay on mobile */
  }
 
+ /* Ensure banner image doesn't interfere with mobile layout */
+ .banner-img {
+ width: 100%;
+ height: auto;
+ max-height: 400px;
+ object-fit: cover;
+ }
+
  /* Hero section mobile styles - cleaner */
  .hero {
  padding: 40px 20px;
@@ -1107,6 +1084,10 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
  width: 100%;
  box-sizing: border-box;
  border-top: 3px dotted #ffb6c1;
+ min-height: 100vh;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
  }
 
  .hero h1 {
@@ -1412,6 +1393,7 @@ body {
  min-height: 100vh;
  display: flex;
  flex-direction: column;
+ background: linear-gradient(to right, #dfe7fd, #fef6ff);
 }
 
 /* Make main content area flex to push footer down */
@@ -1835,7 +1817,7 @@ footer {
  padding-right: 0;
 }
 
-/* Mobile specific border removal and margin fixes */
+ /* Mobile specific border removal and margin fixes */
 @media (max-width: 430px) {
  body {
  border: none;
@@ -1845,6 +1827,7 @@ footer {
  width: 100%;
  overflow-x: hidden;
  min-height: 100vh;
+ background: linear-gradient(to right, #dfe7fd, #fef6ff);
  }
  
  .navbar,
