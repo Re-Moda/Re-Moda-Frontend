@@ -343,7 +343,7 @@ export default function UploadsPage() {
   console.log("Current images state:", images);
 
   return (
-    <>
+    <div className="uploads-page">
       {/* Logo overlay */}
       <div className="logo-overlay" onClick={() => window.location.href = '/'} style={{ cursor: 'pointer' }}>
         <img src={logo} alt="Re:Moda Logo" className="site-logo" />
@@ -389,7 +389,8 @@ export default function UploadsPage() {
         flexDirection: "column",
         alignItems: "center",
         minHeight: "100vh",
-        background: "inherit"
+        background: "inherit",
+        paddingTop: "80px"
       }}>
 
         {/* Main white card */}
@@ -533,6 +534,6 @@ export default function UploadsPage() {
           {notification.message}
         </div>
       )}
-    </>
+    </div>
   );
 }
