@@ -20,27 +20,27 @@ html {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 40px;
+  gap: 32px;
   max-width: 1100px;
   margin: 32px auto;
 }
 
 .uploads-main-card {
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 4px 32px #e3f6fd44;
-  padding: 40px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   flex: 1;
   min-width: 420px;
-  max-width: 540px;
 }
 
 .uploads-sidebar {
-  min-width: 320px;
-  max-width: 340px;
+  width: 320px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 28px;
+  align-self: flex-start;
 }
 
 .uploads-dropzone {
@@ -120,15 +120,16 @@ html {
 
 @media (max-width: 900px) {
   .uploads-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 24px;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 24px !important;
   }
   .uploads-sidebar {
-    min-width: 0;
-    max-width: 100%;
-    flex-direction: row;
-    gap: 16px;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
   }
 }
 
@@ -237,48 +238,7 @@ html {
 
 
 
-/* Mobile menu styles */
-.hamburger-menu {
-  display: none;
-  flex-direction: column;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
-}
 
-.hamburger-menu span {
-  width: 25px;
-  height: 3px;
-  background: #6b5b95;
-  margin: 3px 0;
-  transition: 0.3s;
-  border-radius: 2px;
-}
-
-.hamburger-menu:hover {
-  background: rgba(107, 91, 149, 0.1);
-}
-
-.mobile-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(139, 92, 246, 0.1);
-  padding: 16px 20px;
-  transform: translateY(-100%);
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.mobile-menu.active {
-  transform: translateY(0);
-  opacity: 1;
-}
 
 /* Logo overlay styles */
 .logo-overlay {
@@ -313,43 +273,26 @@ html {
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
-  .hamburger-menu {
-    display: flex;
-  }
-  
-  .nav-buttons {
+  .logo-overlay {
     display: none;
   }
   
-  .mobile-menu {
-    display: block;
-  }
-  
-  .mobile-menu .nav-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .mobile-menu .nav-buttons button,
-  .mobile-menu .nav-status {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-  }
-  
-  .logo-overlay {
-    top: 15px;
-    left: 15px;
-  }
-  
-  .logo-overlay img {
-    max-height: 50px;
-  }
-  
   .navbar-title {
-    margin-left: 70px;
+    margin-left: 0 !important;
     font-size: 16px;
+    text-align: center !important;
+    order: 1 !important;
+  }
+  
+  .navbar-content {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .uploads-nav-buttons {
+    justify-content: center;
+    align-items: center;
+    order: 2 !important;
   }
 } 
 
@@ -407,3 +350,176 @@ html {
   0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
   50% { opacity: 0.7; transform: scale(1.2) rotate(180deg); }
 } 
+
+@media (max-width: 600px) {
+  /* Mobile layout - stack everything vertically */
+  .uploads-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    margin: 16px !important;
+    max-width: 100% !important;
+    padding: 16px !important;
+  }
+  
+  /* Main card mobile adjustments */
+  .uploads-main-card {
+    padding: 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    order: 1 !important; /* Ensure main card comes first */
+  }
+  
+  /* Sidebar mobile adjustments */
+  .uploads-sidebar {
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    order: 2 !important; /* Move sidebar below main content */
+    align-self: stretch !important;
+  }
+  
+  /* Upload dropzone mobile adjustments */
+  .uploads-dropzone {
+    padding: 24px 16px;
+    border-radius: 12px;
+  }
+  
+  /* Upload icon mobile adjustments */
+  .upload-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 16px;
+  }
+  
+  .upload-icon::before {
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 12px solid #7c3aed;
+  }
+  
+  .upload-icon::after {
+    width: 8px;
+    height: 8px;
+  }
+  
+  /* Navbar mobile adjustments */
+  .navbar {
+    padding: 8px 0;
+  }
+  
+  .navbar-content {
+    flex-direction: column !important;
+    padding: 0 16px;
+    gap: 8px !important;
+  }
+  
+  .navbar-title {
+    margin-left: 0 !important;
+    font-size: 20px;
+    text-align: center !important;
+    order: 1 !important;
+  }
+  
+  .uploads-nav-buttons {
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    order: 2 !important;
+  }
+  
+  .nav-status {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  
+  .uploads-nav-buttons button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  /* Logo overlay mobile adjustments */
+  .logo-overlay {
+    display: none;
+  }
+  
+
+  
+  /* Main white card container mobile adjustments */
+  .uploads-main-card {
+    margin: 0;
+    border-radius: 16px;
+  }
+  
+  /* Progress bars mobile adjustments */
+  .uploads-main-card .progress-bar {
+    height: 6px;
+  }
+  
+  /* Category analysis mobile adjustments */
+  .uploads-sidebar > div {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  /* Hide setup progress on mobile */
+  .uploads-sidebar > div:nth-child(2) {
+    display: none !important;
+  }
+  
+  /* Uploaded images list mobile adjustments */
+  .uploads-main-card .uploaded-image-item {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .uploads-main-card .uploaded-image-item img {
+    width: 50px;
+    height: 50px;
+  }
+  
+  /* Form elements mobile adjustments */
+  .uploads-main-card select,
+  .uploads-main-card button {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  /* Text adjustments for mobile */
+  .uploads-main-card h2 {
+    font-size: 18px;
+  }
+  
+  .uploads-main-card p {
+    font-size: 14px;
+  }
+  
+  /* Star background mobile adjustments */
+  .star-bg {
+    z-index: 0;
+  }
+  
+  /* Main content mobile adjustments */
+  .uploads-bg {
+    padding: 0;
+  }
+  
+  /* Force mobile layout for the main container */
+  .uploads-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+  }
+  
+  /* Ensure proper spacing in mobile */
+  .uploads-container > * {
+    width: 100% !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .uploads-container > *:last-child {
+    margin-bottom: 0 !important;
+  }
+}
