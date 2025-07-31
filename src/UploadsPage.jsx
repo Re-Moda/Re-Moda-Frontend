@@ -40,64 +40,87 @@ export default function UploadsPage() {
   const [uploadCount, setUploadCount] = useState(0);
   const [canAccessCloset, setCanAccessCloset] = useState(false);
   const [remainingUploads, setRemainingUploads] = useState(4);
+  const [isBatchUploading, setIsBatchUploading] = useState(false); // New state for batch uploads
+  const [batchProgress, setBatchProgress] = useState(0); // Progress percentage
+  const [remainingItems, setRemainingItems] = useState(0); // Track remaining items during upload
 
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Debug: Track remainingItems changes
+  React.useEffect(() => {
+    console.log('🔄 remainingItems changed to:', remainingItems);
+  }, [remainingItems]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  // Fetch current upload count on component mount
+  // Add CSS for spinner animation
   React.useEffect(() => {
-    const fetchUploadCount = async () => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // Fetch upload count and closet access status
+  const fetchUploadCount = async () => {
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      
+      // Test if clothing-items GET endpoint works (for upload count fallback)
       try {
-        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-        
-        // Test if clothing-items GET endpoint works (for upload count fallback)
-        try {
-          const testResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          console.log('✅ /clothing-items GET endpoint works');
-        } catch (testError) {
-          console.log('❌ /clothing-items GET endpoint failed:', testError.response?.status);
-        }
-        
-        const response = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+        const testResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('✅ /clothing-items GET endpoint works');
+      } catch (testError) {
+        console.log('❌ /clothing-items GET endpoint failed:', testError.response?.status);
+      }
+      
+      const response = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && response.data.success) {
+        const { count, hasMetMinimum } = response.data.data;
+        setUploadCount(count);
+        setCanAccessCloset(hasMetMinimum);
+        setRemainingUploads(Math.max(0, 4 - count));
+      }
+    } catch (error) {
+      console.error('Error fetching upload count:', error);
+      // Fallback: Get upload count from clothing items endpoint
+      try {
+        const clothingResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (response.data && response.data.success) {
-          const { count, hasMetMinimum } = response.data.data;
+        if (clothingResponse.data && clothingResponse.data.success) {
+          const count = clothingResponse.data.data.length;
           setUploadCount(count);
-          setCanAccessCloset(hasMetMinimum);
+          setCanAccessCloset(count >= 4);
           setRemainingUploads(Math.max(0, 4 - count));
         }
-      } catch (error) {
-        console.error('Error fetching upload count:', error);
-        // Fallback: Get upload count from clothing items endpoint
-        try {
-          const clothingResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (clothingResponse.data && clothingResponse.data.success) {
-            const count = clothingResponse.data.data.length;
-            setUploadCount(count);
-            setCanAccessCloset(count >= 4);
-            setRemainingUploads(Math.max(0, 4 - count));
-          }
-        } catch (fallbackError) {
-          console.error('Fallback upload count fetch also failed:', fallbackError);
-          // Set default values
-          setUploadCount(0);
-          setCanAccessCloset(false);
-          setRemainingUploads(4);
-        }
+      } catch (fallbackError) {
+        console.error('Fallback upload count fetch also failed:', fallbackError);
+        // Set default values
+        setUploadCount(0);
+        setCanAccessCloset(false);
+        setRemainingUploads(4);
       }
-    };
+    }
+  };
 
+  React.useEffect(() => {
     fetchUploadCount();
   }, []);
 
@@ -210,44 +233,22 @@ export default function UploadsPage() {
       
       // Verify the upload was successful
       console.log('Upload response:', uploadResponse);
+      console.log('Upload response data:', uploadResponse?.data);
+      console.log('Upload response status:', uploadResponse?.status);
+      
       if (!uploadResponse || !uploadResponse.data) {
+        console.error('❌ Upload failed - no response received');
         throw new Error('Upload failed - no response received');
       }
       
+      console.log('✅ Upload successful for:', img.name);
+      
       // Only update the status of the uploaded image if the API call succeeded
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'success' } : item));
-      setNotification({ type: 'success', message: 'File uploaded successfully! 1 item added to your wardrobe.' });
       
-      // Refresh upload count after successful upload
-      try {
-        const uploadCountResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
-          headers: { Authorization: `Bearer ${jwtToken}` }
-        });
-        
-        if (uploadCountResponse.data && uploadCountResponse.data.success) {
-          const { count, hasMetMinimum } = uploadCountResponse.data.data;
-          setUploadCount(count);
-          setCanAccessCloset(hasMetMinimum);
-          setRemainingUploads(Math.max(0, 4 - count));
-        }
-      } catch (error) {
-        console.error('Error refreshing upload count:', error);
-        // Fallback: Get count from clothing items
-        try {
-          const clothingResponse = await axios.get(`${API_BASE_URL}/clothing-items`, {
-            headers: { Authorization: `Bearer ${jwtToken}` }
-          });
-          
-          if (clothingResponse.data && clothingResponse.data.success) {
-            const count = clothingResponse.data.data.length;
-            setUploadCount(count);
-            setCanAccessCloset(count >= 4);
-            setRemainingUploads(Math.max(0, 4 - count));
-          }
-        } catch (fallbackError) {
-          console.error('Fallback upload count refresh also failed:', fallbackError);
-        }
-      }
+      // Don't show individual success toasts or update upload count - let batch upload handle everything
+      // The batch upload will show the final result and update the count
+      
     } catch (error) {
       console.error('Upload error:', error);
       console.error('Error response:', error.response?.data);
@@ -272,28 +273,116 @@ export default function UploadsPage() {
       
       console.error('Final error message:', errorMessage);
       
-      // If it's a 500 error, suggest backend might be down
+      // Only show error notifications during batch uploads if it's a critical error
       if (error.response?.status === 500) {
         console.log('Backend appears to be down. You may need to check the server status.');
-        setNotification({ 
-          type: 'error', 
-          message: 'Server error (500). Backend may be down or overloaded. Please try again later or contact support.' 
-        });
-      } else {
-        setNotification({ type: 'error', message: errorMessage });
+        // Don't show individual error toasts during batch uploads
+        // setNotification({ 
+        //   type: 'error', 
+        //   message: 'Server error (500). Backend may be down or overloaded. Please try again later or contact support.' 
+        // });
       }
+      // else {
+      //   setNotification({ type: 'error', message: errorMessage });
+      // }
       
       setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', errorMsg: errorMessage } : item));
+      
+      // Re-throw the error so the batch upload can handle it
+      throw error;
     }
   };
 
   // Handle upload for all images with selected category and not yet uploaded
-  const handleUpload = () => {
-    images.forEach((img, idx) => {
-      if (img.category && img.status === 'pending') {
-        uploadClothingItem(img, idx);
+  const handleUpload = async () => {
+    const pendingImages = images.filter(img => img.category && img.status === 'pending');
+    
+    if (pendingImages.length === 0) {
+      setNotification({ type: 'error', message: 'No images to upload. Please select categories for your images.' });
+      return;
+    }
+    
+    setIsBatchUploading(true);
+    setBatchProgress(0);
+    setRemainingItems(pendingImages.length);
+    console.log('🚀 Starting batch upload with', pendingImages.length, 'items');
+    
+    let successfulUploads = 0;
+    let failedUploads = 0;
+    
+    try {
+      // Upload all pending images sequentially
+      for (let i = 0; i < pendingImages.length; i++) {
+        const img = pendingImages[i];
+        const idx = images.findIndex(image => image.url === img.url);
+        
+        if (idx !== -1) {
+          try {
+            // Update the image status to uploading without showing individual loading
+            setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'uploading' } : item));
+            
+            console.log(`📤 Uploading item ${i + 1}/${pendingImages.length}:`, img.name);
+            await uploadClothingItem(img, idx);
+            successfulUploads++;
+            
+            // Update remaining count
+            setRemainingItems(prev => {
+              const newCount = prev - 1;
+              console.log(`✅ Item uploaded! Remaining: ${newCount}`);
+              return newCount;
+            });
+            
+          } catch (error) {
+            console.error(`❌ Failed to upload ${img.name}:`, error);
+            failedUploads++;
+            setRemainingItems(prev => {
+              const newCount = prev - 1;
+              console.log(`❌ Item failed! Remaining: ${newCount}`);
+              return newCount;
+            });
+            
+            // Mark as failed
+            setImages(prev => prev.map((item, i) => i === idx ? { ...item, status: 'error', errorMsg: 'Upload failed' } : item));
+          }
+          setBatchProgress(((i + 1) / pendingImages.length) * 100);
+        }
       }
-    });
+      
+      // Show appropriate success/error message
+      console.log('📊 Batch upload completed:');
+      console.log('  - Successful uploads:', successfulUploads);
+      console.log('  - Failed uploads:', failedUploads);
+      console.log('  - Total items processed:', successfulUploads + failedUploads);
+      
+      if (successfulUploads > 0 && failedUploads === 0) {
+        setNotification({ type: 'success', message: `Successfully uploaded ${successfulUploads} items to your wardrobe!` });
+        // Auto-navigate to closet after successful uploads
+        setTimeout(() => {
+          console.log('🔄 Auto-navigating to closet page...');
+          window.location.href = "/user";
+        }, 2000); // Wait 2 seconds then navigate
+      } else if (successfulUploads > 0 && failedUploads > 0) {
+        setNotification({ type: 'warning', message: `${successfulUploads} items uploaded successfully, ${failedUploads} failed.` });
+      } else if (successfulUploads === 0) {
+        setNotification({ type: 'error', message: 'All uploads failed. Please check your connection and try again.' });
+      }
+      
+      // Refresh upload count after all uploads are complete
+      await fetchUploadCount();
+      
+    } catch (error) {
+      console.error('Batch upload error:', error);
+      // Show the actual upload status instead of generic failure
+      if (successfulUploads > 0) {
+        setNotification({ type: 'success', message: `Successfully uploaded ${successfulUploads} items to your wardrobe!` });
+      } else {
+        setNotification({ type: 'error', message: 'Upload process failed. Please try again.' });
+      }
+    } finally {
+      setIsBatchUploading(false);
+      setBatchProgress(0);
+      setRemainingItems(0);
+    }
   };
 
   // Handle Continue to Closet
@@ -385,6 +474,92 @@ export default function UploadsPage() {
 
       {/* Animated star background, always behind content */}
       <div className="star-bg">{stars}</div>
+      
+      {/* Batch Upload Loading Overlay */}
+      {isBatchUploading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '24px',
+            textAlign: 'center',
+            color: 'white',
+            maxWidth: '500px',
+            padding: '40px'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              border: '6px solid rgba(255, 255, 255, 0.3)',
+              borderTop: '6px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <div style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: 'white',
+              marginBottom: '8px'
+            }}>
+              Uploading Your Wardrobe...
+            </div>
+            <div style={{
+              fontSize: '18px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              lineHeight: '1.5',
+              marginBottom: '24px'
+            }}>
+              {remainingItems > 0 ? `${remainingItems} item${remainingItems === 1 ? '' : 's'} remaining...` : 'Finalizing uploads...'}
+            </div>
+            {/* Debug info */}
+            <div style={{
+              fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.6)',
+              marginTop: '8px'
+            }}>
+              Debug: isBatchUploading={isBatchUploading.toString()}, remainingItems={remainingItems}
+            </div>
+            {/* Progress bar */}
+            <div style={{
+              width: '100%',
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              height: '8px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                background: '#667eea',
+                height: '8px',
+                borderRadius: '8px',
+                width: `${batchProgress}%`,
+                transition: 'width 0.3s ease'
+              }}></div>
+            </div>
+            <div style={{
+              fontSize: '16px',
+              color: 'rgba(255, 255, 255, 0.7)'
+            }}>
+              {Math.round(batchProgress)}% Complete
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Main content, always above stars */}
       <div style={{
         fontFamily: "'EB Garamond', serif",
@@ -467,15 +642,74 @@ export default function UploadsPage() {
                           {CATEGORY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
                         {img.status === 'pending' && img.category && (
-                          <button onClick={() => uploadClothingItem(img, idx)} style={{ background: '#a78bfa', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, padding: '4px 14px', cursor: 'pointer', marginLeft: 8 }}>Upload</button>
+                          <button 
+                            onClick={() => uploadClothingItem(img, idx)} 
+                            disabled={isBatchUploading}
+                            style={{ 
+                              background: isBatchUploading ? '#ccc' : '#a78bfa', 
+                              color: '#fff', 
+                              border: 'none', 
+                              borderRadius: 6, 
+                              fontWeight: 600, 
+                              fontSize: 15, 
+                              padding: '4px 14px', 
+                              cursor: isBatchUploading ? 'not-allowed' : 'pointer', 
+                              marginLeft: 8,
+                              opacity: isBatchUploading ? 0.6 : 1
+                            }}
+                          >
+                            {isBatchUploading ? 'Disabled' : 'Upload'}
+                          </button>
                         )}
                         {img.status === 'uploading' && <span style={{ color: '#a78bfa', marginLeft: 8 }}>Uploading...</span>}
-                        {img.status === 'success' && <span style={{ color: '#22c55e', marginLeft: 8 }}>Uploaded!</span>}
+                        {img.status === 'success' && <span style={{ color: '#22c55e', marginLeft: 8 }}>✓</span>}
                         {img.status === 'error' && <span style={{ color: '#d72660', marginLeft: 8 }}>{img.errorMsg}</span>}
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            
+            {/* Upload All Button */}
+            {images.length > 0 && images.some(img => img.category && img.status === 'pending') && (
+              <div style={{ 
+                marginTop: 24, 
+                textAlign: 'center',
+                padding: '20px',
+                background: '#f8fafc',
+                borderRadius: '12px',
+                border: '2px solid #e0e7ff'
+              }}>
+                <button
+                  onClick={handleUpload}
+                  disabled={isBatchUploading}
+                  style={{
+                    background: isBatchUploading ? '#ccc' : '#a78bfa',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontWeight: 700,
+                    fontSize: '18px',
+                    padding: '16px 32px',
+                    cursor: isBatchUploading ? 'not-allowed' : 'pointer',
+                    opacity: isBatchUploading ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(167, 139, 250, 0.3)'
+                  }}
+                >
+                  {isBatchUploading ? 'Uploading All Items...' : `Upload All Items (${images.filter(img => img.category && img.status === 'pending').length})`}
+                </button>
+                {isBatchUploading && (
+                  <div style={{ 
+                    marginTop: '12px', 
+                    fontSize: '14px', 
+                    color: '#666',
+                    fontWeight: 500 
+                  }}>
+                    Please wait while we upload your items...
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -533,7 +767,19 @@ export default function UploadsPage() {
       </div>
       {/* Notification */}
       {notification && (
-        <div style={{ position: 'fixed', bottom: 32, right: 32, background: notification.type === 'success' ? '#d1fae5' : '#fee2e2', color: notification.type === 'success' ? '#065f46' : '#b91c1c', borderRadius: 12, padding: '18px 32px', fontWeight: 600, fontSize: 17, boxShadow: '0 2px 12px #e3f6fd44', zIndex: 1000 }}>
+        <div style={{ 
+          position: 'fixed', 
+          bottom: 32, 
+          right: 32, 
+          background: notification.type === 'success' ? '#d1fae5' : notification.type === 'warning' ? '#fef3c7' : '#fee2e2', 
+          color: notification.type === 'success' ? '#065f46' : notification.type === 'warning' ? '#92400e' : '#b91c1c', 
+          borderRadius: 12, 
+          padding: '18px 32px', 
+          fontWeight: 600, 
+          fontSize: 17, 
+          boxShadow: '0 2px 12px #e3f6fd44', 
+          zIndex: 1000 
+        }}>
           {notification.message}
         </div>
       )}

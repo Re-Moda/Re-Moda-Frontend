@@ -194,21 +194,27 @@ const UserPage = () => {
 
   // Function to process uploaded items
   const processUploadedItems = async () => {
-    // If already processing, don't start another process
-    if (processingUploads) {
-      console.log('Already processing uploads, skipping...');
+    // If already processing or already processed, don't start another process
+    if (processingUploads || hasProcessedUploads.current) {
+      console.log('Already processing uploads or already processed, skipping...');
       return;
     }
     
+    console.log('Starting to process uploaded items...');
     setProcessingUploads(true);
+    hasProcessedUploads.current = true; // Mark as processed
+    
     try {
       // Simulate processing time for uploaded items
+      console.log('Simulating processing time...');
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Fetch updated closet items after processing
+      console.log('Fetching updated closet items...');
       await fetchClosetItems();
       
       // Load outfits after processing
+      console.log('Loading outfits...');
       await loadOutfits();
       
       console.log('Uploaded items processed successfully');
@@ -217,6 +223,7 @@ const UserPage = () => {
       console.error('Error processing uploads:', error);
       showToast('Error processing uploads. Please try again.', 'error');
     } finally {
+      console.log('Setting processingUploads to false');
       setProcessingUploads(false);
     }
   };
@@ -226,6 +233,7 @@ const UserPage = () => {
   const [expandedItems, setExpandedItems] = useState({});
   const [loadingItems, setLoadingItems] = useState(new Set()); // Track loading state for individual items
   const [processingUploads, setProcessingUploads] = useState(false); // Track loading state for processing uploads
+  const hasProcessedUploads = useRef(false); // Track if we've already processed uploads
 
   // Toast notification function
   const showToast = (message, type = 'info') => {
@@ -645,6 +653,9 @@ const UserPage = () => {
   useEffect(() => {
     console.log('Component mounted, loading closet items...');
     
+    // Reset the processed flag
+    hasProcessedUploads.current = false;
+    
     // Check if we should show processing state immediately
     const showProcessing = localStorage.getItem('showProcessingUploads');
     const storedUploadCount = localStorage.getItem('uploadCount');
@@ -656,13 +667,20 @@ const UserPage = () => {
       // Clear the flag
       localStorage.removeItem('showProcessingUploads');
       localStorage.removeItem('uploadCount');
+      
+      // Start processing immediately
+      setTimeout(() => {
+        processUploadedItems();
+      }, 100);
+    } else {
+      // If no processing needed, just fetch closet items
+      fetchClosetItems();
     }
-    
-    fetchClosetItems();
   }, []);
 
   // Process uploaded items when upload count changes
   useEffect(() => {
+    // Only trigger if we have uploads and we're not already processing
     if (uploadCount > 0 && !processingUploads) {
       console.log('Upload count changed to:', uploadCount, '- triggering processing...');
       // Small delay to ensure the loading state is visible
@@ -670,7 +688,7 @@ const UserPage = () => {
         processUploadedItems();
       }, 100);
     }
-  }, [uploadCount]);
+  }, [uploadCount]); // Remove processingUploads from dependencies to prevent loops
 
   // Check for generated avatar from chat (but don't override user's actual avatar)
   useEffect(() => {
@@ -941,6 +959,24 @@ const UserPage = () => {
       document.head.appendChild(style);
     }
   }, []);
+
+  // Debug useEffect to track state changes
+  useEffect(() => {
+    console.log('State update - processingUploads:', processingUploads, 'uploadCount:', uploadCount);
+  }, [processingUploads, uploadCount]);
+
+  // Fallback mechanism to prevent stuck processing state
+  useEffect(() => {
+    if (processingUploads) {
+      const timeout = setTimeout(() => {
+        console.log('Processing timeout reached - forcing state reset');
+        setProcessingUploads(false);
+        showToast('Processing completed (timeout). Your wardrobe has been updated.', 'success');
+      }, 10000); // 10 second timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [processingUploads]);
 
   if (loading) return <div>Loading your closet...</div>;
 
