@@ -299,6 +299,9 @@ export default function UploadsPage() {
   // Handle Continue to Closet
   const handleContinue = () => {
     if (canContinue) {
+      // Set flag to show loading state immediately on closet page
+      localStorage.setItem('showProcessingUploads', 'true');
+      localStorage.setItem('uploadCount', uploadCount.toString());
       window.location.href = "/user";
     }
   };

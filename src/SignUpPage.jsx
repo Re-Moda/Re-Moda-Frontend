@@ -380,7 +380,7 @@ const SignUpPage = () => {
       </div>
       {/* Main content, always above stars */}
       <div className={`magazine-signup-bg ${bgClass}`} style={{ position: 'relative', minHeight: '100vh', zIndex: 2, background: 'transparent' }}>
-        {/* Loading Modal */}
+        {/* Full Screen Loading State */}
         {isLoading && (
           <div style={{
             position: 'fixed',
@@ -390,45 +390,42 @@ const SignUpPage = () => {
             bottom: 0,
             width: '100%',
             height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 9999,
-            backdropFilter: 'blur(5px)'
+            backdropFilter: 'blur(10px)'
           }}>
             <div style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '20px',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-              maxWidth: '400px',
-              textAlign: 'center'
+              gap: '24px',
+              textAlign: 'center',
+              color: 'white'
             }}>
               <div style={{
-                width: '60px',
-                height: '60px',
-                border: '4px solid #f3f3f3',
-                borderTop: '4px solid #667eea',
+                width: '80px',
+                height: '80px',
+                border: '6px solid rgba(255, 255, 255, 0.3)',
+                borderTop: '6px solid #667eea',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite'
               }}></div>
               <div style={{
-                fontSize: '24px',
+                fontSize: '28px',
                 fontWeight: 'bold',
-                color: '#2c3e50',
+                color: 'white',
                 marginBottom: '8px'
               }}>
                 Creating Your Account...
               </div>
               <div style={{
-                fontSize: '16px',
-                color: '#7f8c8d',
-                lineHeight: '1.5'
+                fontSize: '18px',
+                color: 'rgba(255, 255, 255, 0.8)',
+                lineHeight: '1.5',
+                maxWidth: '500px'
               }}>
                 Please wait while we set up your Re:Moda profile and upload your avatar.
               </div>

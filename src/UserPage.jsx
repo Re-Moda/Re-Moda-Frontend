@@ -194,13 +194,22 @@ const UserPage = () => {
 
   // Function to process uploaded items
   const processUploadedItems = async () => {
+    // If already processing, don't start another process
+    if (processingUploads) {
+      console.log('Already processing uploads, skipping...');
+      return;
+    }
+    
     setProcessingUploads(true);
     try {
       // Simulate processing time for uploaded items
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Here you would call your async function to handle API rate limiting
-      // await yourAsyncProcessingFunction();
+      // Fetch updated closet items after processing
+      await fetchClosetItems();
+      
+      // Load outfits after processing
+      await loadOutfits();
       
       console.log('Uploaded items processed successfully');
       showToast('Your wardrobe has been processed successfully!', 'success');
@@ -311,7 +320,30 @@ const UserPage = () => {
     };
 
     fetchUserData();
-  }, []);
+
+    // Set up periodic check for new uploads (every 5 seconds)
+    const uploadCheckInterval = setInterval(async () => {
+      if (!processingUploads) { // Only check if not currently processing
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        try {
+          const uploadResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (uploadResponse.data && uploadResponse.data.success) {
+            const { count } = uploadResponse.data.data;
+            if (count > uploadCount) {
+              console.log('New uploads detected! Count changed from', uploadCount, 'to', count);
+              setUploadCount(count);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking for new uploads:', error);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(uploadCheckInterval);
+  }, [uploadCount, processingUploads]);
 
   // Function to spend coins for AI features
   const useAIFeature = async (featureCost = 10) => {
@@ -612,13 +644,33 @@ const UserPage = () => {
   // Load closet items when component mounts
   useEffect(() => {
     console.log('Component mounted, loading closet items...');
-    fetchClosetItems();
     
-    // Process uploaded items if there are any
-    if (uploadCount > 0) {
-      processUploadedItems();
+    // Check if we should show processing state immediately
+    const showProcessing = localStorage.getItem('showProcessingUploads');
+    const storedUploadCount = localStorage.getItem('uploadCount');
+    
+    if (showProcessing === 'true' && storedUploadCount) {
+      console.log('Showing processing state immediately for', storedUploadCount, 'uploads');
+      setUploadCount(parseInt(storedUploadCount));
+      setProcessingUploads(true);
+      // Clear the flag
+      localStorage.removeItem('showProcessingUploads');
+      localStorage.removeItem('uploadCount');
     }
+    
+    fetchClosetItems();
   }, []);
+
+  // Process uploaded items when upload count changes
+  useEffect(() => {
+    if (uploadCount > 0 && !processingUploads) {
+      console.log('Upload count changed to:', uploadCount, '- triggering processing...');
+      // Small delay to ensure the loading state is visible
+      setTimeout(() => {
+        processUploadedItems();
+      }, 100);
+    }
+  }, [uploadCount]);
 
   // Check for generated avatar from chat (but don't override user's actual avatar)
   useEffect(() => {
@@ -1084,41 +1136,54 @@ const UserPage = () => {
         </div>
       </div>
 
-      {/* Processing uploads loading display */}
+      {/* Full Screen Loading State for Processing Uploads */}
       {processingUploads && (
         <div style={{
           position: 'fixed',
-          top: 100,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 100,
-          background: '#e0e7ff',
-          border: '2px solid #7c3aed',
-          borderRadius: 16,
-          padding: '20px 32px',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-          fontFamily: "'EB Garamond', serif",
-          color: '#7c3aed',
-          fontWeight: 600,
-          fontSize: 16,
-          minWidth: 350,
-          textAlign: 'center',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
           display: 'flex',
+          justifyContent: 'center',
           alignItems: 'center',
-          gap: 12
+          zIndex: 9999,
+          backdropFilter: 'blur(10px)'
         }}>
           <div style={{
-            width: '24px',
-            height: '24px',
-            border: '3px solid #7c3aed',
-            borderTop: '3px solid transparent',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-          <div>
-            Processing your uploaded items...
-            <div style={{ fontSize: 14, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>
-              Please wait while we process your wardrobe
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '24px',
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              border: '6px solid rgba(255, 255, 255, 0.3)',
+              borderTop: '6px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <div style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: 'white',
+              marginBottom: '8px'
+            }}>
+              Processing Your Wardrobe...
+            </div>
+            <div style={{
+              fontSize: '18px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              lineHeight: '1.5',
+              maxWidth: '500px'
+            }}>
+              Please wait while we process your uploaded items and update your closet.
             </div>
           </div>
         </div>

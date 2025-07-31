@@ -5,10 +5,8 @@ import pinkStarMarker from "./assets/pink-star-marker.png";
 import goldStarMarker from "./assets/gold-star-marker.png";
 import coinRemoda from "./assets/coin-re-moda.png";
 import logo from "./assets/logo.png";
-import aiBlueJeans from "./assets/place-holder-clothing/ai-blue-jeans.png";
-import aiBlueShirt from "./assets/place-holder-clothing/ai-blue-shirt.png";
-import aiPaolaJacket from "./assets/place-holder-clothing/ai-paola-jacket.png";
-import aiYellowPants from "./assets/place-holder-clothing/ai-yellow-pants.png";
+import axios from "axios";
+import API_BASE_URL from './config.js';
 
 
 // Google Maps libraries to load (Places API is needed for place search)
@@ -164,14 +162,65 @@ const ThriftPage = () => {
     const [routeDuration, setRouteDuration] = useState(null);  // State to store the travel duration
     const [routeDistance, setRouteDistance] = useState(null);  // Stores travel distance in miles
     const refScrollUp = useRef(null);  // Ref for scroll to top functionality
-    const [unusedItems, setUnusedItems] = useState([
-        { id: 1, name: "blue jeans", image: aiBlueJeans },
-        { id: 2, name: "blue shirt", image: aiBlueShirt },
-        { id: 3, name: "paola jacket", image: aiPaolaJacket },
-        { id: 4, name: "yellow pants", image: aiYellowPants }
-    ]);
+    const [unusedItems, setUnusedItems] = useState([]);
+    const [loadingItems, setLoadingItems] = useState(true);
+    const carouselRef = useRef(null);
 
-    // On mount, get user's current location using browser geolocation
+    // Fetch unused items from backend
+    const fetchUnusedItems = async () => {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        try {
+            const response = await axios.get(`${API_BASE_URL}/clothing-items`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.data && response.data.success) {
+                const allItems = response.data.data || [];
+                console.log('All items from backend:', allItems);
+                
+                // Debug: Log each item to see the structure
+                allItems.forEach((item, index) => {
+                    console.log(`Item ${index}:`, {
+                        id: item.id,
+                        label: item.label,
+                        category: item.category,
+                        status: item.status,
+                        is_unused: item.is_unused,
+                        isUnused: item.isUnused,
+                        unused: item.unused,
+                        generatedImageUrl: item.generatedImageUrl,
+                        image_url: item.image_url,
+                        image: item.image,
+                        allFields: Object.keys(item)
+                    });
+                });
+                
+                // Try multiple possible field names for unused items
+                const unusedItems = allItems.filter(item => 
+                    item.category === 'unused' || 
+                    item.status === 'unused' ||
+                    item.is_unused === true ||
+                    item.isUnused === true ||
+                    item.unused === true ||
+                    item.category === 'Unused' ||
+                    item.status === 'Unused'
+                );
+                
+                console.log('Filtered unused items:', unusedItems);
+                setUnusedItems(unusedItems);
+            } else {
+                console.log('No unused items found');
+                setUnusedItems([]);
+            }
+        } catch (error) {
+            console.error('Error fetching unused items:', error);
+            setUnusedItems([]);
+        } finally {
+            setLoadingItems(false);
+        }
+    };
+
+    // On mount, get user's current location using browser geolocation and fetch unused items
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -185,6 +234,9 @@ const ThriftPage = () => {
                 console.error("Error getting location.", error);
             }
         );
+        
+        // Fetch unused items
+        fetchUnusedItems();
     }, []);
 
     // Called when the Google Map is loaded
@@ -310,8 +362,104 @@ const ThriftPage = () => {
         window.location.href = "/user";
     }
 
-    const handleDonate = () => {  // TEMPORARY FUNCTION TO CLEAR THE LIST
-        setUnusedItems([]); // This will clear the list
+    // Confirmation modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null);
+    const [selectedItem, setSelectedItem] = useState(null);
+
+    // Show confirmation modal
+    const showConfirmation = (action, item) => {
+        setConfirmAction(action);
+        setSelectedItem(item);
+        setShowConfirmModal(true);
+    };
+
+    // Handle confirmation
+    const handleConfirm = async () => {
+        if (!selectedItem) return;
+
+        if (confirmAction === 'restore') {
+            await restoreToCloset(selectedItem.id);
+        } else if (confirmAction === 'donate') {
+            await donateToThriftStore(selectedItem.id);
+        }
+
+        setShowConfirmModal(false);
+        setConfirmAction(null);
+        setSelectedItem(null);
+    };
+
+    // Cancel confirmation
+    const handleCancel = () => {
+        setShowConfirmModal(false);
+        setConfirmAction(null);
+        setSelectedItem(null);
+    };
+
+    // Restore item back to closet
+    const restoreToCloset = async (itemId) => {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        try {
+            const response = await axios.patch(`${API_BASE_URL}/clothing-items/${itemId}/restore`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.data && response.data.success) {
+                console.log('Item restored to closet successfully');
+                // Remove the item from the unused items list with smooth transition
+                setUnusedItems(prevItems => prevItems.filter(item => item.id !== itemId));
+            } else {
+                console.error('Failed to restore item to closet');
+            }
+        } catch (error) {
+            console.error('Error restoring item to closet:', error);
+        }
+    };
+
+    // Donate individual item to thrift store
+    const donateToThriftStore = async (itemId) => {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/clothing-items/${itemId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.data && response.data.success) {
+                console.log('Item donated to thrift store successfully');
+                // Remove the item from the unused items list with smooth transition
+                setUnusedItems(prevItems => prevItems.filter(item => item.id !== itemId));
+            } else {
+                console.error('Failed to donate item to thrift store');
+            }
+        } catch (error) {
+            console.error('Error donating item to thrift store:', error);
+        }
+    };
+
+    const handleDonate = async () => {
+        if (unusedItems.length === 0) return;
+        
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        try {
+            // Donate all unused items
+            const itemIds = unusedItems.map(item => item.id);
+            const response = await axios.post(`${API_BASE_URL}/clothing-items/donate`, {
+                item_ids: itemIds
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.data && response.data.success) {
+                console.log('Items donated successfully');
+                setUnusedItems([]);
+                // You could also add coins here
+                // addCoins(unusedItems.length * 5); // 5 coins per item
+            } else {
+                console.error('Failed to donate items');
+            }
+        } catch (error) {
+            console.error('Error donating items:', error);
+        }
     };
 
     const handleScrollUp = () => {
@@ -320,6 +468,44 @@ const ThriftPage = () => {
     
     return (
         <>
+        {/* Confirmation Modal */}
+        {showConfirmModal && (
+            <div className="modal-overlay">
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h3>
+                            {confirmAction === 'restore' ? 'Move Back to Closet' : 'Donate to Thrift Store'}
+                        </h3>
+                    </div>
+                    <div className="modal-body">
+                        <p>
+                            {confirmAction === 'restore' 
+                                ? `Are you sure you want to move "${selectedItem?.label || selectedItem?.name}" back to your closet?`
+                                : `Are you sure you want to donate "${selectedItem?.label || selectedItem?.name}" to the thrift store?`
+                            }
+                        </p>
+                        <p className="modal-warning">
+                            {confirmAction === 'donate' ? 'This action cannot be undone.' : ''}
+                        </p>
+                    </div>
+                    <div className="modal-actions">
+                        <button 
+                            className="modal-btn cancel-btn"
+                            onClick={handleCancel}
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            className={`modal-btn ${confirmAction === 'restore' ? 'restore-btn' : 'donate-btn'}`}
+                            onClick={handleConfirm}
+                        >
+                            {confirmAction === 'restore' ? 'Move Back' : 'Donate'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        
         <div className="thrift-page-container">  {/* Main container for the thrift page */}
             <div ref={refScrollUp}></div>
             <div className="thrift-page-header">
@@ -358,16 +544,126 @@ const ThriftPage = () => {
                     </div>
                 </div>
                 <div className="unused-items-list">
-                    {unusedItems.length === 0 ? (
-                        <p>Thank you for donating!</p>
+                    {loadingItems ? (
+                        <div className="loading-container">
+                            <div className="loading-spinner"></div>
+                            <p>Loading your unused items...</p>
+                        </div>
+                    ) : unusedItems.length === 0 ? (
+                        <div className="empty-state">
+                            <p>No unused items to donate!</p>
+                            <p>Move items to "Unused" in your closet to see them here.</p>
+                        </div>
+                    ) : unusedItems.length > 7 ? (
+                        // Carousel view for more than 7 items
+                        <div className="carousel-container" ref={carouselRef}>
+                            <div className="carousel-track">
+                                {unusedItems.map(item => (
+                                    <div key={item.id} className="carousel-item">
+                                        <div className="item-buttons">
+                                            <button 
+                                                className="restore-button"
+                                                onClick={() => showConfirmation('restore', item)}
+                                                title="Move back to closet"
+                                            >
+                                                +
+                                            </button>
+                                            <button 
+                                                className="donate-individual-button"
+                                                onClick={() => showConfirmation('donate', item)}
+                                                title="Donate to thrift store"
+                                            >
+                                                🎁
+                                            </button>
+                                        </div>
+                                        <img 
+                                            src={item.generatedImageUrl || item.image_url || item.image} 
+                                            alt={item.label || item.name || 'Clothing item'} 
+                                            onError={(e) => {
+                                                console.log('Image failed to load for item:', item.id, 'URL:', e.target.src);
+                                                e.target.style.display = 'none';
+                                                // Show a placeholder or fallback
+                                                const parent = e.target.parentElement;
+                                                if (parent) {
+                                                    const placeholder = document.createElement('div');
+                                                    placeholder.style.cssText = `
+                                                        width: 100%;
+                                                        height: 280px;
+                                                        background: #f3f4f6;
+                                                        display: flex;
+                                                        align-items: center;
+                                                        justify-content: center;
+                                                        color: #6b7280;
+                                                        font-size: 14px;
+                                                        border-radius: 12px 12px 0 0;
+                                                    `;
+                                                    placeholder.textContent = 'Image not available';
+                                                    parent.insertBefore(placeholder, e.target);
+                                                }
+                                            }}
+                                        />
+                                        <div className="item-info">
+                                            <h4>{item.label || item.name || 'Clothing Item'}</h4>
+                                            <p>{item.description || 'Ready to donate'}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     ) : (
-                        <ul>
+                        // Grid view for 7 or fewer items
+                        <div className="grid-container">
                             {unusedItems.map(item => (
-                                <li key={item.id} className="unused-item">
-                                    <img src={item.image} alt={item.name} />
-                                </li>
+                                <div key={item.id} className="grid-item">
+                                    <div className="item-buttons">
+                                        <button 
+                                            className="restore-button"
+                                            onClick={() => showConfirmation('restore', item)}
+                                            title="Move back to closet"
+                                        >
+                                            +
+                                        </button>
+                                        <button 
+                                            className="donate-individual-button"
+                                            onClick={() => showConfirmation('donate', item)}
+                                            title="Donate to thrift store"
+                                        >
+                                            🎁
+                                        </button>
+                                    </div>
+                                    <img 
+                                        src={item.generatedImageUrl || item.image_url || item.image} 
+                                        alt={item.label || item.name || 'Clothing item'} 
+                                        onError={(e) => {
+                                            console.log('Image failed to load for item:', item.id, 'URL:', e.target.src);
+                                            e.target.style.display = 'none';
+                                            // Show a placeholder or fallback
+                                            const parent = e.target.parentElement;
+                                            if (parent) {
+                                                const placeholder = document.createElement('div');
+                                                placeholder.style.cssText = `
+                                                    width: 100%;
+                                                    height: 280px;
+                                                    background: #f3f4f6;
+                                                    display: flex;
+                                                    align-items: center;
+                                                    justify-content: center;
+                                                    color: #6b7280;
+                                                    font-size: 14px;
+                                                    border-radius: 12px 12px 0 0;
+                                                `;
+                                                placeholder.textContent = 'Image not available';
+                                                parent.insertBefore(placeholder, e.target);
+                                            }
+                                        }}
+                                    />
+                                    <div className="item-info">
+                                        <h4>{item.label || item.name || 'Clothing Item'}</h4>
+                                        <p>{item.description || 'Ready to donate'}</p>
+                                    </div>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     )}
                 </div>
                 {unusedItems.length > 0 &&(

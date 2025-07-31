@@ -174,6 +174,58 @@ const SignInPage = () => {
         {stars}
     </div>
     <div className="magazine-signup-bg" style={{ position: 'relative', minHeight: '100vh', zIndex: 2, background: 'transparent' }}>
+      {/* Full Screen Loading State */}
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '24px',
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              border: '6px solid rgba(255, 255, 255, 0.3)',
+              borderTop: '6px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <div style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: 'white',
+              marginBottom: '8px'
+            }}>
+              Signing In...
+            </div>
+            <div style={{
+              fontSize: '18px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              lineHeight: '1.5',
+              maxWidth: '500px'
+            }}>
+              Please wait while we authenticate your account.
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         {!showIdCard ? (
           <div className="desktop-window">
