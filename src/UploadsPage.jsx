@@ -346,7 +346,7 @@ export default function UploadsPage() {
   console.log("Current images state:", images);
 
   return (
-    <>
+    <div className="uploads-page">
       {/* Logo overlay */}
       <div className="logo-overlay" onClick={() => window.location.href = '/'} style={{ cursor: 'pointer' }}>
         <img src={logo} alt="Re:Moda Logo" className="site-logo" />
@@ -356,11 +356,11 @@ export default function UploadsPage() {
       <nav className="navbar">
         <div className="navbar-content">
           {/* Hamburger menu button */}
-          <div className="hamburger-menu" onClick={toggleMobileMenu}>
+          {/* <div className="hamburger-menu" onClick={toggleMobileMenu}>
             <span></span>
             <span></span>
             <span></span>
-          </div>
+          </div> */}
           
           {/* Page title in navbar */}
           <div className="navbar-title">Build Your Digital Wardrobe</div>
@@ -374,13 +374,13 @@ export default function UploadsPage() {
         </div>
         
         {/* Mobile menu */}
-        <div className={`mobile-menu ${isMobileMenuOpen ? 'active' : ''}`}>
+        {/* <div className={`mobile-menu ${isMobileMenuOpen ? 'active' : ''}`}>
           <div className="uploads-nav-buttons">
             <div className="nav-status">{uploadCount} items processed</div>
             <div className="nav-status">Need {Math.max(0, 4 - uploadCount)} more items</div>
             <button onClick={handleContinue} disabled={!canContinue}>Continue to Closet ⏎</button>
           </div>
-        </div>
+        </div> */}
       </nav>
 
       {/* Animated star background, always behind content */}
@@ -392,11 +392,12 @@ export default function UploadsPage() {
         flexDirection: "column",
         alignItems: "center",
         minHeight: "100vh",
-        background: "inherit"
+        background: "inherit",
+        paddingTop: "80px"
       }}>
 
         {/* Main white card */}
-        <div style={{
+        <div className="uploads-container" style={{
           display: "flex",
           flexDirection: "row",
           width: "100%",
@@ -406,10 +407,11 @@ export default function UploadsPage() {
           borderRadius: 32,
           boxShadow: "0 4px 32px #e3f6fd44",
           padding: 32,
-          minHeight: 600
+          minHeight: 600,
+          gap: 32
         }}>
           {/* Main card */}
-          <div className="uploads-main-card" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 4px 32px #e3f6fd44', padding: 40, flex: 1, minWidth: 420, maxWidth: 540 }}>
+          <div className="uploads-main-card" style={{ background: 'transparent', borderRadius: 0, boxShadow: 'none', padding: 0, flex: 1, minWidth: 420 }}>
             <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>
               {canAccessCloset ? 'Add to Your Digital Closet' : 'Initialize Your Digital Closet'}
             </div>
@@ -422,7 +424,7 @@ export default function UploadsPage() {
             {!canAccessCloset && (
               <div style={{ background: '#f3e8ff', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18 }}>Minimum Upload Requirements</span>
-                <span style={{ color: '#444', fontSize: 15 }}>Upload at least <b>2 tops</b> and <b>2 bottoms</b> to unlock advanced AI styling recommendations and personalized wardrobe analytics.</span>
+                <span style={{ color: '#444', fontSize: 15 }}>Upload at least <b>2 tops</b> and <b>2 bottoms</b> to unlock advanced AI styling.</span>
               </div>
             )}
             {/* Upload area */}
@@ -478,7 +480,7 @@ export default function UploadsPage() {
             )}
           </div>
           {/* Sidebar */}
-          <div className="uploads-sidebar" style={{ minWidth: 320, maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 28 }}>
+          <div className="uploads-sidebar" style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 28, alignSelf: 'flex-start' }}>
             {!canAccessCloset ? (
               <>
                 {/* Category Analysis - Only show during initial setup */}
@@ -523,7 +525,6 @@ export default function UploadsPage() {
               <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Optimization Tips</div>
               <ul style={{ color: '#444', fontSize: 15, paddingLeft: 18, margin: 0, listStyle: 'none' }}>
                 <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Use clean, well-lit backgrounds for optimal AI recognition accuracy</li>
-                <li style={{ marginBottom: 6 }}><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Include multiple angles and lighting conditions for comprehensive analysis</li>
                 <li><span style={{ color: '#a78bfa', fontWeight: 700, marginRight: 6 }}>•</span>Focus on frequently worn items for personalized recommendations</li>
               </ul>
             </div>
@@ -536,6 +537,6 @@ export default function UploadsPage() {
           {notification.message}
         </div>
       )}
-    </>
+    </div>
   );
 }
