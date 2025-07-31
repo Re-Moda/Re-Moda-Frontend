@@ -160,11 +160,11 @@ html {
 
 .navbar-content {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 0 20px;
   box-sizing: border-box;
 }
 
@@ -175,6 +175,7 @@ html {
   align-items: center;
   margin-left: auto;
   margin-right: 0;
+  flex-shrink: 0;
 }
 
 .uploads-nav-buttons button {
@@ -305,7 +306,9 @@ html {
   font-weight: 600;
   font-size: 18px;
   letter-spacing: 0.5px;
-  margin-left: 60px;
+  margin-left: 270px;
+  flex: 1;
+  text-align: left;
 }
 
 /* Mobile responsive styles */
@@ -342,6 +345,11 @@ html {
   
   .logo-overlay img {
     max-height: 50px;
+  }
+  
+  .navbar-title {
+    margin-left: 70px;
+    font-size: 16px;
   }
 } 
 
