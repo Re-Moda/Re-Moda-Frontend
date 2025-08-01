@@ -264,84 +264,69 @@ const StylistChatPage = () => {
   };
 
   // Send message to AI stylist
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || !sessionId) return;
+  const sendMessage = async (messageContent = null) => {
+    const contentToSend = messageContent || inputMessage;
+    if (!contentToSend.trim() || !sessionId) return;
 
     const userMessage = {
       id: Date.now(),
       role: 'user',
-      content: inputMessage,
+      content: contentToSend,
       timestamp: new Date().toISOString()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+    setInputMessage(''); // Clear input only if it was from input field
     setIsTyping(true);
 
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    
     try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await axios.post(`${API_BASE_URL}/chat/sessions/${sessionId}/messages`, {
-        message: inputMessage
+        message: contentToSend
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (response.data.success) {
-        const { recommendations } = response.data.data;
-        setRecommendations(recommendations);
-
-        // Generate a descriptive title based on the user's request
-        const generateChatTitle = (userRequest) => {
-          const request = userRequest.toLowerCase();
-          if (request.includes('party')) return 'Party Outfit Planning';
-          if (request.includes('interview') || request.includes('job')) return 'Professional Interview Look';
-          if (request.includes('wedding')) return 'Wedding Guest Style';
-          if (request.includes('date')) return 'Date Night Outfit';
-          if (request.includes('casual')) return 'Casual Style Session';
-          if (request.includes('formal')) return 'Formal Event Styling';
-          if (request.includes('work') || request.includes('office')) return 'Work Wardrobe Help';
-          if (request.includes('weekend')) return 'Weekend Style Guide';
-          return 'Fashion Consultation';
-        };
-
-        const chatTitle = generateChatTitle(inputMessage);
-
-        // Create assistant message with recommendations
+      if (response.data && response.data.success) {
         const assistantMessage = {
           id: Date.now() + 1,
           role: 'assistant',
-          content: `Here are some perfect outfit recommendations for you! 👗✨\n\nI've created ${recommendations.length} different looks based on your request. Click on any outfit to see it on your avatar and save it to your closet!`,
-          timestamp: new Date().toISOString(),
-          recommendations: recommendations,
-          chatTitle: chatTitle
+          content: response.data.data.message,
+          timestamp: new Date().toISOString()
         };
 
         setMessages(prev => [...prev, assistantMessage]);
-        
-        // Update session title in backend (if supported)
-        try {
-          await axios.patch(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
-            title: chatTitle
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        } catch (error) {
-          console.log('Could not update session title:', error);
+
+        const chatTitle = generateChatTitle(contentToSend);
+
+        // Create assistant message with recommendations
+        if (response.data.data.recommendations && response.data.data.recommendations.length > 0) {
+          const recommendationMessage = {
+            id: Date.now() + 2,
+            role: 'assistant',
+            content: 'Here are some outfit recommendations for you:',
+            recommendations: response.data.data.recommendations,
+            timestamp: new Date().toISOString()
+          };
+          setMessages(prev => [...prev, recommendationMessage]);
+        }
+
+        // Update session title if it's the first message
+        if (messages.length === 0) {
+          try {
+            await axios.patch(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
+              title: chatTitle
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          } catch (error) {
+            console.error('Error updating session title:', error);
+          }
         }
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      console.log('Full error details:', error.response?.data);
-      
-      // Provide a fallback response if backend is not working
-      const fallbackMessage = {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: `I understand you're looking for outfit help! 👗✨\n\nSince the AI stylist is temporarily unavailable, here are some general outfit suggestions based on your request:\n\n• Try mixing and matching items from your closet\n• Use the "Build your own" feature to create outfits\n• Check your "Favourites" and "Recurring" categories for saved looks\n\nWould you like to try the "Build your own" feature instead?`,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, fallbackMessage]);
+      showToast('Failed to send message. Please try again.', 'error');
     } finally {
       setIsTyping(false);
     }
@@ -656,6 +641,78 @@ const StylistChatPage = () => {
     startChatSession();
   }, []);
 
+  // Function to render messages with JSON parsing
+  const renderMessage = (message) => {
+    // Try to parse JSON content
+    try {
+      const jsonContent = JSON.parse(message.content);
+      
+      if (jsonContent.type === 'welcome') {
+        return <div>{jsonContent.content}</div>;
+      }
+      
+      if (jsonContent.type === 'promptOptions') {
+        return (
+          <div>
+            <p>{jsonContent.content}</p>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              marginTop: '12px'
+            }}>
+              {jsonContent.suggestions.map((suggestion, index) => (
+                <button 
+                  key={index}
+                  onClick={() => sendMessage(suggestion)}
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 20px',
+                    margin: '4px',
+                    borderRadius: '25px',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      
+      // If not a special type, display as regular message
+      return <div>{message.content}</div>;
+      
+    } catch (e) {
+      // If not JSON, display as regular message
+      return <div>{message.content}</div>;
+    }
+  };
+
+  // Generate a descriptive title based on the user's request
+  const generateChatTitle = (userRequest) => {
+    const request = userRequest.toLowerCase();
+    if (request.includes('party')) return 'Party Outfit Planning';
+    if (request.includes('interview') || request.includes('job')) return 'Professional Interview Look';
+    if (request.includes('wedding')) return 'Wedding Guest Style';
+    if (request.includes('date')) return 'Date Night Outfit';
+    if (request.includes('casual')) return 'Casual Style Session';
+    if (request.includes('formal')) return 'Formal Event Styling';
+    if (request.includes('work') || request.includes('office')) return 'Work Wardrobe Help';
+    if (request.includes('weekend')) return 'Weekend Style Guide';
+    return 'Fashion Consultation';
+  };
+
+  // Function to spend coins for AI features
+
   return (
     <div style={{
       height: '100vh',
@@ -952,22 +1009,6 @@ const StylistChatPage = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
-              onClick={() => setShowChatHistory(!showChatHistory)}
-              style={{
-                background: '#48dbfb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-              title="View chat history"
-            >
-              {showChatHistory ? 'Hide History' : 'Chat History'}
-            </button>
-            <button
               onClick={async () => {
                 try {
                   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -1065,7 +1106,7 @@ const StylistChatPage = () => {
               backdropFilter: 'blur(10px)',
               whiteSpace: 'pre-line'
             }}>
-              {message.content}
+              {renderMessage(message)}
               
               {/* Show recommendations if available */}
               {message.recommendations && (

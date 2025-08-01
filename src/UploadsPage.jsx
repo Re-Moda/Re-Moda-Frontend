@@ -359,6 +359,9 @@ export default function UploadsPage() {
         // Auto-navigate to closet after successful uploads
         setTimeout(() => {
           console.log('🔄 Auto-navigating to closet page...');
+          // Set flags to show loading state immediately on closet page
+          localStorage.setItem('showProcessingUploads', 'true');
+          localStorage.setItem('uploadCount', uploadCount.toString());
           window.location.href = "/user";
         }, 2000); // Wait 2 seconds then navigate
       } else if (successfulUploads > 0 && failedUploads > 0) {

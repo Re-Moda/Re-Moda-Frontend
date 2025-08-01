@@ -194,27 +194,45 @@ const UserPage = () => {
 
   // Function to process uploaded items
   const processUploadedItems = async () => {
-    // If already processing or already processed, don't start another process
-    if (processingUploads || hasProcessedUploads.current) {
-      console.log('Already processing uploads or already processed, skipping...');
+    // If already processing, don't start another process
+    if (processingUploads) {
+      console.log('Already processing uploads, skipping...');
       return;
     }
     
     console.log('Starting to process uploaded items...');
     setProcessingUploads(true);
-    hasProcessedUploads.current = true; // Mark as processed
     
     try {
-      // Simulate processing time for uploaded items
-      console.log('Simulating processing time...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Continuous check for new items until processing is complete
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds max
+      let previousItemCount = 0;
       
-      // Fetch updated closet items after processing
-      console.log('Fetching updated closet items...');
-      await fetchClosetItems();
+      while (attempts < maxAttempts) {
+        console.log(`Processing attempt ${attempts + 1}/${maxAttempts}`);
+        
+        // Fetch current closet items
+        await fetchClosetItems();
+        
+        // Check if we have new items
+        const currentItemCount = closetItems.length;
+        console.log(`Current items: ${currentItemCount}, Previous: ${previousItemCount}`);
+        
+        if (currentItemCount > previousItemCount) {
+          console.log('New items detected, continuing to process...');
+          previousItemCount = currentItemCount;
+          attempts = 0; // Reset attempts when new items are found
+        } else {
+          attempts++;
+        }
+        
+        // Wait 1 second before next check
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       
-      // Load outfits after processing
-      console.log('Loading outfits...');
+      // Load outfits after processing is complete
+      console.log('Processing complete, loading outfits...');
       await loadOutfits();
       
       console.log('Uploaded items processed successfully');
@@ -225,6 +243,7 @@ const UserPage = () => {
     } finally {
       console.log('Setting processingUploads to false');
       setProcessingUploads(false);
+      hasProcessedUploads.current = true; // Mark as processed
     }
   };
   const [uploadCount, setUploadCount] = useState(0);
@@ -329,7 +348,7 @@ const UserPage = () => {
 
     fetchUserData();
 
-    // Set up periodic check for new uploads (every 5 seconds)
+    // Set up periodic check for new uploads (every 3 seconds)
     const uploadCheckInterval = setInterval(async () => {
       if (!processingUploads) { // Only check if not currently processing
         const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -342,13 +361,19 @@ const UserPage = () => {
             if (count > uploadCount) {
               console.log('New uploads detected! Count changed from', uploadCount, 'to', count);
               setUploadCount(count);
+              // Start processing immediately if we have new uploads
+              if (!processingUploads) {
+                setTimeout(() => {
+                  processUploadedItems();
+                }, 100);
+              }
             }
           }
         } catch (error) {
           console.error('Error checking for new uploads:', error);
         }
       }
-    }, 5000); // Check every 5 seconds
+    }, 3000); // Check every 3 seconds
 
     return () => clearInterval(uploadCheckInterval);
   }, [uploadCount, processingUploads]);
@@ -673,15 +698,42 @@ const UserPage = () => {
         processUploadedItems();
       }, 100);
     } else {
-      // If no processing needed, just fetch closet items
-      fetchClosetItems();
+      // Check if we have recent uploads by checking upload count
+      const checkForRecentUploads = async () => {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        try {
+          const uploadResponse = await axios.get(`${API_BASE_URL}/users/me/upload-count`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (uploadResponse.data && uploadResponse.data.success) {
+            const { count } = uploadResponse.data.data;
+            if (count > 0) {
+              console.log('Detected recent uploads, starting processing...');
+              setUploadCount(count);
+              setProcessingUploads(true);
+              setTimeout(() => {
+                processUploadedItems();
+              }, 100);
+            } else {
+              fetchClosetItems();
+            }
+          } else {
+            fetchClosetItems();
+          }
+        } catch (error) {
+          console.error('Error checking for recent uploads:', error);
+          fetchClosetItems();
+        }
+      };
+      
+      checkForRecentUploads();
     }
   }, []);
 
   // Process uploaded items when upload count changes
   useEffect(() => {
     // Only trigger if we have uploads and we're not already processing
-    if (uploadCount > 0 && !processingUploads) {
+    if (uploadCount > 0 && !processingUploads && !hasProcessedUploads.current) {
       console.log('Upload count changed to:', uploadCount, '- triggering processing...');
       // Small delay to ensure the loading state is visible
       setTimeout(() => {
