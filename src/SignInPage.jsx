@@ -73,7 +73,6 @@ function getRandomAnimation() {
 
 const SignInPage = () => {
   const [form, setForm] = useState({ username: "", password: "" });
-  const [showIdCard, setShowIdCard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -115,12 +114,12 @@ const SignInPage = () => {
   });
 
   // Placeholder user data for demo
-  const userData = {
-    name: "Jane Doe",
-    username: form.username,
-    avatarType: "boy",
-    photo: null
-  };
+  // const userData = {
+  //   name: "Jane Doe",
+  //   username: form.username || "User",
+  //   avatarType: "boy",
+  //   photo: null
+  // };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -128,7 +127,6 @@ const SignInPage = () => {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setShowIdCard(false);
     setLoading(true);
     setErrorMsg("");
 
@@ -138,11 +136,15 @@ const SignInPage = () => {
         password: form.password
       })
       sessionStorage.setItem("token", response.data.token);  // save token to session storage
-      setShowIdCard(true);
+      
+      // Keep loading state visible for at least 2 seconds
       setTimeout(() => {
         setLoading(false);
-        window.location.href = "/uploads";
+        setTimeout(() => {
+          window.location.href = "/uploads";
+        }, 500); // Small delay after hiding loading
       }, 2000);
+      
       console.log("Sign in successful.", response.data);
     } catch (error) {
       setLoading(false);
@@ -182,13 +184,13 @@ const SignInPage = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          width: '100%',
-          height: '100%',
+          width: '100vw',
+          height: '100vh',
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 9999,
+          zIndex: 99999,
           backdropFilter: 'blur(10px)'
         }}>
           <div style={{
@@ -199,14 +201,6 @@ const SignInPage = () => {
             textAlign: 'center',
             color: 'white'
           }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              border: '6px solid rgba(255, 255, 255, 0.3)',
-              borderTop: '6px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
             <div style={{
               fontSize: '28px',
               fontWeight: 'bold',
@@ -227,7 +221,7 @@ const SignInPage = () => {
         </div>
       )}
       <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        {!showIdCard ? (
+        {!loading ? (
           <div className="desktop-window">
             <div className="desktop-titlebar">
             <button className="go-back-home-btn"
@@ -281,32 +275,17 @@ const SignInPage = () => {
                 <button 
                   type="submit" 
                   className="magazine-signup-btn"
-                  disabled={loading}
                   style={{
-                    background: loading ? '#f0f0f0' : '#e3f0ff',
-                    color: loading ? '#888' : '#3a5a8c',
-                    cursor: loading ? 'not-allowed' : 'pointer',
+                    background: '#e3f0ff',
+                    color: '#3a5a8c',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px'
                   }}
                 >
-                  {loading ? (
-                    <>
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid #888',
-                        borderTop: '2px solid transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }}></div>
-                      Signing In...
-                    </>
-                  ) : (
-                    'Sign In'
-                  )}
+                  Sign In
                 </button>
                 <button
                   type="button"
@@ -353,19 +332,7 @@ const SignInPage = () => {
               </form>
             </div>
           </div>
-        ) : (
-          <div className="idcard-twirl-in" style={{ position: 'absolute', left: 0, right: 0, margin: 'auto', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-            <IdCard username={userData.username} photo={userData.photo} avatarType={userData.avatarType} />
-            {loading && (
-              <div style={{ width: 220, marginTop: 24, textAlign: 'center' }}>
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>Logging in...</div>
-                <div className="signin-loading-bar">
-                  <div className="signin-loading-bar-inner" />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
     </>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from './config';
+import favStar from './assets/fav-star.webp';
+import logo from './assets/logo.png';
 
 // Import UserAvatar component from UserPage
 function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef }) {
@@ -86,8 +88,109 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
   );
 }
 
+// AvatarSelector component for changing avatars
+const AvatarSelector = ({ currentAvatarId, onAvatarChange }) => {
+  const [selectedAvatar, setSelectedAvatar] = useState(currentAvatarId || 1);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  const handleAvatarSelect = async (avatarId) => {
+    if (isUpdating) return;
+    
+    setSelectedAvatar(avatarId);
+    setIsUpdating(true);
+    
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      await axios.patch(`${API_BASE_URL}/users/me/avatar-id`, 
+        { avatar_id: avatarId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      onAvatarChange(avatarId);
+      showToast('Avatar updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      showToast('Failed to update avatar', 'error');
+      setSelectedAvatar(currentAvatarId); // Revert on error
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Avatar images array (you'll need to import these)
+  const AVATAR_IMAGES = [
+    '/src/assets/avatars/atar-1.png',
+    '/src/assets/avatars/atar-2.png',
+    '/src/assets/avatars/atar-3.png',
+    '/src/assets/avatars/atar-4.png',
+    '/src/assets/avatars/atar-5.png',
+    '/src/assets/avatars/atar-6.png',
+    '/src/assets/avatars/atar-7.png',
+    '/src/assets/avatars/atar-8.png',
+    '/src/assets/avatars/atar-9.png',
+    '/src/assets/avatars/atar-10.png',
+    '/src/assets/avatars/atar-11.png',
+    '/src/assets/avatars/atar-12.png',
+    '/src/assets/avatars/atar-13.png',
+    '/src/assets/avatars/atar-14.png',
+    '/src/assets/avatars/atar-15.png'
+  ];
+
+  return (
+    <div style={{ 
+      marginTop: 16,
+      padding: 16,
+      background: 'rgba(255, 255, 255, 0.9)',
+      borderRadius: 12,
+      border: '1px solid rgba(168, 139, 250, 0.2)'
+    }}>
+      <h4 style={{ 
+        margin: '0 0 12px 0', 
+        color: '#7c3aed', 
+        fontSize: 16,
+        fontWeight: '600'
+      }}>
+        Change Avatar
+      </h4>
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: 8, 
+        justifyContent: 'center',
+        maxHeight: 200,
+        overflowY: 'auto'
+      }}>
+        {AVATAR_IMAGES.map((avatar, index) => (
+          <img
+            key={index}
+            src={avatar}
+            alt={`Avatar ${index + 1}`}
+            style={{
+              width: 50,
+              height: 50,
+              borderRadius: 8,
+              cursor: isUpdating ? 'not-allowed' : 'pointer',
+              border: selectedAvatar === index + 1 ? '3px solid #7c3aed' : '1px solid #ddd',
+              opacity: isUpdating ? 0.6 : selectedAvatar === index + 1 ? 1 : 0.7,
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => !isUpdating && handleAvatarSelect(index + 1)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const StylistChatPage = () => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: 'Hi! Welcome to Re:Moda by TechStyles! I am your StyleForce assistant. I can help you find the perfect outfit for any occasion. What are you looking for today?',
+      timestamp: Date.now().toString()
+    }
+  ]);
   const [inputMessage, setInputMessage] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
@@ -95,9 +198,20 @@ const StylistChatPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const [coinBalance, setCoinBalance] = useState(0);
+  const [userAvatarId, setUserAvatarId] = useState(1);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   
   // Chat history states
   const [chatSessions, setChatSessions] = useState([]);
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  
+  // Avatar states
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [username, setUsername] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Toast notification function
   const showToast = (message, type = 'info') => {
@@ -105,22 +219,22 @@ const StylistChatPage = () => {
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed;
-      bottom: 20px;
+      top: 20px;
       right: 20px;
-      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-      color: white;
       padding: 12px 20px;
       border-radius: 8px;
+      color: white;
       font-weight: 600;
-      font-size: 14px;
       z-index: 10000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       transform: translateX(100%);
       transition: transform 0.3s ease;
+      ${type === 'success' ? 'background: #22c55e;' : 
+        type === 'error' ? 'background: #ef4444;' : 
+        type === 'warning' ? 'background: #f59e0b;' : 
+        'background: #3b82f6;'}
     `;
     toast.textContent = message;
     
-    // Add to page
     document.body.appendChild(toast);
     
     // Animate in
@@ -136,20 +250,68 @@ const StylistChatPage = () => {
       }, 300);
     }, 3000);
   };
-  const [showChatHistory, setShowChatHistory] = useState(false);
-  const [selectedSessionId, setSelectedSessionId] = useState(null);
-  
-  // Avatar states (similar to UserPage)
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [username, setUsername] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
-  const fileInputRef = useRef();
+
+  // Star animation helper functions
+  const animationNames = ['moveX', 'moveY', 'moveXY'];
+  function getRandomAnimation() {
+    const name = animationNames[Math.floor(Math.random() * animationNames.length)];
+    const duration = 8 + Math.random() * 12; // 8s to 20s
+    const delay = Math.random() * 10; // 0-10s
+    return {
+      animation: `${name} ${duration}s linear infinite`,
+      animationDelay: `${delay}s`
+    };
+  }
+
+  // Generate animated stars for background
+  const stars = Array.from({ length: 60 }).map((_, i) => {
+    const top = Math.random() * 100;
+    const left = Math.random() * 100;
+    const size = 18 + Math.random() * 52; // 18px to 70px
+    const opacity = 0.18 + Math.random() * 0.45; // 0.18 to 0.63
+    const anim = getRandomAnimation();
+    const style = {
+      position: 'absolute',
+      zIndex: 0,
+      pointerEvents: 'none',
+      opacity,
+      width: size,
+      height: size,
+      top: `${top}%`,
+      left: `${left}%`,
+      filter: 'drop-shadow(0 2px 8px #b7e6e0)',
+      ...anim
+    };
+    return <img src={favStar} alt="star" key={i} style={style} />;
+  });
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Add CSS for star animations
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes moveX {
+        0% { transform: translateX(0px); }
+        100% { transform: translateX(100px); }
+      }
+      @keyframes moveY {
+        0% { transform: translateY(0px); }
+        100% { transform: translateY(100px); }
+      }
+      @keyframes moveXY {
+        0% { transform: translateX(0px) translateY(0px); }
+        100% { transform: translateX(50px) translateY(50px); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -175,6 +337,7 @@ const StylistChatPage = () => {
         if (userResponse.data.success) {
           setUsername(userResponse.data.data.username || 'User');
           setAvatarUrl(userResponse.data.data.avatar_url || '');
+          setUserAvatarId(userResponse.data.data.avatar_id || 1);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -715,11 +878,31 @@ const StylistChatPage = () => {
 
   return (
     <div style={{
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: 'Arial, sans-serif'
+      background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)',
+      fontFamily: 'Arial, sans-serif',
+      position: 'relative',
+      overflow: 'hidden',
+      margin: 0,
+      padding: 0
     }}>
+      {/* Animated star background */}
+      <div 
+        className="star-bg" 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          zIndex: 1, 
+          pointerEvents: 'none',
+          background: 'transparent'
+        }}
+      >
+        {stars}
+      </div>
       {/* Chat History Sidebar */}
       {showChatHistory && (
         <div style={{
@@ -819,22 +1002,42 @@ const StylistChatPage = () => {
       {/* Left Side - Avatar Section */}
       <div style={{
         width: '400px',
-        background: 'rgba(255, 255, 255, 0.95)',
+        background: 'rgba(255, 255, 255, 0.9)',
         padding: '32px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+        justifyContent: 'center',
+        boxShadow: '0 4px 20px rgba(168, 139, 250, 0.15)',
         backdropFilter: 'blur(10px)',
-        borderRight: '1px solid rgba(0,0,0,0.1)'
+        borderRight: '1px solid rgba(168, 139, 250, 0.2)',
+        zIndex: 2,
+        height: '100vh'
       }}>
         <div style={{
           color: '#a78bfa',
           fontWeight: 700,
-          fontSize: 18,
+          fontSize: 20,
           marginBottom: 24,
-          textAlign: 'center'
+          textAlign: 'center',
+          textShadow: '0 2px 4px rgba(168, 139, 250, 0.2)',
+          position: 'relative'
         }}>
+          {/* Logo on top of "Your Avatar" text */}
+          <img 
+            src={logo} 
+            alt="Re:Moda Logo" 
+            style={{ 
+              position: 'absolute',
+              top: '-160px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              height: '180px',
+              width: 'auto',
+              zIndex: 10,
+              filter: 'drop-shadow(0 4px 8px rgba(168, 139, 250, 0.3))'
+            }} 
+          />
           Your Avatar
         </div>
         <div style={{ position: 'relative' }}>
@@ -970,6 +1173,45 @@ const StylistChatPage = () => {
             ✨ Creating your outfit...
           </div>
         )}
+        
+        {/* Avatar Change Button */}
+        <button
+          onClick={() => setShowAvatarSelector(!showAvatarSelector)}
+          style={{
+            marginTop: 16,
+            background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '25px',
+            padding: '10px 20px',
+            fontSize: '14px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            boxShadow: '0 4px 15px rgba(168, 139, 250, 0.3)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 6px 20px rgba(168, 139, 250, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 4px 15px rgba(168, 139, 250, 0.3)';
+          }}
+        >
+          {showAvatarSelector ? 'Hide Avatar Selector' : 'Change Avatar'}
+        </button>
+        
+        {/* Avatar Selector */}
+        {showAvatarSelector && (
+          <AvatarSelector 
+            currentAvatarId={userAvatarId}
+            onAvatarChange={(newAvatarId) => {
+              setUserAvatarId(newAvatarId);
+              setShowAvatarSelector(false);
+            }}
+          />
+        )}
       </div>
 
       {/* Right Side - Chat Section */}
@@ -977,34 +1219,51 @@ const StylistChatPage = () => {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh'
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         {/* Header */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          padding: '16px 24px',
+          background: 'rgba(255, 255, 255, 0.9)',
+          padding: '16px 24px 8px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          backdropFilter: 'blur(10px)'
+          boxShadow: '0 4px 20px rgba(168, 139, 250, 0.15)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(168, 139, 250, 0.2)',
+          zIndex: 999,
+          position: 'relative',
+          flexShrink: 0,
+          minHeight: '60px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: 'linear-gradient(45deg, #ff6b6b, #feca57)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}>
-              👗
-            </div>
-            <div>
-              <h2 style={{ margin: 0, color: '#2c3e50', fontSize: '20px' }}>AI Fashion Stylist</h2>
-              <p style={{ margin: 0, color: '#7f8c8d', fontSize: '14px' }}>Your personal style assistant</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img 
+                src="/src/assets/image copy.png" 
+                alt="Heart Icon" 
+                style={{ 
+                  height: '48px',
+                  width: 'auto',
+                  filter: 'drop-shadow(0 2px 4px rgba(168, 139, 250, 0.2))',
+                  transition: 'transform 0.3s ease'
+                }} 
+              />
+              <div>
+                <h2 style={{ 
+                  margin: 0, 
+                  color: '#7c3aed', 
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  textShadow: '0 2px 4px rgba(168, 139, 250, 0.2)'
+                }}>StyleForce</h2>
+                <p style={{ 
+                  margin: 0, 
+                  color: '#a78bfa', 
+                  fontSize: '16px',
+                  fontWeight: '500'
+                }}>Your personal style assistant</p>
+              </div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1083,28 +1342,39 @@ const StylistChatPage = () => {
 
       {/* Messages Container */}
       <div style={{
-        flex: 1,
+        flex: 0.8,
         overflowY: 'auto',
-        padding: '20px',
+        padding: '0px 24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px'
+        gap: '1px',
+        background: 'rgba(255, 255, 255, 0.3)',
+        zIndex: 1,
+        position: 'relative',
+        minHeight: 0
       }}>
         {messages.map((message) => (
-          <div key={message.id} style={{
+          <div key={`${message.id}-${message.timestamp}`} style={{
             display: 'flex',
             justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
-            marginBottom: '16px'
+            marginBottom: '1px'
           }}>
             <div style={{
               maxWidth: '70%',
-              padding: '16px 20px',
-              borderRadius: message.role === 'user' ? '20px 20px 5px 20px' : '20px 20px 20px 5px',
-              background: message.role === 'user' ? '#667eea' : 'rgba(255, 255, 255, 0.95)',
-              color: message.role === 'user' ? 'white' : '#2c3e50',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              padding: '18px 24px',
+              borderRadius: message.role === 'user' ? '24px 24px 8px 24px' : '24px 24px 24px 8px',
+              background: message.role === 'user' 
+                ? 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)' 
+                : 'rgba(255, 255, 255, 0.95)',
+              color: message.role === 'user' ? 'white' : '#4c1d95',
+              boxShadow: message.role === 'user' 
+                ? '0 8px 25px rgba(168, 139, 250, 0.3)' 
+                : '0 4px 20px rgba(168, 139, 250, 0.15)',
               backdropFilter: 'blur(10px)',
-              whiteSpace: 'pre-line'
+              whiteSpace: 'pre-line',
+              border: message.role === 'user' 
+                ? 'none' 
+                : '1px solid rgba(168, 139, 250, 0.2)'
             }}>
               {renderMessage(message)}
               
@@ -1221,14 +1491,17 @@ const StylistChatPage = () => {
       {/* Input Container */}
       <div style={{
         background: 'rgba(255, 255, 255, 0.95)',
-        padding: '20px',
-        borderTop: '1px solid rgba(0,0,0,0.1)',
-        backdropFilter: 'blur(10px)'
+        padding: '0px 20px',
+        borderTop: '1px solid rgba(168, 139, 250, 0.2)',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 -4px 20px rgba(168, 139, 250, 0.1)',
+        flexShrink: 0,
+        marginTop: '500px'
       }}>
         <div style={{
           display: 'flex',
           gap: '12px',
-          alignItems: 'flex-end'
+          alignItems: 'center'
         }}>
           <div style={{
             flex: 1,
@@ -1241,37 +1514,64 @@ const StylistChatPage = () => {
               placeholder="Tell me what you're looking for... (e.g., 'I want to go to a job interview')"
               style={{
                 width: '100%',
-                minHeight: '50px',
+                minHeight: '30px',
                 maxHeight: '120px',
-                padding: '12px 16px',
+                padding: '14px 18px',
                 borderRadius: '25px',
-                border: '2px solid #e0e0e0',
+                border: '2px solid rgba(168, 139, 250, 0.3)',
                 fontSize: '16px',
                 fontFamily: 'Arial, sans-serif',
                 resize: 'none',
                 outline: 'none',
-                transition: 'border-color 0.3s ease'
+                transition: 'all 0.3s ease',
+                background: 'rgba(255, 255, 255, 0.9)',
+                color: '#7c3aed'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#a78bfa';
+                e.target.style.boxShadow = '0 0 0 3px rgba(168, 139, 250, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(168, 139, 250, 0.3)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
           <button
             onClick={sendMessage}
             disabled={!inputMessage.trim() || isLoading}
             style={{
-              background: inputMessage.trim() && !isLoading ? '#667eea' : '#bdc3c7',
+              background: inputMessage.trim() && !isLoading 
+                ? 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)' 
+                : 'rgba(168, 139, 250, 0.3)',
               color: 'white',
               border: 'none',
               borderRadius: '50%',
               width: '50px',
               height: '50px',
-              fontSize: '20px',
+              fontSize: '18px',
               cursor: inputMessage.trim() && !isLoading ? 'pointer' : 'not-allowed',
               transition: 'all 0.3s ease',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: inputMessage.trim() && !isLoading 
+                ? '0 4px 15px rgba(168, 139, 250, 0.4)' 
+                : 'none',
+              transform: inputMessage.trim() && !isLoading ? 'scale(1)' : 'scale(0.95)',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => {
+              if (inputMessage.trim() && !isLoading) {
+                e.target.style.transform = 'scale(1.05)';
+                e.target.style.boxShadow = '0 6px 20px rgba(168, 139, 250, 0.5)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (inputMessage.trim() && !isLoading) {
+                e.target.style.transform = 'scale(1)';
+                e.target.style.boxShadow = '0 4px 15px rgba(168, 139, 250, 0.4)';
+              }
             }}
           >
             {isLoading ? '⏳' : '➤'}
