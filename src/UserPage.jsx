@@ -1,148 +1,96 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import logo from './assets/logo.png';
+import favStar from './assets/fav-star.webp';
 import API_BASE_URL from './config.js';
+import './UserPage.css';
+
+// Helper: Generate random animation for a star
+const animationNames = ['moveX', 'moveY', 'moveXY'];
+function getRandomAnimation() {
+ const name = animationNames[Math.floor(Math.random() * animationNames.length)];
+ const duration = 8 + Math.random() * 12; // 8s to 20s
+ const delay = Math.random() * 10; // 0-10s
+ return {
+   animation: `${name} ${duration}s linear infinite`,
+   animationDelay: `${delay}s`
+ };
+}
 
 const closetCategories = [
-  { key: "all", label: "All" },
-  { key: "top", label: "Top" },
-  { key: "bottom", label: "Bottom" },
-  { key: "shoes", label: "Shoes" },
-  { key: "favourites", label: "Favourites" },
-  { key: "recurring", label: "Recurring" },
-  { key: "unused", label: "Unused" }
+ { key: "all", label: "All" },
+ { key: "top", label: "Top" },
+ { key: "bottom", label: "Bottom" },
+ { key: "shoes", label: "Shoes" },
+ { key: "favourites", label: "Favourites" },
+ { key: "recurring", label: "Recurring" },
+ { key: "unused", label: "Unused" }
 ];
 
-function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef, setGeneratedAvatarUrl, handleFavorite, handleMarkAsWorn }) {
-  // Show generated avatar if it exists, otherwise show real avatar
-  const displayAvatarUrl = generatedAvatarUrl || avatarUrl;
-  
+function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef, setGeneratedAvatarUrl, handleFavorite, handleMarkAsWorn, handleMarkAsRecurring, buildMode }) {
+ // Show generated avatar if it exists, otherwise show real avatar
+ const displayAvatarUrl = generatedAvatarUrl || avatarUrl;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-      {displayAvatarUrl ? (
-        <div style={{ position: 'relative' }}>
-          <img
-            src={displayAvatarUrl}
-            alt="User Avatar"
-            style={{
-              width: 350,
-              height: 700, // much taller
-              borderRadius: 24,
-              objectFit: 'cover',
-              border: '3px solid #a78bfa',
-              marginBottom: 12,
-              background: '#ede9fe',
-              display: 'block'
-            }}
-          />
-          {/* Heart and Worn buttons on generated avatar */}
-          {generatedAvatarUrl && (
-            <div style={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              display: 'flex',
-              gap: 8
-            }}>
-              <button
-                onClick={handleFavorite}
-                style={{
-                  background: '#ff6b6b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                }}
-                title="Add to Favorites"
-              >
-                ❤️
-              </button>
-              <button
-                onClick={handleMarkAsWorn}
-                style={{
-                  background: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                }}
-                title="Mark as Worn"
-              >
-                ✓
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{
-          width: 350,
-          height: 700, // much taller
-          borderRadius: 24,
-          border: '2.5px dashed #a78bfa',
-          background: '#f3e8ff',
-          marginBottom: 12,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#a78bfa',
-          fontSize: 64,
-          fontWeight: 600
-        }}>
-          <span role="img" aria-label="avatar placeholder">👤</span>
-        </div>
-      )}
-      <div style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: 20 }}>{username}</div>
-      {generatedAvatarUrl && (
-        <div style={{ 
-          color: '#22c55e', 
-          fontWeight: 600, 
-          fontSize: 14, 
-          marginTop: 4,
-          background: '#f0fdf4',
-          padding: '4px 8px',
-          borderRadius: 6,
-          border: '1px solid #22c55e'
-        }}>
-          ✨ AI Generated Outfit
-        </div>
-      )}
+   <div className="user-avatar-container">
+     {displayAvatarUrl ? (
+       <div className="avatar-wrapper">
+         <img
+           src={displayAvatarUrl}
+           alt="User Avatar"
+           className="avatar-image"
+         />
 
-      {generatedAvatarUrl && (
-        <button
-          onClick={() => {
-            setGeneratedAvatarUrl(null);
-            localStorage.removeItem('generatedAvatarUrl');
-          }}
-          style={{
-            marginTop: 8,
-            color: '#ff6b6b',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: 14,
-            background: 'none',
-            border: 'none',
-            textDecoration: 'underline'
-          }}
-        >
-          Revert to Original Avatar
-        </button>
-      )}
-    </div>
-  );
+        
+         {/* Heart button on generated avatar - positioned in top left corner in build mode */}
+         {generatedAvatarUrl && (
+           <div className={`avatar-heart-button ${buildMode ? 'build-mode' : ''}`}>
+             <button
+               onClick={handleFavorite}
+               className="avatar-action-btn favorite-btn"
+               title="Add to Favorites"
+             >
+               ❤️
+             </button>
+           </div>
+         )}
+        
+         {/* Recurring button on generated avatar - positioned in top right corner in build mode */}
+         {generatedAvatarUrl && (
+           <div className={`avatar-recurring-button ${buildMode ? 'build-mode' : ''}`}>
+             <button
+               onClick={handleMarkAsRecurring}
+               className="avatar-action-btn recurring-btn"
+               title="Add to Recurring"
+             >
+               🔄
+             </button>
+           </div>
+         )}
+       </div>
+     ) : (
+       <div className="avatar-placeholder">
+         <span role="img" aria-label="avatar placeholder">👤</span>
+       </div>
+     )}
+     <div className="username">{username}</div>
+     {generatedAvatarUrl && (
+       <div className="avatar-buttons-container">
+         <div className="ai-generated-badge">
+           ✨ AI Generated Outfit
+         </div>
+         <button
+           onClick={() => {
+             setGeneratedAvatarUrl(null);
+             localStorage.removeItem('generatedAvatarUrl');
+           }}
+           className="revert-avatar-btn"
+         >
+           Revert to Original Avatar
+         </button>
+       </div>
+     )}
+   </div>
+ );
 }
 
 const UserPage = () => {
@@ -254,6 +202,7 @@ const UserPage = () => {
   const [loadingItems, setLoadingItems] = useState(new Set()); // Track loading state for individual items
   const [processingUploads, setProcessingUploads] = useState(false); // Track loading state for processing uploads
   const hasProcessedUploads = useRef(false); // Track if we've already processed uploads
+  const [flippedItems, setFlippedItems] = useState(new Set()); // Track which items are flipped to show details
 
   // Toast notification function
   const showToast = (message, type = 'info') => {
@@ -590,6 +539,54 @@ const UserPage = () => {
 
   // Add to Worn functionality
   const handleMarkAsWorn = async () => {
+    if (!generatedAvatarUrl) {
+      showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
+      return;
+    }
+    
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      // No duplicate checking - allow all outfits to be added
+      console.log('Creating new outfit and marking as worn...');
+      
+      // Create new outfit via backend
+      const outfitData = {
+        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}`,
+        clothingItemIds: [selectedTopId, selectedBottomId], // Correct field name (camelCase)
+        image_key: generatedAvatarUrl, // Use image_key instead of generated_image_url
+        bucket_name: "clothing-items-remoda", // Add bucket name
+        is_favorite: false,
+        is_recurring: false
+      };
+      
+      console.log('Sending outfit data:', outfitData);
+      
+      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && response.data.success) {
+        console.log('Outfit created and marked as worn successfully:', response.data.data);
+        console.log('Full response from backend:', response.data);
+        showToast('✓ Outfit marked as worn!', 'success');
+        
+        // Refresh outfits from backend
+        loadOutfits();
+      } else {
+        showToast('Failed to mark as worn. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error marking outfit as worn:', error);
+      if (error.response) {
+        console.error('Backend response:', error.response.data);
+        console.error('Status:', error.response.status);
+      }
+      showToast('Failed to mark as worn. Please try again.', 'error');
+    }
+  };
+
+  // Add to Recurring functionality
+  const handleMarkAsRecurring = async () => {
     if (!generatedAvatarUrl) {
       showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
       return;
@@ -1033,8 +1030,30 @@ const UserPage = () => {
 
   if (loading) return <div>Loading your closet...</div>;
 
+  // Generate 60 random star positions and animations
+  const stars = Array.from({ length: 60 }).map((_, i) => {
+    const top = Math.random() * 100;
+    const left = Math.random() * 100;
+    const size = 18 + Math.random() * 52; // 18px to 70px
+    const opacity = 0.18 + Math.random() * 0.45; // 0.18 to 0.63
+    const anim = getRandomAnimation();
+    const style = {
+      position: 'absolute',
+      zIndex: 0,
+      pointerEvents: 'none',
+      opacity,
+      width: size,
+      height: size,
+      top: `${top}%`,
+      left: `${left}%`,
+      filter: 'drop-shadow(0 2px 8px #b7e6e0)',
+      ...anim
+    };
+    return <img src={favStar} alt="star" key={i} style={style} />;
+  });
+
   return (
-    <div style={{
+    <div className={`user-page ${buildMode ? 'build-mode' : ''}`} style={{
       fontFamily: "'EB Garamond', serif",
       display: "flex",
       flexDirection: "column",
@@ -1045,312 +1064,110 @@ const UserPage = () => {
       overflow: "hidden"
     }}>
 
-      {/* Logo in top left purple space */}
-      <img
-        src={logo}
-        alt="ReModa Logo"
-        style={{ 
-          position: 'fixed',
-          top: 16,
-          left: 120,
-          width: 140,
-          height: 'auto',
-          zIndex: 101,
-          objectFit: 'contain',
-        }}
-      />
+      {/* Logo overlay */}
+      <div className="logo-overlay" onClick={() => window.location.href = '/'} style={{ cursor: 'pointer' }}>
+        <img src={logo} alt="Re:Moda Logo" className="site-logo" />
+      </div>
 
-      {/* Redesigned Navigation Bar */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-        padding: '16px 32px',
-        zIndex: 1000,
-        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        {/* Left side - Logo */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img
-            src={logo}
-            alt="ReModa Logo"
-            style={{ 
-              width: 120,
-              height: 'auto',
-              objectFit: 'contain',
-            }}
-          />
-        </div>
-
-        {/* Center - Navigation Buttons */}
-        <div style={{
-          display: 'flex',
-          gap: 16,
-          alignItems: 'center'
-        }}>
-          <button 
-            style={{
-              background: coinBalance < 10 ? "#cbd5e1" : "#fef3c7",
-              color: coinBalance < 10 ? "#64748b" : "#92400e",
-              border: "none",
-              borderRadius: 20,
-              fontWeight: 600,
-              fontSize: 16,
-              padding: "12px 24px",
-              cursor: coinBalance < 10 ? "not-allowed" : "pointer",
-              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
-              transition: "all 0.2s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-            onClick={() => {
-              if (coinBalance < 10) {
-                alert(`You need 10 coins to use AI Try-On. Current balance: ${coinBalance} coins`);
-                return;
-              }
-              setBuildMode(true);
-              setSelectedTopId(null);
-              setSelectedBottomId(null);
-              setSelectedShoesId(null);
-              setGeneratedAvatarUrl(null);
-            }}
-          >
-            <span style={{ fontSize: 18 }}>✨</span>
-            Build your own (10 coins)
-          </button>
+      {/* Navbar */}
+      <nav className={`navbar ${buildMode ? 'build-mode' : ''}`}>
+        <div className="navbar-content">
+          {/* Page title in navbar */}
+          <div className="navbar-title">{buildMode ? 'Build Your Own Mode' : 'My Closet'}</div>
           
-          <button
-            style={{
-              background: "#fbbf24",
-              color: "#92400e",
-              border: "none",
-              borderRadius: 20,
-              fontWeight: 600,
-              fontSize: 16,
-              padding: "12px 24px",
-              cursor: "pointer",
-              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
-              transition: "all 0.2s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-            onClick={() => window.location.href = "/thrift"}
-          >
-            <span style={{ fontSize: 18 }}>🪙</span>
-            Get More Coins
-          </button>
-          
-          <button
-            onClick={() => window.location.href = '/stylist-chat'}
-            style={{
-              background: "#e0e7ff",
-              color: "#3730a3",
-              border: "none",
-              borderRadius: 20,
-              fontWeight: 600,
-              fontSize: 16,
-              padding: "12px 24px",
-              cursor: "pointer",
-              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
-              transition: "all 0.2s ease",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-          >
-            <span style={{ fontSize: 18 }}>💬</span>
-            Chat w/ ur stylist
-          </button>
-        </div>
-
-        {/* Right side - Selected Items and Coin Balance */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* Selected Top/Bottom display - only show in buildMode */}
-          {buildMode && (
-            <div style={{
-              background: '#ede9fe',
-              border: '2px solid #a78bfa',
-              borderRadius: 16,
-              padding: '8px 12px',
-              boxShadow: '0 2px 12px #a78bfa22',
-              fontFamily: "'EB Garamond', serif",
-              color: '#7c3aed',
-              fontWeight: 600,
-              fontSize: 12,
-              textAlign: 'left',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              minWidth: 140,
-              maxHeight: 'fit-content'
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>
-                Selected Top: <span style={{ color: '#232323', fontWeight: 600 }}>
-                  {selectedTopId ? '✓' : 'No top selected'}
-                </span>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>
-                Selected Bottom: <span style={{ color: '#232323', fontWeight: 600 }}>
-                  {selectedBottomId ? '✓' : 'No bottom selected'}
-                </span>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>
-                Selected Shoes: <span style={{ color: '#232323', fontWeight: 600 }}>
-                  {selectedShoesId ? '✓' : 'No shoes selected'}
-                </span>
-              </div>
+          {/* Desktop navigation */}
+          <div className="uploads-nav-buttons">
+            <button
+              className={`nav-btn build-btn ${coinBalance < 10 ? 'disabled' : ''}`}
+              onClick={() => {
+                if (buildMode) {
+                  // Exit build mode
+                  setBuildMode(false);
+                  setSelectedTopId(null);
+                  setSelectedBottomId(null);
+                  setGeneratedAvatarUrl(null);
+                } else {
+                  // Enter build mode
+                  if (coinBalance < 10) {
+                    alert(`You need 10 coins to use AI Try-On. Current balance: ${coinBalance} coins`);
+                    return;
+                  }
+                  setBuildMode(true);
+                  setSelectedTopId(null);
+                  setSelectedBottomId(null);
+                  setGeneratedAvatarUrl(null);
+                }
+              }}
+            >
+              <span className="btn-icon">{buildMode ? '🏠' : '✨'}</span>
+              {buildMode ? 'Back to My Closet' : 'Build your own (10 coins)'}
+            </button>
+            
+            <button
+              className="nav-btn coins-btn"
+              onClick={() => window.location.href = "/thrift"}
+            >
+              <span className="btn-icon">🪙</span>
+              Get More Coins
+            </button>
+            
+            <button
+              className="nav-btn chat-btn"
+              onClick={() => window.location.href = '/stylist-chat'}
+            >
+              <span className="btn-icon">💬</span>
+              Chat w/ ur stylist
+            </button>
+            
+            {/* Coin Balance */}
+            <div className="coin-balance">
+              <span className="coin-icon">🪙</span>
+              <span className="coin-amount">{Math.max(0, coinBalance)} coins</span>
             </div>
-          )}
-          
-          {/* Coin Balance */}
-          <div style={{
-            background: '#fef3c7',
-            border: '2px solid #f59e0b',
-            borderRadius: 20,
-            padding: '12px 20px',
-            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
-            fontFamily: "'EB Garamond', serif",
-            color: '#92400e',
-            fontWeight: 700,
-            fontSize: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            minWidth: 120
-          }}>
-            <span style={{ fontSize: 20 }}>🪙</span>
-            <span>{Math.max(0, coinBalance)} coins</span>
           </div>
         </div>
-      </div>
+      </nav>
+
+      {/* Animated star background, always behind content */}
+      <div className="star-bg">{stars}</div>
 
       {/* Full Screen Loading State for Processing Uploads */}
       {processingUploads && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(10px)'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '24px',
-            textAlign: 'center',
-            color: 'white'
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              border: '6px solid rgba(255, 255, 255, 0.3)',
-              borderTop: '6px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            <div style={{
-              fontSize: '28px',
-              fontWeight: 'bold',
-              color: 'white',
-              marginBottom: '8px'
-            }}>
+        <div className="processing-overlay">
+          <div className="processing-content">
+            <div className="spinner"></div>
+            <div className="processing-text">
               Processing Your Wardrobe...
             </div>
-            <div style={{
-              fontSize: '18px',
-              color: 'rgba(255, 255, 255, 0.8)',
-              lineHeight: '1.5',
-              maxWidth: '500px'
-            }}>
+            <div className="processing-subtext">
               Please wait while we process your uploaded items and update your closet.
             </div>
           </div>
         </div>
       )}
+      
       {/* Main white card */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "95vw",
-        maxWidth: 1400,
-        margin: "120px auto 0 auto", // Increased top margin for fixed nav bar
-        background: "#fff",
-        borderRadius: 32,
-        boxShadow: "0 4px 32px #e3f6fd44",
-        padding: 32,
-        minHeight: 600
-      }}>
+      <div className="main-content">
         {/* Main Content Container */}
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%"
-        }}>
+        <div className="content-container">
           {/* Closet Category Filter - Horizontal at top */}
-          <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 16,
-            marginBottom: 32,
-            padding: "16px 0",
-            borderBottom: "1px solid #e5e7eb"
-          }}>
+          <div className={`category-filter ${buildMode ? 'build-mode' : ''}`}>
             {closetCategories.map(cat => (
               <button
                 key={cat.key}
                 onClick={() => setSelectedCategory(cat.key)}
-                style={{
-                  background: selectedCategory === cat.key ? "#e0e7ff" : "transparent",
-                  color: "#232323",
-                  border: selectedCategory === cat.key ? "2px solid #7c3aed" : "1px solid #d1d5db",
-                  borderRadius: 20,
-                  fontWeight: 600,
-                  fontSize: 14,
-                  padding: "8px 16px",
-                  cursor: "pointer",
-              transition: "all 0.2s ease",
-                  minWidth: "fit-content"
-                }}
+                className={`category-btn ${selectedCategory === cat.key ? 'active' : ''}`}
               >
                 {cat.label}
               </button>
             ))}
             
-            {/* Try On button - moved to second nav bar */}
+            {/* Try On button - at the end of categories */}
             {buildMode && (
               <button
                 onClick={handleTryOn}
                 disabled={!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10}
-                style={{
-                  background: '#7c3aed',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 20,
-                  fontWeight: 600,
-                  fontSize: 14,
-                  padding: "8px 16px",
-                  cursor: (!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10) ? 'not-allowed' : 'pointer',
-                  transition: "all 0.2s ease",
-                  opacity: (!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10) ? 0.6 : 1,
-                  minWidth: "fit-content"
-                }}
+                className={`try-on-btn ${(!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10) ? 'disabled' : ''}`}
               >
                 {loadingTryOn ? "Generating..." : "Try On"}
               </button>
@@ -1358,55 +1175,9 @@ const UserPage = () => {
           </div>
           
           {/* Content Area - Avatar on left, clothes on right */}
-          <div style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "flex-start",
-            gap: 32
-          }}>
+          <div className="content-area">
             {/* Avatar Section */}
-            <div style={{
-              flex: "0 0 260px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              position: "relative"
-            }}>
-
-              {/* Heart icon - only show when there's a generated outfit and no real avatar */}
-              {generatedAvatarUrl && !avatarUrl && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    left: 24,
-                    fontSize: 32,
-                    color: "#e25555",
-                    cursor: "pointer"
-                  }}
-                  onClick={handleFavorite}
-                  title="Add to Favourites"
-                >❤️</span>
-              )}
-              {/* Add to Worn button - only show when there's a generated outfit and no real avatar */}
-              {generatedAvatarUrl && !avatarUrl && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 24,
-                    fontSize: 24,
-                    color: "#22c55e",
-                    cursor: "pointer",
-                    background: "#f0fdf4",
-                    borderRadius: 8,
-                    padding: "4px 8px",
-                    border: "1px solid #22c55e"
-                  }}
-                  onClick={handleMarkAsWorn}
-                  title="Mark as Worn"
-                >✓ Worn</span>
-              )}
+            <div className="avatar-section">
               <UserAvatar
                 generatedAvatarUrl={generatedAvatarUrl}
                 avatarUrl={avatarUrl}
@@ -1417,6 +1188,8 @@ const UserPage = () => {
                 setGeneratedAvatarUrl={setGeneratedAvatarUrl}
                 handleFavorite={handleFavorite}
                 handleMarkAsWorn={handleMarkAsWorn}
+                handleMarkAsRecurring={handleMarkAsRecurring}
+                buildMode={buildMode}
               />
               {/* Animated moving text under avatar */}
               <div style={{
@@ -1436,362 +1209,332 @@ const UserPage = () => {
                   display: 'inline-block',
                   animation: 'moveText 15s linear infinite'
                 }}>
-                  No matter what you wear you are beautiful
+                  No matter what you wear you are beautiful!
                 </span>
               </div>
             </div>
             
-                        {/* Clothing Items Section */}
-            <div style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column"
-            }}>
-              <div style={{
-                fontSize: 20,
-                fontWeight: 600,
-                color: "#374151",
-                marginBottom: 16,
-                textAlign: "center"
-              }}>
-                Your Closet ({filteredItems.length} items)
+            {/* Clothing Items Section */}
+            <div className="clothing-section">
+              <div className="section-title">
+                <span className="item-count">({filteredItems.length} items)</span>
               </div>
               
               {/* Closet Grid: Scrollable container with 2x2 grid */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: 32,
-                maxHeight: "600px",
-                overflowY: "auto",
-                padding: "16px",
-                border: "1px solid #e5e7eb",
-                borderRadius: "12px",
-                backgroundColor: "#fafafa",
-                justifyContent: "center",
-                alignItems: "center"
-              }}>
-                {filteredItems.length === 0 && <div>No items in this category.</div>}
-            {filteredItems.map(item => {
-            // Check if this is an outfit (has outfitClothingItems or is_favorite/is_recurring) or a clothing item
-            const isOutfit = item.outfitClothingItems || item.clothingItemIds || item.clothing_item_ids || item.item_ids || item.clothing_ids || item.items || item.is_favorite || item.is_recurring;
-            
-            return (
-              <div
-                key={item.id}
-                style={{
-                  background: "#fff",
-                  borderRadius: 16,
-                  boxShadow: "0 2px 12px #e3f6fd44",
-                  padding: 16,
-                  width: 280,
-                  minHeight: 320,
-                  textAlign: "center",
-                  position: "relative",
-                  border: buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id) || (selectedShoesId && selectedShoesId === item.id)) ? '3px solid #7c3aed' : 'none',
-                  cursor: buildMode ? 'pointer' : 'default',
-                  opacity: buildMode && ((item.category || item.tag)?.toLowerCase() === 'top' || (item.category || item.tag)?.toLowerCase() === 'bottom' || (item.category || item.tag)?.toLowerCase() === 'shoes') ? 1 : buildMode ? 0.5 : 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto'
-                }}
-                onClick={() => {
-                  if (!buildMode) return;
-                  if ((item.category || item.tag)?.toLowerCase() === 'top') setSelectedTopId(item.id);
-                  if ((item.category || item.tag)?.toLowerCase() === 'bottom') setSelectedBottomId(item.id);
-                  if ((item.category || item.tag)?.toLowerCase() === 'shoes') {
-                    setSelectedShoesId(item.id);
-                    showToast('Shoes selected!', 'success');
-                  }
-                }}
-              >
-                {isOutfit ? (
-                  // Render outfit (generated outfit image)
-                  <>
-                    {(() => {
-                      // Try multiple possible field names for image URL
-                      const imageUrl = item.image_key || item.generated_image_url || item.generatedImageUrl || item.image_url || item.imageUrl || item.avatar_url || item.avatarUrl || item.outfit_image_url || item.outfitImageUrl || item.generated_avatar_url;
-                      console.log('Outfit image URL:', imageUrl, 'for outfit:', item);
-                      
-                      // If no image URL found, try to get it from localStorage (for outfits created via chat)
-                      if (!imageUrl) {
-                        const lastGeneratedOutfit = localStorage.getItem('lastGeneratedOutfit');
-                        if (lastGeneratedOutfit) {
-                          try {
-                            const parsedOutfit = JSON.parse(lastGeneratedOutfit);
-                            if (parsedOutfit.title === item.title) {
-                              console.log('Found matching outfit in localStorage:', parsedOutfit);
-                              return (
+              <div className="closet-grid">
+                {filteredItems.length === 0 && <div className="no-items">No items in this category.</div>}
+                {filteredItems.map(item => {
+                  // Check if this is an outfit (has outfitClothingItems or is_favorite/is_recurring) or a clothing item
+                  const isOutfit = item.outfitClothingItems || item.clothingItemIds || item.clothing_item_ids || item.item_ids || item.clothing_ids || item.items || item.is_favorite || item.is_recurring;
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      className={`closet-item ${buildMode ? 'build-mode' : ''} ${buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? 'selected' : ''} ${flippedItems.has(item.id) ? 'flipped' : ''}`}
+                      onClick={() => {
+                        if (!buildMode) return;
+                        if ((item.category || item.tag)?.toLowerCase() === 'top') setSelectedTopId(item.id);
+                        if ((item.category || item.tag)?.toLowerCase() === 'bottom') setSelectedBottomId(item.id);
+                        if ((item.category || item.tag)?.toLowerCase() === 'shoes') {
+                          setSelectedShoesId(item.id);
+                          showToast('Shoes selected!', 'success');
+                        }
+                      }}
+                    >
+                      <div className="card-inner">
+                        <div className="card-front">
+                          {isOutfit ? (
+                            // Render outfit (generated outfit image)
+                            <>
+                              {(() => {
+                                // Try multiple possible field names for image URL
+                                const imageUrl = item.image_key || item.generated_image_url || item.generatedImageUrl || item.image_url || item.imageUrl || item.avatar_url || item.avatarUrl || item.outfit_image_url || item.outfitImageUrl || item.generated_avatar_url;
+                                console.log('Outfit image URL:', imageUrl, 'for outfit:', item);
+                                
+                                // If no image URL found, try to get it from localStorage (for outfits created via chat)
+                                if (!imageUrl) {
+                                  const lastGeneratedOutfit = localStorage.getItem('lastGeneratedOutfit');
+                                  if (lastGeneratedOutfit) {
+                                    try {
+                                      const parsedOutfit = JSON.parse(lastGeneratedOutfit);
+                                      if (parsedOutfit.title === item.title) {
+                                        console.log('Found matching outfit in localStorage:', parsedOutfit);
+                                        return (
+                                          <img
+                                            src={parsedOutfit.avatarImage}
+                                            alt="Generated Outfit"
+                                            style={{ width: '100%', height: '85%', objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
+                                            onError={(e) => {
+                                              console.log('Failed to load outfit image from localStorage:', parsedOutfit.avatarImage);
+                                              e.target.style.display = 'none';
+                                            }}
+                                          />
+                                        );
+                                      }
+                                    } catch (error) {
+                                      console.error('Error parsing lastGeneratedOutfit:', error);
+                                    }
+                                  }
+                                }
+                                
+                                return imageUrl ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt="Generated Outfit"
+                                    style={{ width: '100%', height: '85%', objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
+                                    onError={(e) => {
+                                      console.log('Failed to load outfit image:', imageUrl);
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <div style={{
+                                    width: '100%',
+                                    height: 200,
+                                    background: '#f0f0f0',
+                                    borderRadius: 12,
+                                    marginBottom: 8,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#666',
+                                    fontSize: 12
+                                  }}>
+                                    No Image
+                                  </div>
+                                );
+                              })()}
+                              
+                              {/* Heart button positioned at top right */}
+                              {!item.is_recurring && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFavorite(item.id);
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    background: item.is_favorite ? '#ff6b6b' : '#f0f0f0',
+                                    color: item.is_favorite ? 'white' : '#666',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: 16,
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 10
+                                  }}
+                                  title={item.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  {item.is_favorite ? '❤️' : '🤍'}
+                                </button>
+                              )}
+                              
+                              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
+                                {item.is_favorite ? "Favorite Outfit" : "✓ Recurring Outfit"}
+                              </div>
+                              <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>
+                                {item.is_favorite ? "Favorited" : "Recurring"}
+                              </div>
+                              
+                              {/* Worn button positioned at top right */}
+                              {item.is_recurring && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsWorn(item.id);
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    background: '#4CAF50',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: 16,
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 10
+                                  }}
+                                  title="Remove from worn"
+                                >
+                                  ✓
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            // Render clothing item
+                            <>
+                              {/* Button to move to unused or restore from unused */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (loadingItems.has(item.id)) return; // Prevent multiple clicks
+                                  if (item.is_unused) {
+                                    console.log('Plus button clicked for item:', item.id, item.label || item.title);
+                                    restoreFromUnused(item.id);
+                                  } else {
+                                    console.log('X button clicked for item:', item.id, item.label || item.title);
+                                    moveToUnused(item.id);
+                                  }
+                                }}
+                                disabled={loadingItems.has(item.id)}
+                                style={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  background: loadingItems.has(item.id) ? '#ccc' : (item.is_unused ? '#90EE90' : '#ffb3d9'), // Gray when loading
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: 24,
+                                  height: 24,
+                                  fontSize: 16,
+                                  fontWeight: 'bold',
+                                  cursor: loadingItems.has(item.id) ? 'not-allowed' : 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  zIndex: 10,
+                                  opacity: loadingItems.has(item.id) ? 0.6 : 1
+                                }}
+                                title={loadingItems.has(item.id) ? "Processing..." : (item.is_unused ? "Move back to closet" : "Move to Unused")}
+                              >
+                                {loadingItems.has(item.id) ? (
+                                  <div style={{
+                                    width: '12px',
+                                    height: '12px',
+                                    border: '2px solid #fff',
+                                    borderTop: '2px solid transparent',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite'
+                                  }}></div>
+                                ) : (
+                                  item.is_unused ? '+' : '−'
+                                )}
+                              </button>
+                              {/* AI-generated image */}
+                              <img
+                                src={item.generatedImageUrl}
+                                alt={item.label || item.title}
+                                style={{ width: '100%', height: '85%', objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
+                                onError={(e) => {
+                                  console.log('Failed to load generated image for item:', item.id, item.generatedImageUrl);
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                              {/* Original image (optional) */}
+                              {item.originalImageUrl && (
                                 <img
-                                  src={parsedOutfit.avatarImage}
-                                  alt="Generated Outfit"
-                                  style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
+                                  src={item.originalImageUrl}
+                                  alt="Original"
+                                  style={{ width: 60, height: 60, objectFit: "contain", borderRadius: 8, marginBottom: 8, border: "1px solid #eee" }}
                                   onError={(e) => {
-                                    console.log('Failed to load outfit image from localStorage:', parsedOutfit.avatarImage);
+                                    console.log('Failed to load original image for item:', item.id, item.originalImageUrl);
                                     e.target.style.display = 'none';
                                   }}
                                 />
-                              );
-                            }
-                          } catch (error) {
-                            console.error('Error parsing lastGeneratedOutfit:', error);
-                          }
-                        }
-                      }
-                      
-                      return imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt="Generated Outfit"
-                          style={{ width: '100%', height: 200, objectFit: "cover", borderRadius: 12, marginBottom: 8 }}
-                          onError={(e) => {
-                            console.log('Failed to load outfit image:', imageUrl);
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div style={{ 
-                          width: '100%', 
-                          height: 200, 
-                          background: '#f0f0f0', 
-                          borderRadius: 12, 
-                          marginBottom: 8,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#666',
-                          fontSize: 12
-                        }}>
-                          No Image
+                              )}
+                              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
+                                {(() => {
+                                  const label = item.label || item.title || '';
+                                  const category = item.category || item.tag || '';
+                                  if (label && category) {
+                                    return `${label.charAt(0).toUpperCase() + label.slice(1)} ${category}`;
+                                  }
+                                  return label || item.title;
+                                })()}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFlippedItems(prev => {
+                                    const newSet = new Set(prev);
+                                    if (newSet.has(item.id)) {
+                                      newSet.delete(item.id);
+                                    } else {
+                                      newSet.add(item.id);
+                                    }
+                                    return newSet;
+                                  });
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  left: 8,
+                                  background: 'rgba(255, 255, 255, 0.9)',
+                                  border: 'none',
+                                  color: '#7c3aed',
+                                  fontSize: 16,
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: 24,
+                                  height: 24,
+                                  zIndex: 10,
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                }}
+                                title={flippedItems.has(item.id) ? 'Show front' : 'View details'}
+                              >
+                                ℹ️
+                              </button>
+                            </>
+                          )}
                         </div>
-                      );
-                    })()}
-                    
-                    {/* Heart button positioned at top right */}
-                    {!item.is_recurring && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(item.id);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          background: item.is_favorite ? '#ff6b6b' : '#f0f0f0',
-                          color: item.is_favorite ? 'white' : '#666',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 32,
-                          height: 32,
-                          fontSize: 16,
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          zIndex: 10
-                        }}
-                        title={item.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
-                      >
-                        {item.is_favorite ? '❤️' : '🤍'}
-                      </button>
-                    )}
-                    
-                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
-                      {item.is_favorite ? "Favorite Outfit" : "✓ Recurring Outfit"}
+                        <div className="card-back">
+                          <div className="description-content">
+                            <h3>Item Details</h3>
+                            <p>{item.description || 'No description available.'}</p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFlippedItems(prev => {
+                                  const newSet = new Set(prev);
+                                  newSet.delete(item.id);
+                                  return newSet;
+                                });
+                              }}
+                              className="flip-back-btn"
+                            >
+                              ← Back to Item
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ color: "#7c3aed", fontWeight: 600, marginBottom: 4 }}>
-                      {item.is_favorite ? "Favorited" : "Recurring"}
-                    </div>
-                    
-                    {/* Worn button positioned at top right */}
-                    {item.is_recurring && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsWorn(item.id);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          background: '#4CAF50',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 32,
-                          height: 32,
-                          fontSize: 16,
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          zIndex: 10
-                        }}
-                        title="Remove from worn"
-                      >
-                        ✓
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  // Render clothing item
-                  <>
-                    {/* Button to move to unused or restore from unused */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (loadingItems.has(item.id)) return; // Prevent multiple clicks
-                        if (item.is_unused) {
-                          console.log('Plus button clicked for item:', item.id, item.label || item.title);
-                          restoreFromUnused(item.id);
-                        } else {
-                          console.log('X button clicked for item:', item.id, item.label || item.title);
-                          moveToUnused(item.id);
-                        }
-                      }}
-                      disabled={loadingItems.has(item.id)}
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        background: loadingItems.has(item.id) ? '#ccc' : (item.is_unused ? '#90EE90' : '#ffb3d9'), // Gray when loading
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: 24,
-                        height: 24,
-                        fontSize: 16,
-                        fontWeight: 'bold',
-                        cursor: loadingItems.has(item.id) ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 10,
-                        opacity: loadingItems.has(item.id) ? 0.6 : 1
-                      }}
-                      title={loadingItems.has(item.id) ? "Processing..." : (item.is_unused ? "Move back to closet" : "Move to Unused")}
-                    >
-                      {loadingItems.has(item.id) ? (
-                        <div style={{
-                          width: '12px',
-                          height: '12px',
-                          border: '2px solid #fff',
-                          borderTop: '2px solid transparent',
-                          borderRadius: '50%',
-                          animation: 'spin 1s linear infinite'
-                        }}></div>
-                      ) : (
-                        item.is_unused ? '+' : '−'
-                      )}
-                    </button>
-                    {/* AI-generated image */}
-                    <img
-                      src={item.generatedImageUrl}
-                      alt={item.label || item.title}
-                      style={{ width: '95%', height: '70%', objectFit: "contain", borderRadius: 12, marginBottom: 8 }}
-                      onError={(e) => {
-                        console.log('Failed to load generated image for item:', item.id, item.generatedImageUrl);
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                    {/* Original image (optional) */}
-                    {item.originalImageUrl && (
-                      <img
-                        src={item.originalImageUrl}
-                        alt="Original"
-                        style={{ width: 60, height: 60, objectFit: "contain", borderRadius: 8, marginBottom: 8, border: "1px solid #eee" }}
-                        onError={(e) => {
-                          console.log('Failed to load original image for item:', item.id, item.originalImageUrl);
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    )}
-                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
-                      {(() => {
-                        const label = item.label || item.title || '';
-                        const category = item.category || item.tag || '';
-                        if (label && category) {
-                          return `${label.charAt(0).toUpperCase() + label.slice(1)} ${category}`;
-                        }
-                        return label || item.title;
-                      })()}
-                    </div>
-                    <button 
-                      onClick={() => setExpandedItems(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        left: 8,
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        border: 'none',
-                        color: '#7c3aed',
-                        fontSize: 16,
-                        cursor: 'pointer',
-                        padding: '4px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 24,
-                        height: 24,
-                        zIndex: 10,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                      title={expandedItems[item.id] ? 'Hide details' : 'View details'}
-                    >
-                      ℹ️
-                    </button>
-                    {expandedItems[item.id] && (
-                      <div style={{ color: "#444", fontSize: 14, lineHeight: 1.4, marginTop: 8 }}>{item.description}</div>
-                    )}
-                  </>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-        
-        {/* Add (+) button with label - moved outside the grid */}
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24, gap: 16 }}>
-          <button
-            onClick={() => window.location.href = "/uploads"}
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              background: "#b3d1f7",
-              color: "#fff",
-              fontSize: 24,
-              fontWeight: 700,
-              border: "none",
-              boxShadow: "0 2px 12px #e3f6fd44",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-            title="Add more clothes"
-          >+</button>
-          <div style={{
-            color: "#7c3aed",
-            fontWeight: 600,
-            fontSize: 18,
-            fontFamily: "'EB Garamond', serif"
-          }}>
-            Add more clothes
+              
+              {/* Add (+) button overlay - positioned on top of closet grid */}
+              <button
+                onClick={() => window.location.href = "/uploads"}
+                className="add-item-overlay-btn"
+                title="Add more clothes"
+              >
+                +
+              </button>
+            </div>
           </div>
-        </div>
-        </div>
-        </div>
         </div>
       </div>
     </div>
   );
 };
-
+              
 export default UserPage; 
