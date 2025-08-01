@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from './config';
-import favStar from './assets/fav-star.webp';
-import logo from './assets/logo.png';
+import './StylistChatPage.css';
 
 // Import UserAvatar component from UserPage
-function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef }) {
+function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef, setGeneratedAvatarUrl }) {
   // Show generated avatar if available, otherwise show user's avatar
   // This allows generated outfits to be displayed on the avatar
   const displayAvatarUrl = generatedAvatarUrl || avatarUrl;
@@ -14,71 +13,31 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
   console.log('UserAvatar render:', { generatedAvatarUrl, avatarUrl, displayAvatarUrl });
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="user-avatar-container">
       {displayAvatarUrl ? (
         <img
+          className="user-avatar-image"
           src={displayAvatarUrl}
           alt="User Avatar"
-          style={{
-            width: 350,
-            height: 700, // much taller
-            borderRadius: 24,
-            objectFit: 'cover',
-            border: '3px solid #a78bfa',
-            marginBottom: 12,
-            background: '#ede9fe',
-            display: 'block'
-          }}
         />
       ) : (
-        <div style={{
-          width: 350,
-          height: 700, // much taller
-          borderRadius: 24,
-          border: '2.5px dashed #a78bfa',
-          background: '#f3e8ff',
-          marginBottom: 12,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#a78bfa',
-          fontSize: 64,
-          fontWeight: 600
-        }}>
+        <div className="user-avatar-placeholder">
           <span role="img" aria-label="avatar placeholder">👤</span>
         </div>
       )}
-      <div style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: 20 }}>{username}</div>
+      <div className="user-avatar-username">{username}</div>
       {generatedAvatarUrl && !avatarUrl && (
-        <div style={{ 
-          color: '#22c55e', 
-          fontWeight: 600, 
-          fontSize: 14, 
-          marginTop: 4,
-          background: '#f0fdf4',
-          padding: '4px 8px',
-          borderRadius: 6,
-          border: '1px solid #22c55e'
-        }}>
+        <div className="ai-generated-badge">
           ✨ AI Generated Outfit
         </div>
       )}
 
       {generatedAvatarUrl && !avatarUrl && (
         <button
+          className="revert-avatar-btn"
           onClick={() => {
             setGeneratedAvatarUrl(null);
             localStorage.removeItem('generatedAvatarUrl');
-          }}
-          style={{
-            marginTop: 8,
-            color: '#ff6b6b',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: 14,
-            background: 'none',
-            border: 'none',
-            textDecoration: 'underline'
           }}
         >
           Revert to Original Avatar
@@ -88,109 +47,8 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
   );
 }
 
-// AvatarSelector component for changing avatars
-const AvatarSelector = ({ currentAvatarId, onAvatarChange }) => {
-  const [selectedAvatar, setSelectedAvatar] = useState(currentAvatarId || 1);
-  const [isUpdating, setIsUpdating] = useState(false);
-  
-  const handleAvatarSelect = async (avatarId) => {
-    if (isUpdating) return;
-    
-    setSelectedAvatar(avatarId);
-    setIsUpdating(true);
-    
-    try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      await axios.patch(`${API_BASE_URL}/users/me/avatar-id`, 
-        { avatar_id: avatarId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      onAvatarChange(avatarId);
-      showToast('Avatar updated successfully!', 'success');
-    } catch (error) {
-      console.error('Error updating avatar:', error);
-      showToast('Failed to update avatar', 'error');
-      setSelectedAvatar(currentAvatarId); // Revert on error
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // Avatar images array (you'll need to import these)
-  const AVATAR_IMAGES = [
-    '/src/assets/avatars/atar-1.png',
-    '/src/assets/avatars/atar-2.png',
-    '/src/assets/avatars/atar-3.png',
-    '/src/assets/avatars/atar-4.png',
-    '/src/assets/avatars/atar-5.png',
-    '/src/assets/avatars/atar-6.png',
-    '/src/assets/avatars/atar-7.png',
-    '/src/assets/avatars/atar-8.png',
-    '/src/assets/avatars/atar-9.png',
-    '/src/assets/avatars/atar-10.png',
-    '/src/assets/avatars/atar-11.png',
-    '/src/assets/avatars/atar-12.png',
-    '/src/assets/avatars/atar-13.png',
-    '/src/assets/avatars/atar-14.png',
-    '/src/assets/avatars/atar-15.png'
-  ];
-
-  return (
-    <div style={{ 
-      marginTop: 16,
-      padding: 16,
-      background: 'rgba(255, 255, 255, 0.9)',
-      borderRadius: 12,
-      border: '1px solid rgba(168, 139, 250, 0.2)'
-    }}>
-      <h4 style={{ 
-        margin: '0 0 12px 0', 
-        color: '#7c3aed', 
-        fontSize: 16,
-        fontWeight: '600'
-      }}>
-        Change Avatar
-      </h4>
-      <div style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 8, 
-        justifyContent: 'center',
-        maxHeight: 200,
-        overflowY: 'auto'
-      }}>
-        {AVATAR_IMAGES.map((avatar, index) => (
-          <img
-            key={index}
-            src={avatar}
-            alt={`Avatar ${index + 1}`}
-            style={{
-              width: 50,
-              height: 50,
-              borderRadius: 8,
-              cursor: isUpdating ? 'not-allowed' : 'pointer',
-              border: selectedAvatar === index + 1 ? '3px solid #7c3aed' : '1px solid #ddd',
-              opacity: isUpdating ? 0.6 : selectedAvatar === index + 1 ? 1 : 0.7,
-              transition: 'all 0.2s ease'
-            }}
-            onClick={() => !isUpdating && handleAvatarSelect(index + 1)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const StylistChatPage = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: 'Hi! Welcome to Re:Moda by TechStyles! I am your StyleForce assistant. I can help you find the perfect outfit for any occasion. What are you looking for today?',
-      timestamp: Date.now().toString()
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
@@ -198,20 +56,9 @@ const StylistChatPage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const [coinBalance, setCoinBalance] = useState(0);
-  const [userAvatarId, setUserAvatarId] = useState(1);
-  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   
   // Chat history states
   const [chatSessions, setChatSessions] = useState([]);
-  const [showChatHistory, setShowChatHistory] = useState(false);
-  const [selectedSessionId, setSelectedSessionId] = useState(null);
-  
-  // Avatar states
-  const [avatarUrl, setAvatarUrl] = useState(null);
-  const [username, setUsername] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
-  const fileInputRef = useRef(null);
 
   // Toast notification function
   const showToast = (message, type = 'info') => {
@@ -219,22 +66,22 @@ const StylistChatPage = () => {
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed;
-      top: 20px;
+      bottom: 20px;
       right: 20px;
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+      color: white;
       padding: 12px 20px;
       border-radius: 8px;
-      color: white;
       font-weight: 600;
+      font-size: 14px;
       z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       transform: translateX(100%);
       transition: transform 0.3s ease;
-      ${type === 'success' ? 'background: #22c55e;' : 
-        type === 'error' ? 'background: #ef4444;' : 
-        type === 'warning' ? 'background: #f59e0b;' : 
-        'background: #3b82f6;'}
     `;
     toast.textContent = message;
     
+    // Add to page
     document.body.appendChild(toast);
     
     // Animate in
@@ -250,68 +97,20 @@ const StylistChatPage = () => {
       }, 300);
     }, 3000);
   };
-
-  // Star animation helper functions
-  const animationNames = ['moveX', 'moveY', 'moveXY'];
-  function getRandomAnimation() {
-    const name = animationNames[Math.floor(Math.random() * animationNames.length)];
-    const duration = 8 + Math.random() * 12; // 8s to 20s
-    const delay = Math.random() * 10; // 0-10s
-    return {
-      animation: `${name} ${duration}s linear infinite`,
-      animationDelay: `${delay}s`
-    };
-  }
-
-  // Generate animated stars for background
-  const stars = Array.from({ length: 60 }).map((_, i) => {
-    const top = Math.random() * 100;
-    const left = Math.random() * 100;
-    const size = 18 + Math.random() * 52; // 18px to 70px
-    const opacity = 0.18 + Math.random() * 0.45; // 0.18 to 0.63
-    const anim = getRandomAnimation();
-    const style = {
-      position: 'absolute',
-      zIndex: 0,
-      pointerEvents: 'none',
-      opacity,
-      width: size,
-      height: size,
-      top: `${top}%`,
-      left: `${left}%`,
-      filter: 'drop-shadow(0 2px 8px #b7e6e0)',
-      ...anim
-    };
-    return <img src={favStar} alt="star" key={i} style={style} />;
-  });
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  
+  // Avatar states (similar to UserPage)
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [username, setUsername] = useState("User"); // Default username
+  const [uploading, setUploading] = useState(false);
+  const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
+  const fileInputRef = useRef();
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  // Add CSS for star animations
-  React.useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes moveX {
-        0% { transform: translateX(0px); }
-        100% { transform: translateX(100px); }
-      }
-      @keyframes moveY {
-        0% { transform: translateY(0px); }
-        100% { transform: translateY(100px); }
-      }
-      @keyframes moveXY {
-        0% { transform: translateX(0px) translateY(0px); }
-        100% { transform: translateX(50px) translateY(50px); }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -335,13 +134,19 @@ const StylistChatPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (userResponse.data.success) {
-          setUsername(userResponse.data.data.username || 'User');
-          setAvatarUrl(userResponse.data.data.avatar_url || '');
-          setUserAvatarId(userResponse.data.data.avatar_id || 1);
+          const username = userResponse.data.data.username || 'User';
+          const avatarUrl = userResponse.data.data.avatar_url || '';
+          console.log('Fetched user data:', { username, avatarUrl });
+          setUsername(username);
+          setAvatarUrl(avatarUrl);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
+              } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Set default values when API is not available
+          setUsername("User");
+          setAvatarUrl("");
+          setCoinBalance(0);
+        }
     };
     fetchUserData();
   }, []);
@@ -451,14 +256,89 @@ const StylistChatPage = () => {
       });
 
       if (response.data && response.data.success) {
+        console.log('Backend response:', response.data);
+        console.log('Response data structure:', response.data.data);
+        console.log('Full response object:', JSON.stringify(response.data, null, 2));
+        
+        // Handle different response formats
+        let messageContent = response.data.data.message;
+        
+        // Check all possible response fields
+        console.log('Available fields in response.data.data:', Object.keys(response.data.data));
+        
+        if (response.data.data.content) {
+          messageContent = response.data.data.content;
+          console.log('Using content field:', messageContent);
+        } else if (response.data.data.promptOptions) {
+          messageContent = JSON.stringify(response.data.data.promptOptions);
+          console.log('Using promptOptions field:', messageContent);
+        } else if (response.data.data.welcome) {
+          messageContent = JSON.stringify(response.data.data.welcome);
+          console.log('Using welcome field:', messageContent);
+        } else if (response.data.data.response) {
+          messageContent = response.data.data.response;
+          console.log('Using response field:', messageContent);
+        } else if (response.data.data.answer) {
+          messageContent = response.data.data.answer;
+          console.log('Using answer field:', messageContent);
+        } else if (response.data.data.message) {
+          console.log('Using message field:', messageContent);
+        } else {
+          console.log('No recognized field found, using raw data:', response.data.data);
+          // Try to find any field that might contain the actual response
+          const possibleFields = ['content', 'response', 'answer', 'text', 'data'];
+          for (const field of possibleFields) {
+            if (response.data.data[field]) {
+              messageContent = response.data.data[field];
+              console.log(`Found response in ${field} field:`, messageContent);
+              break;
+            }
+          }
+        }
+        
         const assistantMessage = {
           id: Date.now() + 1,
           role: 'assistant',
-          content: response.data.data.message,
+          content: messageContent,
           timestamp: new Date().toISOString()
         };
 
-        setMessages(prev => [...prev, assistantMessage]);
+        console.log('Created assistant message:', assistantMessage);
+        
+        // Check if this was a greeting
+        const isGreeting = contentToSend.toLowerCase().includes('hello') || 
+                          contentToSend.toLowerCase().includes('hi') ||
+                          contentToSend.toLowerCase().includes('hey');
+        
+        // Only add the backend response if it's not a greeting (to avoid showing "Message processed successfully")
+        if (!isGreeting) {
+          setMessages(prev => [...prev, assistantMessage]);
+        }
+        
+        // Add custom prompt options for greetings
+        if (isGreeting) {
+          const customSuggestions = [
+            "Outfit I want to go out for a picnic",
+            "First date dinner outfit", 
+            "Hiking/outdoor stuff outfit",
+            "Business casual work outfit",
+            "Grabbing coffee with friends",
+            "Going to the intern yacht party"
+          ];
+          
+          const promptOptionsMessage = {
+            id: Date.now() + 2,
+            role: 'assistant',
+            content: JSON.stringify({
+              type: 'promptOptions',
+              content: "Hi there! 👋 I'm your personal AI stylist. I can help you create amazing outfits from your wardrobe! Here are some ideas to get started:",
+              suggestions: customSuggestions
+            }),
+            timestamp: new Date().toISOString()
+          };
+          
+          setMessages(prev => [...prev, promptOptionsMessage]);
+        }
 
         const chatTitle = generateChatTitle(contentToSend);
 
@@ -877,121 +757,45 @@ const StylistChatPage = () => {
   // Function to spend coins for AI features
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%)',
-      fontFamily: 'Arial, sans-serif',
-      position: 'relative',
-      overflow: 'hidden',
-      margin: 0,
-      padding: 0
-    }}>
-      {/* Animated star background */}
-      <div 
-        className="star-bg" 
-        style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          zIndex: 1, 
-          pointerEvents: 'none',
-          background: 'transparent'
-        }}
-      >
-        {stars}
-      </div>
+    <div className="stylist-chat-page">
       {/* Chat History Sidebar */}
       {showChatHistory && (
-        <div style={{
-          width: '300px',
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRight: '1px solid rgba(0,0,0,0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
+        <div className="chat-history-sidebar">
           {/* Chat History Header */}
-          <div style={{
-            padding: '20px',
-            borderBottom: '1px solid rgba(0,0,0,0.1)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '18px' }}>
+          <div className="chat-history-header">
+            <h3 className="chat-history-title">
               Chat History
             </h3>
             <button
+              className="chat-history-close-btn"
               onClick={() => setShowChatHistory(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '20px',
-                cursor: 'pointer',
-                color: '#7f8c8d'
-              }}
             >
               ✕
             </button>
           </div>
           
           {/* Chat Sessions List */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '10px'
-          }}>
+          <div className="chat-sessions-list">
             {chatSessions.map((session) => (
               <div
                 key={session.id}
+                className={`chat-session-item ${selectedSessionId === session.id ? 'selected' : ''}`}
                 onClick={() => switchToSession(session.id)}
-                style={{
-                  padding: '12px',
-                  margin: '4px 0',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  background: selectedSessionId === session.id ? '#667eea' : 'rgba(255, 255, 255, 0.8)',
-                  color: selectedSessionId === session.id ? 'white' : '#2c3e50',
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s ease'
-                }}
               >
-                <div style={{
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  marginBottom: '4px'
-                }}>
+                <div className="chat-session-title">
                   {session.title}
                 </div>
-                <div style={{
-                  fontSize: '12px',
-                  opacity: 0.8,
-                  marginBottom: '4px'
-                }}>
+                <div className="chat-session-date">
                   {new Date(session.started_at).toLocaleDateString()}
                 </div>
-                <div style={{
-                  fontSize: '11px',
-                  opacity: 0.7,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
+                <div className="chat-session-preview">
                   {session.userRequest ? `"${session.userRequest}"` : session.lastMessage || 'No messages yet'}
                 </div>
               </div>
             ))}
             
             {chatSessions.length === 0 && (
-              <div style={{
-                padding: '20px',
-                textAlign: 'center',
-                color: '#7f8c8d',
-                fontSize: '14px'
-              }}>
+              <div className="chat-sessions-empty">
                 No previous chats found
               </div>
             )}
@@ -999,275 +803,81 @@ const StylistChatPage = () => {
         </div>
       )}
       
-      {/* Left Side - Avatar Section */}
-      <div style={{
-        width: '400px',
-        background: 'rgba(255, 255, 255, 0.9)',
-        padding: '32px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 4px 20px rgba(168, 139, 250, 0.15)',
-        backdropFilter: 'blur(10px)',
-        borderRight: '1px solid rgba(168, 139, 250, 0.2)',
-        zIndex: 2,
-        height: '100vh'
-      }}>
-        <div style={{
-          color: '#a78bfa',
-          fontWeight: 700,
-          fontSize: 20,
-          marginBottom: 24,
-          textAlign: 'center',
-          textShadow: '0 2px 4px rgba(168, 139, 250, 0.2)',
-          position: 'relative'
-        }}>
-          {/* Logo on top of "Your Avatar" text */}
-          <img 
-            src={logo} 
-            alt="Re:Moda Logo" 
-            style={{ 
-              position: 'absolute',
-              top: '-160px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              height: '180px',
-              width: 'auto',
-              zIndex: 10,
-              filter: 'drop-shadow(0 4px 8px rgba(168, 139, 250, 0.3))'
-            }} 
-          />
-          Your Avatar
+      {/* Header - Separate component at top */}
+      <div className="chat-header">
+        <div className="chat-header-left">
+          <div className="chat-header-icon">
+            💜
+          </div>
+          <div className="chat-header-info">
+            <h2 className="chat-header-title">StyleForce</h2>
+            <p className="chat-header-subtitle">Your personal style assistant</p>
+          </div>
         </div>
-        <div style={{ position: 'relative' }}>
-          <UserAvatar 
-            generatedAvatarUrl={generatedAvatarUrl}
-            avatarUrl={avatarUrl}
-            username={username}
-            uploading={uploading}
-            handleAvatarChange={handleAvatarChange}
-            fileInputRef={fileInputRef}
-          />
-          
-          {/* Heart and Worn buttons - show when there's a generated outfit */}
-          {generatedAvatarUrl && (
-            <>
-              {/* Heart button */}
-              <button
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  left: 12,
-                  background: '#ff6b6b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  zIndex: 10
-                }}
-                onClick={async () => {
-                  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                  try {
-                    // Create outfit and mark as favorite
-                    const outfitData = {
-                      title: "Chat Generated Outfit",
-                      clothingItemIds: [1, 2], // Use first two items as fallback
-                      image_key: generatedAvatarUrl,
-                      bucket_name: "clothing-items-remoda",
-                      is_favorite: true,
-                      is_recurring: false
-                    };
-                    
-                    const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
-                    
-                    if (response.data.success) {
-                      showToast('❤️ Outfit added to favorites!', 'success');
-                    } else {
-                      showToast('Failed to add to favorites. Please try again.', 'error');
-                    }
-                  } catch (error) {
-                    console.error('Error favoriting outfit:', error);
-                    showToast('Failed to add to favorites. Please try again.', 'error');
-                  }
-                }}
-                title="Add to Favourites"
-              >
-                ❤️
-              </button>
+        
+        {/* Desktop buttons - visible on desktop only */}
+        <div className="chat-header-right desktop-only">
+          <button
+            className="chat-clear-btn"
+            onClick={async () => {
+              try {
+                const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                if (sessionId && token) {
+                  // Delete the current session from backend
+                  await axios.delete(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  console.log('Chat session deleted from backend');
+                }
+              } catch (error) {
+                console.error('Error deleting chat session:', error);
+              }
               
-              {/* Add to Worn button */}
-              <button
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  background: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  zIndex: 10
-                }}
-                onClick={async () => {
-                  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                  try {
-                    // Create outfit and mark as recurring
-                    const outfitData = {
-                      title: "Chat Generated Outfit",
-                      clothingItemIds: [1, 2], // Use first two items as fallback
-                      image_key: generatedAvatarUrl,
-                      bucket_name: "clothing-items-remoda",
-                      is_favorite: false,
-                      is_recurring: true
-                    };
-                    
-                    const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
-                    
-                    if (response.data.success) {
-                      showToast('✓ Outfit added to recurring!', 'success');
-                    } else {
-                      showToast('Failed to add to recurring. Please try again.', 'error');
-                    }
-                  } catch (error) {
-                    console.error('Error marking outfit as recurring:', error);
-                    showToast('Failed to add to recurring. Please try again.', 'error');
-                  }
-                }}
-                title="Add to Recurring"
-              >
-                ✓
-              </button>
-            </>
-          )}
-        </div>
-        {isLoading && (
-          <div style={{
-            marginTop: 16,
-            padding: '8px 16px',
-            background: '#f0fdf4',
-            color: '#22c55e',
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            border: '1px solid #22c55e'
-          }}>
-            ✨ Creating your outfit...
-          </div>
-        )}
-        
-        {/* Avatar Change Button */}
-        <button
-          onClick={() => setShowAvatarSelector(!showAvatarSelector)}
-          style={{
-            marginTop: 16,
-            background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '25px',
-            padding: '10px 20px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            boxShadow: '0 4px 15px rgba(168, 139, 250, 0.3)',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 20px rgba(168, 139, 250, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 15px rgba(168, 139, 250, 0.3)';
-          }}
-        >
-          {showAvatarSelector ? 'Hide Avatar Selector' : 'Change Avatar'}
-        </button>
-        
-        {/* Avatar Selector */}
-        {showAvatarSelector && (
-          <AvatarSelector 
-            currentAvatarId={userAvatarId}
-            onAvatarChange={(newAvatarId) => {
-              setUserAvatarId(newAvatarId);
-              setShowAvatarSelector(false);
+              // Clear local state
+              setMessages([]);
+              setSessionId(null);
+              setRecommendations([]);
+              
+              // Reset avatar to original
+              setGeneratedAvatarUrl(null);
+              localStorage.removeItem('generatedAvatarUrl');
+              
+              // Refresh chat sessions list to remove the deleted session
+              await loadChatSessions();
+              
+              // Start a new session
+              await startChatSession();
             }}
-          />
-        )}
-      </div>
-
-      {/* Right Side - Chat Section */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Header */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.9)',
-          padding: '16px 24px 8px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          boxShadow: '0 4px 20px rgba(168, 139, 250, 0.15)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(168, 139, 250, 0.2)',
-          zIndex: 999,
-          position: 'relative',
-          flexShrink: 0,
-          minHeight: '60px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img 
-                src="/src/assets/image copy.png" 
-                alt="Heart Icon" 
-                style={{ 
-                  height: '48px',
-                  width: 'auto',
-                  filter: 'drop-shadow(0 2px 4px rgba(168, 139, 250, 0.2))',
-                  transition: 'transform 0.3s ease'
-                }} 
-              />
-              <div>
-                <h2 style={{ 
-                  margin: 0, 
-                  color: '#7c3aed', 
-                  fontSize: '24px',
-                  fontWeight: '700',
-                  textShadow: '0 2px 4px rgba(168, 139, 250, 0.2)'
-                }}>StyleForce</h2>
-                <p style={{ 
-                  margin: 0, 
-                  color: '#a78bfa', 
-                  fontSize: '16px',
-                  fontWeight: '500'
-                }}>Your personal style assistant</p>
-              </div>
-            </div>
+            title="Clear chat history"
+          >
+            Clear Chat
+          </button>
+          <button
+            className="chat-back-btn"
+            onClick={() => window.location.href = '/user'}
+            title="Go back to closet"
+          >
+            Back to Closet
+          </button>
+          <div className="chat-coin-balance">
+            {coinBalance} coins
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        </div>
+        
+        {/* Mobile buttons - visible on mobile only */}
+        <div className="chat-header-bottom-row mobile-only">
+          <div className="chat-header-center">
             <button
+              className="chat-back-btn"
+              onClick={() => window.location.href = '/user'}
+              title="Go back to closet"
+            >
+              Back to Closet
+            </button>
+          </div>
+          <div className="chat-header-right">
+            <button
+              className="chat-clear-btn"
               onClick={async () => {
                 try {
                   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -1297,139 +907,143 @@ const StylistChatPage = () => {
                 // Start a new session
                 await startChatSession();
               }}
-              style={{
-                background: '#ff6b6b',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
               title="Clear chat history"
             >
               Clear Chat
             </button>
-            <button
-              onClick={() => window.location.href = '/user'}
-              style={{
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-              title="Go back to closet"
-            >
-              Back to Closet
-            </button>
-            <div style={{
-              background: '#feca57',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              color: '#2c3e50',
-              fontWeight: 'bold',
-              fontSize: '14px'
-            }}>
+            <div className="chat-coin-balance">
               {coinBalance} coins
             </div>
           </div>
         </div>
+      </div>
 
-      {/* Messages Container */}
-      <div style={{
-        flex: 0.8,
-        overflowY: 'auto',
-        padding: '0px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1px',
-        background: 'rgba(255, 255, 255, 0.3)',
-        zIndex: 1,
-        position: 'relative',
-        minHeight: 0
-      }}>
+      {/* Main Content Area - Flex row for desktop, column for mobile */}
+      <div className="main-content">
+        {/* Left Side - Avatar Section */}
+        <div className="avatar-section">
+          <div className="avatar-section-title">
+            Your Avatar
+          </div>
+          <div className="avatar-container">
+            <UserAvatar 
+              generatedAvatarUrl={generatedAvatarUrl}
+              avatarUrl={avatarUrl}
+              username={username}
+              uploading={uploading}
+              handleAvatarChange={handleAvatarChange}
+              fileInputRef={fileInputRef}
+              setGeneratedAvatarUrl={setGeneratedAvatarUrl}
+            />
+            
+            {/* Heart and Worn buttons - show when there's a generated outfit */}
+            {generatedAvatarUrl && (
+              <>
+                {/* Heart button */}
+                <button
+                  className="avatar-favorite-btn"
+                  onClick={async () => {
+                    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                    try {
+                      // Create outfit and mark as favorite
+                      const outfitData = {
+                        title: "Chat Generated Outfit",
+                        clothingItemIds: [1, 2], // Use first two items as fallback
+                        image_key: generatedAvatarUrl,
+                        bucket_name: "clothing-items-remoda",
+                        is_favorite: true,
+                        is_recurring: false
+                      };
+                      
+                      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      
+                      if (response.data.success) {
+                        showToast('❤️ Outfit added to favorites!', 'success');
+                      } else {
+                        showToast('Failed to add to favorites. Please try again.', 'error');
+                      }
+                    } catch (error) {
+                      console.error('Error favoriting outfit:', error);
+                      showToast('Failed to add to favorites. Please try again.', 'error');
+                    }
+                  }}
+                  title="Add to Favourites"
+                >
+                  ❤️
+                </button>
+                
+                {/* Add to Worn button */}
+                <button
+                  className="avatar-worn-btn"
+                  onClick={async () => {
+                    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                    try {
+                      // Create outfit and mark as recurring
+                      const outfitData = {
+                        title: "Chat Generated Outfit",
+                        clothingItemIds: [1, 2], // Use first two items as fallback
+                        image_key: generatedAvatarUrl,
+                        bucket_name: "clothing-items-remoda",
+                        is_favorite: false,
+                        is_recurring: true
+                      };
+                      
+                      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      
+                      if (response.data.success) {
+                        showToast('✓ Outfit added to recurring!', 'success');
+                      } else {
+                        showToast('Failed to add to recurring. Please try again.', 'error');
+                      }
+                    } catch (error) {
+                      console.error('Error marking outfit as recurring:', error);
+                      showToast('Failed to add to recurring. Please try again.', 'error');
+                    }
+                  }}
+                  title="Add to Recurring"
+                >
+                  ✓
+                </button>
+              </>
+            )}
+          </div>
+          {isLoading && (
+            <div className="avatar-loading-indicator">
+              ✨ Creating your outfit...
+            </div>
+          )}
+        </div>
+
+        {/* Right Side - Chat Section */}
+        <div className="chat-section">
+
+        {/* Messages Container */}
+        <div className="messages-container">
         {messages.map((message) => (
-          <div key={`${message.id}-${message.timestamp}`} style={{
-            display: 'flex',
-            justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
-            marginBottom: '1px'
-          }}>
-            <div style={{
-              maxWidth: '70%',
-              padding: '18px 24px',
-              borderRadius: message.role === 'user' ? '24px 24px 8px 24px' : '24px 24px 24px 8px',
-              background: message.role === 'user' 
-                ? 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)' 
-                : 'rgba(255, 255, 255, 0.95)',
-              color: message.role === 'user' ? 'white' : '#4c1d95',
-              boxShadow: message.role === 'user' 
-                ? '0 8px 25px rgba(168, 139, 250, 0.3)' 
-                : '0 4px 20px rgba(168, 139, 250, 0.15)',
-              backdropFilter: 'blur(10px)',
-              whiteSpace: 'pre-line',
-              border: message.role === 'user' 
-                ? 'none' 
-                : '1px solid rgba(168, 139, 250, 0.2)'
-            }}>
+          <div key={message.id} className={`message-wrapper ${message.role}`}>
+            <div className={`message-bubble ${message.role}`}>
               {renderMessage(message)}
               
               {/* Show recommendations if available */}
               {message.recommendations && (
-                <div style={{ marginTop: '16px' }}>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '12px',
-                    marginTop: '12px'
-                  }}>
+                <div className="recommendations-container">
+                  <div className="recommendations-grid">
                     {message.recommendations.map((rec, index) => (
-                      <div key={index} style={{
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        border: '2px solid #e0e0e0',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        ':hover': {
-                          borderColor: '#667eea',
-                          transform: 'translateY(-2px)'
-                        }
-                      }} onClick={() => createOutfitFromRecommendation(rec, index)}>
-                        <div style={{
-                          width: '100%',
-                          height: '120px',
-                          background: '#f0f0f0',
-                          borderRadius: '8px',
-                          marginBottom: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '24px'
-                        }}>
+                      <div key={index} className="recommendation-card" onClick={() => createOutfitFromRecommendation(rec, index)}>
+                        <div className="recommendation-image">
                           👗
                         </div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#2c3e50' }}>
+                        <h4 className="recommendation-title">
                           {rec.title}
                         </h4>
-                        <p style={{ margin: 0, fontSize: '12px', color: '#7f8c8d' }}>
+                        <p className="recommendation-description">
                           {rec.description}
                         </p>
-                        <button style={{
-                          marginTop: '8px',
-                          background: '#667eea',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          width: '100%'
-                        }}>
+                        <button className="recommendation-btn">
                           Try This Outfit
                         </button>
                       </div>
@@ -1445,185 +1059,55 @@ const StylistChatPage = () => {
 
         {/* Typing indicator */}
         {isTyping && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              padding: '16px 20px',
-              borderRadius: '20px 20px 20px 5px',
-              background: 'rgba(255, 255, 255, 0.95)',
-              color: '#2c3e50',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s infinite ease-in-out'
-                }}></div>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s infinite ease-in-out 0.2s'
-                }}></div>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s infinite ease-in-out 0.4s'
-                }}></div>
+          <div className="typing-indicator-wrapper">
+            <div className="typing-indicator-bubble">
+              <div className="typing-dots">
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
               </div>
             </div>
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+        <div className="messages-end" ref={messagesEndRef} />
       </div>
 
       {/* Input Container */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '0px 20px',
-        borderTop: '1px solid rgba(168, 139, 250, 0.2)',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 -4px 20px rgba(168, 139, 250, 0.1)',
-        flexShrink: 0,
-        marginTop: '500px'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center'
-        }}>
-          <div style={{
-            flex: 1,
-            position: 'relative'
-          }}>
+      <div className="input-container">
+        <div className="input-wrapper">
+          <div className="input-field-container">
             <textarea
+              className="input-textarea"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Tell me what you're looking for... (e.g., 'I want to go to a job interview')"
-              style={{
-                width: '100%',
-                minHeight: '30px',
-                maxHeight: '120px',
-                padding: '14px 18px',
-                borderRadius: '25px',
-                border: '2px solid rgba(168, 139, 250, 0.3)',
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                resize: 'none',
-                outline: 'none',
-                transition: 'all 0.3s ease',
-                background: 'rgba(255, 255, 255, 0.9)',
-                color: '#7c3aed'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#a78bfa';
-                e.target.style.boxShadow = '0 0 0 3px rgba(168, 139, 250, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(168, 139, 250, 0.3)';
-                e.target.style.boxShadow = 'none';
-              }}
             />
           </div>
           <button
+            className="send-button"
             onClick={sendMessage}
             disabled={!inputMessage.trim() || isLoading}
-            style={{
-              background: inputMessage.trim() && !isLoading 
-                ? 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)' 
-                : 'rgba(168, 139, 250, 0.3)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '50%',
-              width: '50px',
-              height: '50px',
-              fontSize: '18px',
-              cursor: inputMessage.trim() && !isLoading ? 'pointer' : 'not-allowed',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: inputMessage.trim() && !isLoading 
-                ? '0 4px 15px rgba(168, 139, 250, 0.4)' 
-                : 'none',
-              transform: inputMessage.trim() && !isLoading ? 'scale(1)' : 'scale(0.95)',
-              flexShrink: 0
-            }}
-            onMouseEnter={(e) => {
-              if (inputMessage.trim() && !isLoading) {
-                e.target.style.transform = 'scale(1.05)';
-                e.target.style.boxShadow = '0 6px 20px rgba(168, 139, 250, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (inputMessage.trim() && !isLoading) {
-                e.target.style.transform = 'scale(1)';
-                e.target.style.boxShadow = '0 4px 15px rgba(168, 139, 250, 0.4)';
-              }
-            }}
           >
             {isLoading ? '⏳' : '➤'}
           </button>
         </div>
-      </div>
-    </div>
+              </div>
+      </div> {/* Close chat-section */}
+      </div> {/* Close main-content */}
 
       {/* Loading overlay */}
       {isLoading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 16px'
-            }}></div>
-            <p style={{ margin: 0, color: '#2c3e50' }}>Creating your outfit...</p>
+        <div className="loading-overlay">
+          <div className="loading-modal">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Creating your outfit...</p>
           </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: scale(0); }
-          40% { transform: scale(1); }
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+
     </div>
   );
 };
