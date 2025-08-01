@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from './config';
+import './StylistChatPage.css';
 
 // Import UserAvatar component from UserPage
-function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef }) {
+function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handleAvatarChange, fileInputRef, setGeneratedAvatarUrl }) {
   // Show generated avatar if available, otherwise show user's avatar
   // This allows generated outfits to be displayed on the avatar
   const displayAvatarUrl = generatedAvatarUrl || avatarUrl;
@@ -12,71 +13,31 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
   console.log('UserAvatar render:', { generatedAvatarUrl, avatarUrl, displayAvatarUrl });
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="user-avatar-container">
       {displayAvatarUrl ? (
         <img
+          className="user-avatar-image"
           src={displayAvatarUrl}
           alt="User Avatar"
-          style={{
-            width: 350,
-            height: 700, // much taller
-            borderRadius: 24,
-            objectFit: 'cover',
-            border: '3px solid #a78bfa',
-            marginBottom: 12,
-            background: '#ede9fe',
-            display: 'block'
-          }}
         />
       ) : (
-        <div style={{
-          width: 350,
-          height: 700, // much taller
-          borderRadius: 24,
-          border: '2.5px dashed #a78bfa',
-          background: '#f3e8ff',
-          marginBottom: 12,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#a78bfa',
-          fontSize: 64,
-          fontWeight: 600
-        }}>
+        <div className="user-avatar-placeholder">
           <span role="img" aria-label="avatar placeholder">👤</span>
         </div>
       )}
-      <div style={{ fontWeight: 'bold', color: '#7c3aed', fontSize: 20 }}>{username}</div>
+      <div className="user-avatar-username">{username}</div>
       {generatedAvatarUrl && !avatarUrl && (
-        <div style={{ 
-          color: '#22c55e', 
-          fontWeight: 600, 
-          fontSize: 14, 
-          marginTop: 4,
-          background: '#f0fdf4',
-          padding: '4px 8px',
-          borderRadius: 6,
-          border: '1px solid #22c55e'
-        }}>
+        <div className="ai-generated-badge">
           ✨ AI Generated Outfit
         </div>
       )}
 
       {generatedAvatarUrl && !avatarUrl && (
         <button
+          className="revert-avatar-btn"
           onClick={() => {
             setGeneratedAvatarUrl(null);
             localStorage.removeItem('generatedAvatarUrl');
-          }}
-          style={{
-            marginTop: 8,
-            color: '#ff6b6b',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: 14,
-            background: 'none',
-            border: 'none',
-            textDecoration: 'underline'
           }}
         >
           Revert to Original Avatar
@@ -141,7 +102,7 @@ const StylistChatPage = () => {
   
   // Avatar states (similar to UserPage)
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("User"); // Default username
   const [uploading, setUploading] = useState(false);
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
   const fileInputRef = useRef();
@@ -173,12 +134,19 @@ const StylistChatPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (userResponse.data.success) {
-          setUsername(userResponse.data.data.username || 'User');
-          setAvatarUrl(userResponse.data.data.avatar_url || '');
+          const username = userResponse.data.data.username || 'User';
+          const avatarUrl = userResponse.data.data.avatar_url || '';
+          console.log('Fetched user data:', { username, avatarUrl });
+          setUsername(username);
+          setAvatarUrl(avatarUrl);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
+              } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Set default values when API is not available
+          setUsername("User");
+          setAvatarUrl("");
+          setCoinBalance(0);
+        }
     };
     fetchUserData();
   }, []);
@@ -714,101 +682,45 @@ const StylistChatPage = () => {
   // Function to spend coins for AI features
 
   return (
-    <div style={{
-      height: '100vh',
-      display: 'flex',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: 'Arial, sans-serif'
-    }}>
+    <div className="stylist-chat-page">
       {/* Chat History Sidebar */}
       {showChatHistory && (
-        <div style={{
-          width: '300px',
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRight: '1px solid rgba(0,0,0,0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          backdropFilter: 'blur(10px)'
-        }}>
+        <div className="chat-history-sidebar">
           {/* Chat History Header */}
-          <div style={{
-            padding: '20px',
-            borderBottom: '1px solid rgba(0,0,0,0.1)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h3 style={{ margin: 0, color: '#2c3e50', fontSize: '18px' }}>
+          <div className="chat-history-header">
+            <h3 className="chat-history-title">
               Chat History
             </h3>
             <button
+              className="chat-history-close-btn"
               onClick={() => setShowChatHistory(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '20px',
-                cursor: 'pointer',
-                color: '#7f8c8d'
-              }}
             >
               ✕
             </button>
           </div>
           
           {/* Chat Sessions List */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '10px'
-          }}>
+          <div className="chat-sessions-list">
             {chatSessions.map((session) => (
               <div
                 key={session.id}
+                className={`chat-session-item ${selectedSessionId === session.id ? 'selected' : ''}`}
                 onClick={() => switchToSession(session.id)}
-                style={{
-                  padding: '12px',
-                  margin: '4px 0',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  background: selectedSessionId === session.id ? '#667eea' : 'rgba(255, 255, 255, 0.8)',
-                  color: selectedSessionId === session.id ? 'white' : '#2c3e50',
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s ease'
-                }}
               >
-                <div style={{
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  marginBottom: '4px'
-                }}>
+                <div className="chat-session-title">
                   {session.title}
                 </div>
-                <div style={{
-                  fontSize: '12px',
-                  opacity: 0.8,
-                  marginBottom: '4px'
-                }}>
+                <div className="chat-session-date">
                   {new Date(session.started_at).toLocaleDateString()}
                 </div>
-                <div style={{
-                  fontSize: '11px',
-                  opacity: 0.7,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
+                <div className="chat-session-preview">
                   {session.userRequest ? `"${session.userRequest}"` : session.lastMessage || 'No messages yet'}
                 </div>
               </div>
             ))}
             
             {chatSessions.length === 0 && (
-              <div style={{
-                padding: '20px',
-                textAlign: 'center',
-                color: '#7f8c8d',
-                fontSize: '14px'
-              }}>
+              <div className="chat-sessions-empty">
                 No previous chats found
               </div>
             )}
@@ -816,199 +728,81 @@ const StylistChatPage = () => {
         </div>
       )}
       
-      {/* Left Side - Avatar Section */}
-      <div style={{
-        width: '400px',
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '32px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
-        backdropFilter: 'blur(10px)',
-        borderRight: '1px solid rgba(0,0,0,0.1)'
-      }}>
-        <div style={{
-          color: '#a78bfa',
-          fontWeight: 700,
-          fontSize: 18,
-          marginBottom: 24,
-          textAlign: 'center'
-        }}>
-          Your Avatar
+      {/* Header - Separate component at top */}
+      <div className="chat-header">
+        <div className="chat-header-left">
+          <div className="chat-header-icon">
+            💜
+          </div>
+          <div className="chat-header-info">
+            <h2 className="chat-header-title">StyleForce</h2>
+            <p className="chat-header-subtitle">Your personal style assistant</p>
+          </div>
         </div>
-        <div style={{ position: 'relative' }}>
-          <UserAvatar 
-            generatedAvatarUrl={generatedAvatarUrl}
-            avatarUrl={avatarUrl}
-            username={username}
-            uploading={uploading}
-            handleAvatarChange={handleAvatarChange}
-            fileInputRef={fileInputRef}
-          />
-          
-          {/* Heart and Worn buttons - show when there's a generated outfit */}
-          {generatedAvatarUrl && (
-            <>
-              {/* Heart button */}
-              <button
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  left: 12,
-                  background: '#ff6b6b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  zIndex: 10
-                }}
-                onClick={async () => {
-                  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                  try {
-                    // Create outfit and mark as favorite
-                    const outfitData = {
-                      title: "Chat Generated Outfit",
-                      clothingItemIds: [1, 2], // Use first two items as fallback
-                      image_key: generatedAvatarUrl,
-                      bucket_name: "clothing-items-remoda",
-                      is_favorite: true,
-                      is_recurring: false
-                    };
-                    
-                    const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
-                    
-                    if (response.data.success) {
-                      showToast('❤️ Outfit added to favorites!', 'success');
-                    } else {
-                      showToast('Failed to add to favorites. Please try again.', 'error');
-                    }
-                  } catch (error) {
-                    console.error('Error favoriting outfit:', error);
-                    showToast('Failed to add to favorites. Please try again.', 'error');
-                  }
-                }}
-                title="Add to Favourites"
-              >
-                ❤️
-              </button>
+        
+        {/* Desktop buttons - visible on desktop only */}
+        <div className="chat-header-right desktop-only">
+          <button
+            className="chat-clear-btn"
+            onClick={async () => {
+              try {
+                const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                if (sessionId && token) {
+                  // Delete the current session from backend
+                  await axios.delete(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  console.log('Chat session deleted from backend');
+                }
+              } catch (error) {
+                console.error('Error deleting chat session:', error);
+              }
               
-              {/* Add to Worn button */}
-              <button
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  background: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  zIndex: 10
-                }}
-                onClick={async () => {
-                  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                  try {
-                    // Create outfit and mark as recurring
-                    const outfitData = {
-                      title: "Chat Generated Outfit",
-                      clothingItemIds: [1, 2], // Use first two items as fallback
-                      image_key: generatedAvatarUrl,
-                      bucket_name: "clothing-items-remoda",
-                      is_favorite: false,
-                      is_recurring: true
-                    };
-                    
-                    const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
-                    
-                    if (response.data.success) {
-                      showToast('✓ Outfit added to recurring!', 'success');
-                    } else {
-                      showToast('Failed to add to recurring. Please try again.', 'error');
-                    }
-                  } catch (error) {
-                    console.error('Error marking outfit as recurring:', error);
-                    showToast('Failed to add to recurring. Please try again.', 'error');
-                  }
-                }}
-                title="Add to Recurring"
-              >
-                ✓
-              </button>
-            </>
-          )}
+              // Clear local state
+              setMessages([]);
+              setSessionId(null);
+              setRecommendations([]);
+              
+              // Reset avatar to original
+              setGeneratedAvatarUrl(null);
+              localStorage.removeItem('generatedAvatarUrl');
+              
+              // Refresh chat sessions list to remove the deleted session
+              await loadChatSessions();
+              
+              // Start a new session
+              await startChatSession();
+            }}
+            title="Clear chat history"
+          >
+            Clear Chat
+          </button>
+          <button
+            className="chat-back-btn"
+            onClick={() => window.location.href = '/user'}
+            title="Go back to closet"
+          >
+            Back to Closet
+          </button>
+          <div className="chat-coin-balance">
+            {coinBalance} coins
+          </div>
         </div>
-        {isLoading && (
-          <div style={{
-            marginTop: 16,
-            padding: '8px 16px',
-            background: '#f0fdf4',
-            color: '#22c55e',
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            border: '1px solid #22c55e'
-          }}>
-            ✨ Creating your outfit...
-          </div>
-        )}
-      </div>
-
-      {/* Right Side - Chat Section */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh'
-      }}>
-        {/* Header */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          padding: '16px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: 'linear-gradient(45deg, #ff6b6b, #feca57)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}>
-              👗
-            </div>
-            <div>
-              <h2 style={{ margin: 0, color: '#2c3e50', fontSize: '20px' }}>AI Fashion Stylist</h2>
-              <p style={{ margin: 0, color: '#7f8c8d', fontSize: '14px' }}>Your personal style assistant</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        
+        {/* Mobile buttons - visible on mobile only */}
+        <div className="chat-header-bottom-row mobile-only">
+          <div className="chat-header-center">
             <button
+              className="chat-back-btn"
+              onClick={() => window.location.href = '/user'}
+              title="Go back to closet"
+            >
+              Back to Closet
+            </button>
+          </div>
+          <div className="chat-header-right">
+            <button
+              className="chat-clear-btn"
               onClick={async () => {
                 try {
                   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -1038,128 +832,143 @@ const StylistChatPage = () => {
                 // Start a new session
                 await startChatSession();
               }}
-              style={{
-                background: '#ff6b6b',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
               title="Clear chat history"
             >
               Clear Chat
             </button>
-            <button
-              onClick={() => window.location.href = '/user'}
-              style={{
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-              title="Go back to closet"
-            >
-              Back to Closet
-            </button>
-            <div style={{
-              background: '#feca57',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              color: '#2c3e50',
-              fontWeight: 'bold',
-              fontSize: '14px'
-            }}>
+            <div className="chat-coin-balance">
               {coinBalance} coins
             </div>
           </div>
         </div>
+      </div>
 
-      {/* Messages Container */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
+      {/* Main Content Area - Flex row for desktop, column for mobile */}
+      <div className="main-content">
+        {/* Left Side - Avatar Section */}
+        <div className="avatar-section">
+          <div className="avatar-section-title">
+            Your Avatar
+          </div>
+          <div className="avatar-container">
+            <UserAvatar 
+              generatedAvatarUrl={generatedAvatarUrl}
+              avatarUrl={avatarUrl}
+              username={username}
+              uploading={uploading}
+              handleAvatarChange={handleAvatarChange}
+              fileInputRef={fileInputRef}
+              setGeneratedAvatarUrl={setGeneratedAvatarUrl}
+            />
+            
+            {/* Heart and Worn buttons - show when there's a generated outfit */}
+            {generatedAvatarUrl && (
+              <>
+                {/* Heart button */}
+                <button
+                  className="avatar-favorite-btn"
+                  onClick={async () => {
+                    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                    try {
+                      // Create outfit and mark as favorite
+                      const outfitData = {
+                        title: "Chat Generated Outfit",
+                        clothingItemIds: [1, 2], // Use first two items as fallback
+                        image_key: generatedAvatarUrl,
+                        bucket_name: "clothing-items-remoda",
+                        is_favorite: true,
+                        is_recurring: false
+                      };
+                      
+                      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      
+                      if (response.data.success) {
+                        showToast('❤️ Outfit added to favorites!', 'success');
+                      } else {
+                        showToast('Failed to add to favorites. Please try again.', 'error');
+                      }
+                    } catch (error) {
+                      console.error('Error favoriting outfit:', error);
+                      showToast('Failed to add to favorites. Please try again.', 'error');
+                    }
+                  }}
+                  title="Add to Favourites"
+                >
+                  ❤️
+                </button>
+                
+                {/* Add to Worn button */}
+                <button
+                  className="avatar-worn-btn"
+                  onClick={async () => {
+                    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                    try {
+                      // Create outfit and mark as recurring
+                      const outfitData = {
+                        title: "Chat Generated Outfit",
+                        clothingItemIds: [1, 2], // Use first two items as fallback
+                        image_key: generatedAvatarUrl,
+                        bucket_name: "clothing-items-remoda",
+                        is_favorite: false,
+                        is_recurring: true
+                      };
+                      
+                      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      
+                      if (response.data.success) {
+                        showToast('✓ Outfit added to recurring!', 'success');
+                      } else {
+                        showToast('Failed to add to recurring. Please try again.', 'error');
+                      }
+                    } catch (error) {
+                      console.error('Error marking outfit as recurring:', error);
+                      showToast('Failed to add to recurring. Please try again.', 'error');
+                    }
+                  }}
+                  title="Add to Recurring"
+                >
+                  ✓
+                </button>
+              </>
+            )}
+          </div>
+          {isLoading && (
+            <div className="avatar-loading-indicator">
+              ✨ Creating your outfit...
+            </div>
+          )}
+        </div>
+
+        {/* Right Side - Chat Section */}
+        <div className="chat-section">
+
+        {/* Messages Container */}
+        <div className="messages-container">
         {messages.map((message) => (
-          <div key={message.id} style={{
-            display: 'flex',
-            justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              maxWidth: '70%',
-              padding: '16px 20px',
-              borderRadius: message.role === 'user' ? '20px 20px 5px 20px' : '20px 20px 20px 5px',
-              background: message.role === 'user' ? '#667eea' : 'rgba(255, 255, 255, 0.95)',
-              color: message.role === 'user' ? 'white' : '#2c3e50',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-              backdropFilter: 'blur(10px)',
-              whiteSpace: 'pre-line'
-            }}>
+          <div key={message.id} className={`message-wrapper ${message.role}`}>
+            <div className={`message-bubble ${message.role}`}>
               {renderMessage(message)}
               
               {/* Show recommendations if available */}
               {message.recommendations && (
-                <div style={{ marginTop: '16px' }}>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '12px',
-                    marginTop: '12px'
-                  }}>
+                <div className="recommendations-container">
+                  <div className="recommendations-grid">
                     {message.recommendations.map((rec, index) => (
-                      <div key={index} style={{
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        border: '2px solid #e0e0e0',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        ':hover': {
-                          borderColor: '#667eea',
-                          transform: 'translateY(-2px)'
-                        }
-                      }} onClick={() => createOutfitFromRecommendation(rec, index)}>
-                        <div style={{
-                          width: '100%',
-                          height: '120px',
-                          background: '#f0f0f0',
-                          borderRadius: '8px',
-                          marginBottom: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '24px'
-                        }}>
+                      <div key={index} className="recommendation-card" onClick={() => createOutfitFromRecommendation(rec, index)}>
+                        <div className="recommendation-image">
                           👗
                         </div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#2c3e50' }}>
+                        <h4 className="recommendation-title">
                           {rec.title}
                         </h4>
-                        <p style={{ margin: 0, fontSize: '12px', color: '#7f8c8d' }}>
+                        <p className="recommendation-description">
                           {rec.description}
                         </p>
-                        <button style={{
-                          marginTop: '8px',
-                          background: '#667eea',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          width: '100%'
-                        }}>
+                        <button className="recommendation-btn">
                           Try This Outfit
                         </button>
                       </div>
@@ -1175,155 +984,55 @@ const StylistChatPage = () => {
 
         {/* Typing indicator */}
         {isTyping && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              padding: '16px 20px',
-              borderRadius: '20px 20px 20px 5px',
-              background: 'rgba(255, 255, 255, 0.95)',
-              color: '#2c3e50',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s infinite ease-in-out'
-                }}></div>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s infinite ease-in-out 0.2s'
-                }}></div>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#667eea',
-                  animation: 'bounce 1.4s infinite ease-in-out 0.4s'
-                }}></div>
+          <div className="typing-indicator-wrapper">
+            <div className="typing-indicator-bubble">
+              <div className="typing-dots">
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
               </div>
             </div>
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+        <div className="messages-end" ref={messagesEndRef} />
       </div>
 
       {/* Input Container */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '20px',
-        borderTop: '1px solid rgba(0,0,0,0.1)',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-end'
-        }}>
-          <div style={{
-            flex: 1,
-            position: 'relative'
-          }}>
+      <div className="input-container">
+        <div className="input-wrapper">
+          <div className="input-field-container">
             <textarea
+              className="input-textarea"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Tell me what you're looking for... (e.g., 'I want to go to a job interview')"
-              style={{
-                width: '100%',
-                minHeight: '50px',
-                maxHeight: '120px',
-                padding: '12px 16px',
-                borderRadius: '25px',
-                border: '2px solid #e0e0e0',
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                resize: 'none',
-                outline: 'none',
-                transition: 'border-color 0.3s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
             />
           </div>
           <button
+            className="send-button"
             onClick={sendMessage}
             disabled={!inputMessage.trim() || isLoading}
-            style={{
-              background: inputMessage.trim() && !isLoading ? '#667eea' : '#bdc3c7',
-              color: 'white',
-              border: 'none',
-              borderRadius: '50%',
-              width: '50px',
-              height: '50px',
-              fontSize: '20px',
-              cursor: inputMessage.trim() && !isLoading ? 'pointer' : 'not-allowed',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
           >
             {isLoading ? '⏳' : '➤'}
           </button>
         </div>
-      </div>
-    </div>
+              </div>
+      </div> {/* Close chat-section */}
+      </div> {/* Close main-content */}
 
       {/* Loading overlay */}
       {isLoading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #667eea',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 16px'
-            }}></div>
-            <p style={{ margin: 0, color: '#2c3e50' }}>Creating your outfit...</p>
+        <div className="loading-overlay">
+          <div className="loading-modal">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Creating your outfit...</p>
           </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: scale(0); }
-          40% { transform: scale(1); }
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+
     </div>
   );
 };
