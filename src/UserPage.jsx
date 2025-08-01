@@ -158,6 +158,7 @@ const UserPage = () => {
   const [buildMode, setBuildMode] = useState(false);
   const [selectedTopId, setSelectedTopId] = useState(null);
   const [selectedBottomId, setSelectedBottomId] = useState(null);
+  const [selectedShoesId, setSelectedShoesId] = useState(null);
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
   const [loadingTryOn, setLoadingTryOn] = useState(false);
   const [currentOutfitId, setCurrentOutfitId] = useState(null); // Only declare once
@@ -990,7 +991,7 @@ const UserPage = () => {
     const allItems = closetItems.filter(item =>
       selectedCategory === "all"
         ? !item.is_unused // Exclude unused items from "All" category
-        : (item.category || item.tag)?.toLowerCase() === selectedCategory
+        : (item.category || item.tag)?.toLowerCase() === selectedCategory && !item.is_unused // Exclude unused items from specific categories too
     );
     console.log('Filtered items for category', selectedCategory, ':', allItems.length);
     return allItems;
@@ -1116,6 +1117,7 @@ const UserPage = () => {
               setBuildMode(true);
               setSelectedTopId(null);
               setSelectedBottomId(null);
+              setSelectedShoesId(null);
               setGeneratedAvatarUrl(null);
             }}
           >
@@ -1197,6 +1199,11 @@ const UserPage = () => {
               <div style={{ fontSize: 12, fontWeight: 700 }}>
                 Selected Bottom: <span style={{ color: '#232323', fontWeight: 600 }}>
                   {selectedBottomId ? '✓' : 'No bottom selected'}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700 }}>
+                Selected Shoes: <span style={{ color: '#232323', fontWeight: 600 }}>
+                  {selectedShoesId ? '✓' : 'No shoes selected'}
                 </span>
               </div>
             </div>
@@ -1481,9 +1488,9 @@ const UserPage = () => {
                   minHeight: 320,
                   textAlign: "center",
                   position: "relative",
-                  border: buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? '3px solid #7c3aed' : 'none',
+                  border: buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id) || (selectedShoesId && selectedShoesId === item.id)) ? '3px solid #7c3aed' : 'none',
                   cursor: buildMode ? 'pointer' : 'default',
-                  opacity: buildMode && ((item.category || item.tag)?.toLowerCase() === 'top' || (item.category || item.tag)?.toLowerCase() === 'bottom') ? 1 : buildMode ? 0.5 : 1,
+                  opacity: buildMode && ((item.category || item.tag)?.toLowerCase() === 'top' || (item.category || item.tag)?.toLowerCase() === 'bottom' || (item.category || item.tag)?.toLowerCase() === 'shoes') ? 1 : buildMode ? 0.5 : 1,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -1494,6 +1501,10 @@ const UserPage = () => {
                   if (!buildMode) return;
                   if ((item.category || item.tag)?.toLowerCase() === 'top') setSelectedTopId(item.id);
                   if ((item.category || item.tag)?.toLowerCase() === 'bottom') setSelectedBottomId(item.id);
+                  if ((item.category || item.tag)?.toLowerCase() === 'shoes') {
+                    setSelectedShoesId(item.id);
+                    showToast('Shoes selected!', 'success');
+                  }
                 }}
               >
                 {isOutfit ? (

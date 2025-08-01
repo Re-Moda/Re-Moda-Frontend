@@ -256,14 +256,89 @@ const StylistChatPage = () => {
       });
 
       if (response.data && response.data.success) {
+        console.log('Backend response:', response.data);
+        console.log('Response data structure:', response.data.data);
+        console.log('Full response object:', JSON.stringify(response.data, null, 2));
+        
+        // Handle different response formats
+        let messageContent = response.data.data.message;
+        
+        // Check all possible response fields
+        console.log('Available fields in response.data.data:', Object.keys(response.data.data));
+        
+        if (response.data.data.content) {
+          messageContent = response.data.data.content;
+          console.log('Using content field:', messageContent);
+        } else if (response.data.data.promptOptions) {
+          messageContent = JSON.stringify(response.data.data.promptOptions);
+          console.log('Using promptOptions field:', messageContent);
+        } else if (response.data.data.welcome) {
+          messageContent = JSON.stringify(response.data.data.welcome);
+          console.log('Using welcome field:', messageContent);
+        } else if (response.data.data.response) {
+          messageContent = response.data.data.response;
+          console.log('Using response field:', messageContent);
+        } else if (response.data.data.answer) {
+          messageContent = response.data.data.answer;
+          console.log('Using answer field:', messageContent);
+        } else if (response.data.data.message) {
+          console.log('Using message field:', messageContent);
+        } else {
+          console.log('No recognized field found, using raw data:', response.data.data);
+          // Try to find any field that might contain the actual response
+          const possibleFields = ['content', 'response', 'answer', 'text', 'data'];
+          for (const field of possibleFields) {
+            if (response.data.data[field]) {
+              messageContent = response.data.data[field];
+              console.log(`Found response in ${field} field:`, messageContent);
+              break;
+            }
+          }
+        }
+        
         const assistantMessage = {
           id: Date.now() + 1,
           role: 'assistant',
-          content: response.data.data.message,
+          content: messageContent,
           timestamp: new Date().toISOString()
         };
 
-        setMessages(prev => [...prev, assistantMessage]);
+        console.log('Created assistant message:', assistantMessage);
+        
+        // Check if this was a greeting
+        const isGreeting = contentToSend.toLowerCase().includes('hello') || 
+                          contentToSend.toLowerCase().includes('hi') ||
+                          contentToSend.toLowerCase().includes('hey');
+        
+        // Only add the backend response if it's not a greeting (to avoid showing "Message processed successfully")
+        if (!isGreeting) {
+          setMessages(prev => [...prev, assistantMessage]);
+        }
+        
+        // Add custom prompt options for greetings
+        if (isGreeting) {
+          const customSuggestions = [
+            "Outfit I want to go out for a picnic",
+            "First date dinner outfit", 
+            "Hiking/outdoor stuff outfit",
+            "Business casual work outfit",
+            "Grabbing coffee with friends",
+            "Going to the intern yacht party"
+          ];
+          
+          const promptOptionsMessage = {
+            id: Date.now() + 2,
+            role: 'assistant',
+            content: JSON.stringify({
+              type: 'promptOptions',
+              content: "Hi there! 👋 I'm your personal AI stylist. I can help you create amazing outfits from your wardrobe! Here are some ideas to get started:",
+              suggestions: customSuggestions
+            }),
+            timestamp: new Date().toISOString()
+          };
+          
+          setMessages(prev => [...prev, promptOptionsMessage]);
+        }
 
         const chatTitle = generateChatTitle(contentToSend);
 

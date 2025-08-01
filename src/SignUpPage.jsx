@@ -157,7 +157,7 @@ const SignUpPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Add CSS for spinner animation
-  useEffect(() => {
+  React.useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes spin {
@@ -251,6 +251,7 @@ const SignUpPage = () => {
         password: form.password,
         security_question: form.securityQuestion,
         security_answer: form.securityAnswer,
+        avatar_id: selectedAvatarIdx + 1, // Add avatar_id (convert 0-based index to 1-based avatar ID)
       });
 
       // 2. Log in to get JWT token (if signup doesn't return it)
@@ -388,13 +389,13 @@ const SignUpPage = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            width: '100%',
-            height: '100%',
+            width: '100vw',
+            height: '100vh',
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 9999,
+            zIndex: 99999,
             backdropFilter: 'blur(10px)'
           }}>
             <div style={{
