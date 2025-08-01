@@ -253,6 +253,10 @@ const UserPage = () => {
   const [expandedItems, setExpandedItems] = useState({});
   const [loadingItems, setLoadingItems] = useState(new Set()); // Track loading state for individual items
   const [processingUploads, setProcessingUploads] = useState(false); // Track loading state for processing uploads
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [donationData, setDonationData] = useState(null);
   const hasProcessedUploads = useRef(false); // Track if we've already processed uploads
 
   // Toast notification function
@@ -619,6 +623,11 @@ const UserPage = () => {
       if (response.data && response.data.success) {
         console.log('Outfit created and marked as recurring successfully:', response.data.data);
         console.log('Full response from backend:', response.data);
+        
+        // Mark outfit as worn to update wear counts
+        const outfitId = response.data.data.id;
+        await markOutfitAsWorn(outfitId);
+        
         showToast('✓ Outfit added to recurring! Check the "Recurring" category to see it.', 'success');
         
         // Refresh outfits from backend
@@ -633,6 +642,32 @@ const UserPage = () => {
         console.error('Status:', error.response.status);
       }
       showToast('Failed to add to recurring. Please try again.', 'error');
+    }
+  };
+
+  // Mark outfit as worn to update wear counts
+  const markOutfitAsWorn = async (outfitId) => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      const response = await axios.patch(
+        `${API_BASE_URL}/outfits/${outfitId}/worn`, 
+        {}, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data && response.data.success) {
+        console.log('Outfit marked as worn! Wear count updated.');
+        showToast('Outfit marked as worn! Wear count updated.', 'success');
+        
+        // Refresh clothing items to show updated wear counts
+        await fetchClosetItems();
+      } else {
+        console.error('Failed to mark outfit as worn:', response.data);
+        showToast('Failed to update wear count. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error marking outfit as worn:', error);
+      showToast('Failed to update wear count. Please try again.', 'error');
     }
   };
 
@@ -807,6 +842,155 @@ const UserPage = () => {
       console.error('Error removing from recurring:', error);
       showToast('Failed to remove from recurring. Please try again.', 'error');
     }
+  };
+
+  // Wardrobe Analysis Functions
+  const analyzeWardrobe = async () => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/mcp/analyze-wardrobe`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data && response.data.success) {
+        const { data } = response.data;
+        displayAnalysisModal(data);
+      } else {
+        showToast('Failed to analyze wardrobe. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error analyzing wardrobe:', error);
+      showToast('Failed to analyze wardrobe. Please try again.', 'error');
+    }
+  };
+
+  const getDonationSuggestions = async () => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/mcp/donation-suggestions`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data && response.data.success) {
+        const { data } = response.data;
+        displayDonationModal(data);
+      } else {
+        showToast('Failed to get donation suggestions. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error getting donation suggestions:', error);
+      showToast('Failed to get donation suggestions. Please try again.', 'error');
+    }
+  };
+
+  // Batch Operations
+  const moveLowWearItems = async () => {
+    try {
+      // Get items with wear_count < 3
+      const lowWearItems = closetItems.filter(item => 
+        item.wear_count && item.wear_count < 3 && !item.is_unused
+      );
+      
+      if (lowWearItems.length === 0) {
+        showToast('No low-wear items found!', 'info');
+        return;
+      }
+      
+      // Move all to unused
+      for (const item of lowWearItems) {
+        await moveToUnused(item.id);
+      }
+      
+      showToast(`Moved ${lowWearItems.length} low-wear items to unused`, 'success');
+      
+    } catch (error) {
+      console.error('Error moving low-wear items:', error);
+      showToast('Failed to move items. Please try again.', 'error');
+    }
+  };
+
+  const moveOldItems = async () => {
+    try {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      const oldItems = closetItems.filter(item => 
+        item.last_worn_at && 
+        new Date(item.last_worn_at) < sixMonthsAgo && 
+        !item.is_unused
+      );
+      
+      if (oldItems.length === 0) {
+        showToast('No old items found!', 'info');
+        return;
+      }
+      
+      for (const item of oldItems) {
+        await moveToUnused(item.id);
+      }
+      
+      showToast(`Moved ${oldItems.length} old items to unused`, 'success');
+      
+    } catch (error) {
+      console.error('Error moving old items:', error);
+      showToast('Failed to move items. Please try again.', 'error');
+    }
+  };
+
+  // Natural Language Command Handler
+  const handleVoiceCommand = async (command) => {
+    const lowerCommand = command.toLowerCase();
+    
+    if (lowerCommand.includes("move") && lowerCommand.includes("unused")) {
+      // Parse item from command
+      const itemMatch = command.match(/move (.*?) to unused/i);
+      if (itemMatch) {
+        const itemDescription = itemMatch[1];
+        await moveItemByDescription(itemDescription);
+      }
+    }
+    
+    if (lowerCommand.includes("analyze") || lowerCommand.includes("donation")) {
+      await analyzeWardrobe();
+    }
+    
+    if (lowerCommand.includes("low wear") || lowerCommand.includes("rarely worn")) {
+      await moveLowWearItems();
+    }
+    
+    if (lowerCommand.includes("old items") || lowerCommand.includes("not worn")) {
+      await moveOldItems();
+    }
+  };
+
+  // Move item by description
+  const moveItemByDescription = async (description) => {
+    const matchingItem = closetItems.find(item => 
+      item.label && item.label.toLowerCase().includes(description.toLowerCase()) ||
+      item.title && item.title.toLowerCase().includes(description.toLowerCase())
+    );
+    
+    if (matchingItem) {
+      await moveToUnused(matchingItem.id);
+      showToast(`Moved ${matchingItem.label || matchingItem.title} to unused`, 'success');
+    } else {
+      showToast(`Could not find item matching "${description}"`, 'error');
+    }
+  };
+
+  // Modal display functions
+  const displayAnalysisModal = (data) => {
+    setAnalysisData(data);
+    setShowAnalysisModal(true);
+  };
+
+  const displayDonationModal = (data) => {
+    setDonationData(data);
+    setShowDonationModal(true);
   };
 
   const fetchClosetItems = async () => {
@@ -1168,6 +1352,31 @@ const UserPage = () => {
             <span style={{ fontSize: 18 }}>💬</span>
             Chat w/ ur stylist
           </button>
+
+          {/* Analysis Buttons */}
+          <button
+            onClick={analyzeWardrobe}
+            style={{
+              background: "#dcfce7",
+              color: "#166534",
+              border: "none",
+              borderRadius: 20,
+              fontWeight: 600,
+              fontSize: 16,
+              padding: "12px 24px",
+              cursor: "pointer",
+              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
+              transition: "all 0.2s ease",
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            <span style={{ fontSize: 18 }}>📊</span>
+            Analyze Wardrobe
+          </button>
+
+
         </div>
 
         {/* Right side - Selected Items and Coin Balance */}
@@ -1231,7 +1440,7 @@ const UserPage = () => {
         </div>
       </div>
 
-      {/* Full Screen Loading State for Processing Uploads */}
+            {/* Full Screen Loading State for Processing Uploads */}
       {processingUploads && (
         <div style={{
           position: 'fixed',
@@ -1731,7 +1940,7 @@ const UserPage = () => {
                         border: 'none',
                         color: '#7c3aed',
                         fontSize: 16,
-                        cursor: 'pointer',
+                          cursor: 'pointer',
                         padding: '4px',
                         borderRadius: '50%',
                         display: 'flex',
@@ -1790,6 +1999,213 @@ const UserPage = () => {
         </div>
         </div>
       </div>
+
+      {/* Analysis Modal */}
+      {showAnalysisModal && analysisData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: 32,
+            maxWidth: 600,
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 4px 32px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h2 style={{ color: '#7c3aed', marginBottom: 24 }}>Wardrobe Analysis</h2>
+            
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ color: '#374151', marginBottom: 16 }}>Statistics</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Total Items</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#7c3aed' }}>
+                    {analysisData.analysis?.totalItems || 0}
+                  </div>
+                </div>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Never Worn</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>
+                    {analysisData.analysis?.itemsWornZeroTimes || 0}
+                  </div>
+                </div>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Worn Once</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#f59e0b' }}>
+                    {analysisData.analysis?.itemsWornOnce || 0}
+                  </div>
+                </div>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Not Worn in 6 Months</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#dc2626' }}>
+                    {analysisData.analysis?.itemsNotWornIn6Months || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {analysisData.suggestedForDonation && analysisData.suggestedForDonation.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ color: '#374151', marginBottom: 16 }}>
+                  Suggested for Donation ({analysisData.suggestedForDonation.length} items)
+                </h3>
+                <div style={{ maxHeight: 200, overflow: 'auto' }}>
+                  {analysisData.suggestedForDonation.map(item => (
+                    <div key={item.id} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: 12,
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      marginBottom: 8
+                    }}>
+                      <img 
+                        src={item.image_key} 
+                        alt={item.label}
+                        style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }}
+                      />
+                      <span style={{ flex: 1, fontWeight: 600 }}>{item.label}</span>
+                      <span style={{ color: '#6b7280' }}>Worn: {item.wear_count || 0} times</span>
+                      <button 
+                        onClick={() => moveToUnused(item.id)}
+                        style={{
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '6px 12px',
+                          cursor: 'pointer',
+                          fontSize: 12
+                        }}
+                      >
+                        Move to Unused
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowAnalysisModal(false)}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '12px 24px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Donation Modal */}
+      {showDonationModal && donationData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: 32,
+            maxWidth: 600,
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 4px 32px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h2 style={{ color: '#7c3aed', marginBottom: 24 }}>Donation Suggestions</h2>
+            
+            <div style={{ marginBottom: 24 }}>
+              <p style={{ color: '#6b7280', marginBottom: 16 }}>
+                These items are rarely worn and could be donated to make room for new favorites.
+              </p>
+              
+              <div style={{ maxHeight: 300, overflow: 'auto' }}>
+                {donationData.map(item => (
+                  <div key={item.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: 12,
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 8,
+                    marginBottom: 8
+                  }}>
+                    <img 
+                      src={item.image_key} 
+                      alt={item.label}
+                      style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }}
+                    />
+                    <span style={{ flex: 1, fontWeight: 600 }}>{item.label}</span>
+                    <span style={{ color: '#6b7280' }}>Worn: {item.wear_count || 0} times</span>
+                    <button 
+                      onClick={() => moveToUnused(item.id)}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        fontSize: 12
+                      }}
+                    >
+                      Move to Unused
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowDonationModal(false)}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '12px 24px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

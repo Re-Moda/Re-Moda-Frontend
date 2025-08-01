@@ -97,6 +97,235 @@ const StylistChatPage = () => {
       }, 300);
     }, 3000);
   };
+
+  // MCP Server Integration
+  const callMCPServer = async (command) => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    
+    try {
+      // Call MCP server endpoint
+      const response = await axios.post(`${API_BASE_URL}/mcp/execute`, {
+        command: command,
+        userId: sessionStorage.getItem('userId') || localStorage.getItem('userId')
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('MCP Server response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('MCP Server error:', error);
+      throw error;
+    }
+  };
+
+  // Enhanced wardrobe command handler with MCP server
+  const handleWardrobeCommand = async (command) => {
+    const lowerCommand = command.toLowerCase();
+    
+    // Add user message to chat
+    const userMessage = {
+      id: Date.now(),
+      role: 'user',
+      content: command,
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsTyping(true);
+
+    try {
+      // Try MCP server first
+      console.log('Sending command to MCP server:', command);
+      const mcpResponse = await callMCPServer(command);
+      
+      if (mcpResponse && mcpResponse.success) {
+        const assistantMessage = {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: mcpResponse.message || `✅ MCP Server executed: "${command}"`,
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        showToast('MCP Server command executed successfully', 'success');
+        return; // Exit early if MCP server succeeds
+      }
+    } catch (error) {
+      console.error('MCP Server failed, falling back to manual commands:', error);
+    }
+    
+    // Fallback to manual command handling
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    
+    try {
+      // Parse the command with enhanced natural language detection
+      if (lowerCommand.includes('move') || lowerCommand.includes('old') || lowerCommand.includes('havent') || lowerCommand.includes('haven\'t') || lowerCommand.includes('not worn')) {
+        // Handle time-based movement - multiple variations
+        if (lowerCommand.includes('3 months') || 
+            lowerCommand.includes('past 3 months') ||
+            lowerCommand.includes('old items') ||
+            lowerCommand.includes('havent worn') ||
+            lowerCommand.includes('haven\'t worn') ||
+            lowerCommand.includes('not worn') ||
+            lowerCommand.includes('while')) {
+          console.log('Sending move-old-items request...');
+          const response = await axios.post(`${API_BASE_URL}/mcp/move-old-items`, {
+            months: 3
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          console.log('Move old items response:', response.data);
+          
+          if (response.data && response.data.success) {
+            // Handle different possible response structures
+            let movedCount = 0;
+            if (response.data.data && response.data.data.movedCount) {
+              movedCount = response.data.data.movedCount;
+            } else if (response.data.data && response.data.data.count) {
+              movedCount = response.data.data.count;
+            } else if (response.data.movedCount) {
+              movedCount = response.data.movedCount;
+            } else if (response.data.count) {
+              movedCount = response.data.count;
+            } else if (response.data.data && Array.isArray(response.data.data)) {
+              movedCount = response.data.data.length;
+            }
+            
+            const assistantMessage = {
+              id: Date.now() + 1,
+              role: 'assistant',
+              content: `✅ Successfully moved ${movedCount} items that haven't been worn in the past 3 months to unused!`,
+              timestamp: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            showToast(`Moved ${movedCount} items to unused`, 'success');
+          } else {
+            throw new Error('Failed to move items');
+          }
+        }
+        // Handle low-wear items
+        else if (lowerCommand.includes('low wear') || lowerCommand.includes('rarely worn')) {
+          console.log('Sending move-low-wear-items request...');
+          const response = await axios.post(`${API_BASE_URL}/mcp/move-low-wear-items`, {
+            maxWearCount: 3
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          console.log('Move low-wear items response:', response.data);
+          
+          if (response.data && response.data.success) {
+            // Handle different possible response structures
+            let movedCount = 0;
+            if (response.data.data && response.data.data.movedCount) {
+              movedCount = response.data.data.movedCount;
+            } else if (response.data.data && response.data.data.count) {
+              movedCount = response.data.data.count;
+            } else if (response.data.movedCount) {
+              movedCount = response.data.movedCount;
+            } else if (response.data.count) {
+              movedCount = response.data.count;
+            } else if (response.data.data && Array.isArray(response.data.data)) {
+              movedCount = response.data.data.length;
+            }
+            
+            const assistantMessage = {
+              id: Date.now() + 1,
+              role: 'assistant',
+              content: `✅ Successfully moved ${movedCount} low-wear items to unused!`,
+              timestamp: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            showToast(`Moved ${movedCount} low-wear items to unused`, 'success');
+          } else {
+            throw new Error('Failed to move items');
+          }
+        }
+        // Handle specific item movement
+        else {
+          const itemMatch = command.match(/move (.*?) to unused/i);
+          if (itemMatch) {
+            const itemDescription = itemMatch[1];
+            const response = await axios.post(`${API_BASE_URL}/mcp/move-item-by-description`, {
+              description: itemDescription
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.data && response.data.success) {
+              const assistantMessage = {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: `✅ Successfully moved "${itemDescription}" to unused!`,
+                timestamp: new Date().toISOString()
+              };
+              setMessages(prev => [...prev, assistantMessage]);
+              showToast(`Moved "${itemDescription}" to unused`, 'success');
+            } else {
+              throw new Error('Failed to move item');
+            }
+          } else {
+            throw new Error('Could not parse item description');
+          }
+        }
+      }
+      // Handle analysis commands
+      else if (lowerCommand.includes('analyze') || lowerCommand.includes('analysis')) {
+        const response = await axios.post(`${API_BASE_URL}/mcp/analyze-wardrobe`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data && response.data.success) {
+          const analysis = response.data.data;
+          const assistantMessage = {
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: `📊 Wardrobe Analysis:\n• Total Items: ${analysis.totalItems || 0}\n• Never Worn: ${analysis.itemsWornZeroTimes || 0}\n• Worn Once: ${analysis.itemsWornOnce || 0}\n• Not Worn in 6 Months: ${analysis.itemsNotWornIn6Months || 0}`,
+            timestamp: new Date().toISOString()
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        } else {
+          throw new Error('Failed to analyze wardrobe');
+        }
+      }
+      else {
+        const assistantMessage = {
+          id: Date.now() + 1,
+          role: 'assistant',
+          content: "I can help you manage your wardrobe! Try commands like:\n• 'Move items I haven't worn in 3 months to unused'\n• 'Move low-wear items to unused'\n• 'Move blue shirt to unused'\n• 'Analyze my wardrobe'",
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      console.error('Error handling wardrobe command:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = "❌ Sorry, I couldn't process that wardrobe command. Please try again or use a different command.";
+      
+      // If we have a response from the backend, show more specific error
+      if (error.response?.data?.message) {
+        errorMessage = `❌ ${error.response.data.message}`;
+      } else if (error.response?.status === 404) {
+        errorMessage = "❌ Backend endpoint not found. Please check if the MCP routes are implemented.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "❌ Backend server error. Please try again later.";
+      }
+      
+      const assistantMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: errorMessage,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      showToast('Failed to process wardrobe command', 'error');
+    } finally {
+      setIsTyping(false);
+    }
+  };
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   
@@ -235,6 +464,39 @@ const StylistChatPage = () => {
   const sendMessage = async (messageContent = null) => {
     const contentToSend = messageContent || inputMessage;
     if (!contentToSend.trim() || !sessionId) return;
+
+    // Check for wardrobe management commands first
+    const lowerCommand = contentToSend.toLowerCase();
+    
+    // Enhanced command detection for natural language
+    const isWardrobeCommand = (
+      // Move to unused commands
+      (lowerCommand.includes('move') && (
+        lowerCommand.includes('unused') || 
+        lowerCommand.includes('unsued') ||
+        lowerCommand.includes('unsed') ||
+        lowerCommand.includes('unuse')
+      )) ||
+      // Time-based commands
+      (lowerCommand.includes('old') && lowerCommand.includes('items')) ||
+      (lowerCommand.includes('havent') && lowerCommand.includes('worn')) ||
+      (lowerCommand.includes('haven\'t') && lowerCommand.includes('worn')) ||
+      (lowerCommand.includes('not worn') && lowerCommand.includes('while')) ||
+      // Analysis commands
+      lowerCommand.includes('analyze') ||
+      lowerCommand.includes('analysis') ||
+      lowerCommand.includes('wardrobe') ||
+      // Low wear commands
+      (lowerCommand.includes('low') && lowerCommand.includes('wear')) ||
+      (lowerCommand.includes('rarely') && lowerCommand.includes('worn'))
+    );
+    
+    if (isWardrobeCommand) {
+      console.log('Detected wardrobe command:', contentToSend);
+      // Handle wardrobe management command
+      await handleWardrobeCommand(contentToSend);
+      return;
+    }
 
     const userMessage = {
       id: Date.now(),
@@ -1073,27 +1335,29 @@ const StylistChatPage = () => {
         <div className="messages-end" ref={messagesEndRef} />
       </div>
 
-      {/* Input Container */}
-      <div className="input-container">
-        <div className="input-wrapper">
-          <div className="input-field-container">
-            <textarea
-              className="input-textarea"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Tell me what you're looking for... (e.g., 'I want to go to a job interview')"
-            />
+              {/* Input Container */}
+        <div className="input-container">
+          <div className="input-wrapper">
+            <div className="input-field-container">
+              <textarea
+                className="input-textarea"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Tell me what you're looking for... (e.g., 'I want to go to a job interview')"
+              />
+            </div>
+            <button
+              className="send-button"
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+            >
+              {isLoading ? '⏳' : '➤'}
+            </button>
           </div>
-          <button
-            className="send-button"
-            onClick={sendMessage}
-            disabled={!inputMessage.trim() || isLoading}
-          >
-            {isLoading ? '⏳' : '➤'}
-          </button>
+          
+
         </div>
-              </div>
       </div> {/* Close chat-section */}
       </div> {/* Close main-content */}
 
