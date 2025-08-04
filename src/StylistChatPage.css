@@ -332,6 +332,7 @@
   /* Container for title and subtitle */
 }
 
+
 .chat-header-title {
   margin: 0;
   color: #5219a2;
@@ -661,8 +662,8 @@
   color: #2c3e50;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - scoped to StylistChatPage only */
+.stylist-chat-page * {
   transition: all 0.3s ease;
 }
 
