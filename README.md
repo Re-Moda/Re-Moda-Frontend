@@ -259,9 +259,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Backend Integration**: RESTful APIs, JWT Authentication
 - **UI/UX Design**: Modern, responsive design with animations
 
-## 📞 Support
-
-For support, email support@remoda.com or create an issue in the repository.
 
 ---
 
