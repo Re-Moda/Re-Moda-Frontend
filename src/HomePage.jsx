@@ -89,7 +89,7 @@ const HomePage = (props) => {
  };
 
  return (
- <>
+ <div className="homepage-container">
  <div className="logo-overlay">
  <img src={logo} alt="Re:Moda Logo" className="site-logo" />
  </div>
@@ -331,7 +331,7 @@ const HomePage = (props) => {
  </div>
  </div>
  </footer>
- </>
+ </div>
  );
 };
 
