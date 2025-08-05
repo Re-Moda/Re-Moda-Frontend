@@ -1294,9 +1294,9 @@ const StylistChatPage = () => {
                   <div className="recommendations-grid">
                     {message.recommendations.map((rec, index) => (
                       <div key={index} className="recommendation-card" onClick={() => createOutfitFromRecommendation(rec, index)}>
-                        <div className="recommendation-image">
+                        {/* <div className="recommendation-image">
                           👗
-                        </div>
+                        </div> */}
                         <h4 className="recommendation-title">
                           {rec.title}
                         </h4>

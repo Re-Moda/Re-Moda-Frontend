@@ -207,6 +207,7 @@ const UserPage = () => {
   const [processingUploads, setProcessingUploads] = useState(false); // Track loading state for processing uploads
   const hasProcessedUploads = useRef(false); // Track if we've already processed uploads
   const [flippedItems, setFlippedItems] = useState(new Set()); // Track which items are flipped to show details
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Track mobile menu state
 
   // Toast notification function
   const showToast = (message, type = 'info') => {
@@ -1223,7 +1224,8 @@ const UserPage = () => {
               }}
             >
               <span className="btn-icon">{buildMode ? '🏠 ' : '✨ '}</span>
-              {buildMode ? 'Back to My Closet' : 'Build your own (10 coins)'}
+              <span className="btn-text">{buildMode ? 'Back to My Closet' : 'Build your own (10 coins)'}</span>
+              <span className="btn-text-mobile">{buildMode ? 'Back' : 'Build'}</span>
             </button>
             
             <button
@@ -1231,7 +1233,8 @@ const UserPage = () => {
               onClick={analyzeWardrobe}
             >
               <span className="btn-icon">📊 </span>
-              Analyze Wardrobe
+              <span className="btn-text">Analyze Wardrobe</span>
+              <span className="btn-text-mobile">Analyze</span>
             </button>
             
             <button
@@ -1239,7 +1242,8 @@ const UserPage = () => {
               onClick={() => window.location.href = '/stylist-chat'}
             >
               <span className="btn-icon">💬 </span>
-              Chat w/ ur stylist
+              <span className="btn-text">Chat w/ ur stylist</span>
+              <span className="btn-text-mobile">Chat</span>
             </button>
             
             <button
@@ -1247,7 +1251,8 @@ const UserPage = () => {
               onClick={() => window.location.href = "/thrift"}
             >
               <span className="btn-icon">🪙 </span>
-              Get More Coins
+              <span className="btn-text">Get More Coins</span>
+              <span className="btn-text-mobile">Get More</span>
             </button>
             
             {/* Coin Balance */}
@@ -1256,7 +1261,114 @@ const UserPage = () => {
               <span className="coin-amount">{Math.max(0, coinBalance)} coins</span>
             </div>
           </div>
+
+          {/* Mobile hamburger menu */}
+          <div className="mobile-menu-toggle">
+            <button 
+              className="hamburger-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile menu overlay */}
+        {mobileMenuOpen && (
+          <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
+            <div className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
+              <div className="mobile-menu-header">
+                <h3>Menu</h3>
+                <button 
+                  className="mobile-menu-close"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="mobile-menu-items">
+                <button
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    window.location.href = '/';
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span className="mobile-menu-icon">🏠</span>
+                  <span className="mobile-menu-text">Home</span>
+                </button>
+                
+                <button
+                  className={`mobile-menu-item ${coinBalance < 10 ? 'disabled' : ''}`}
+                  onClick={() => {
+                    if (buildMode) {
+                      setBuildMode(false);
+                      setSelectedTopId(null);
+                      setSelectedBottomId(null);
+                      setGeneratedAvatarUrl(null);
+                    } else {
+                      if (coinBalance < 10) {
+                        alert(`You need 10 coins to use AI Try-On. Current balance: ${coinBalance} coins`);
+                        return;
+                      }
+                      setBuildMode(true);
+                      setSelectedTopId(null);
+                      setSelectedBottomId(null);
+                      setGeneratedAvatarUrl(null);
+                    }
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span className="mobile-menu-icon">{buildMode ? '🏠' : '✨'}</span>
+                  <span className="mobile-menu-text">{buildMode ? 'Back to My Closet' : 'Build your own (10 coins)'}</span>
+                </button>
+                
+                <button
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    analyzeWardrobe();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span className="mobile-menu-icon">📊</span>
+                  <span className="mobile-menu-text">Analyze Wardrobe</span>
+                </button>
+                
+                <button
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    window.location.href = '/stylist-chat';
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span className="mobile-menu-icon">💬</span>
+                  <span className="mobile-menu-text">Chat w/ ur stylist</span>
+                </button>
+                
+                <button
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    window.location.href = "/thrift";
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span className="mobile-menu-icon">🪙</span>
+                  <span className="mobile-menu-text">Get More Coins</span>
+                </button>
+              </div>
+              
+              <div className="mobile-menu-footer">
+                <div className="mobile-coin-balance">
+                  <span className="mobile-coin-icon">🪙</span>
+                  <span className="mobile-coin-amount">{Math.max(0, coinBalance)} coins</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Animated star background, always behind content */}
@@ -1370,6 +1482,30 @@ const UserPage = () => {
             
             {/* Clothing Items Section */}
             <div className="clothing-section">
+              {/* Categories Container - moved here for mobile */}
+              <div className="mobile-categories-container">
+                {closetCategories.map(cat => (
+                  <button
+                    key={cat.key}
+                    onClick={() => setSelectedCategory(cat.key)}
+                    className={`category-btn ${selectedCategory === cat.key ? 'active' : ''}`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+                
+                {/* Try On button - mobile build mode */}
+                {buildMode && (
+                  <button
+                    onClick={handleTryOn}
+                    disabled={!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10}
+                    className={`try-on-btn ${(!selectedTopId || !selectedBottomId || loadingTryOn || coinBalance < 10) ? 'disabled' : ''}`}
+                  >
+                    {loadingTryOn ? "Generating..." : "Try On"}
+                  </button>
+                )}
+              </div>
+              
               <div className="section-title">
                 <span className="item-count">({filteredItems.length} items)</span>
               </div>

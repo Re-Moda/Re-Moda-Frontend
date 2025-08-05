@@ -177,11 +177,187 @@
  box-shadow: none;
 }
 
+/* Desktop button text - show longer versions */
+.uploads-nav-buttons button .btn-text {
+  display: inline;
+}
+
+.uploads-nav-buttons button .btn-text-mobile {
+  display: none;
+}
+
+/* Mobile hamburger menu */
+.mobile-menu-toggle {
+  display: none;
+}
+
+.hamburger-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburger-line {
+  width: 24px;
+  height: 3px;
+  background: #7c3aed;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+.mobile-menu-content {
+  background: white;
+  border-radius: 16px;
+  width: 280px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.mobile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+}
+
+.mobile-menu-header h3 {
+  margin: 0;
+  color: #7c3aed;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.mobile-menu-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #7c3aed;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-close:hover {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.mobile-menu-items {
+  padding: 16px 0;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mobile-menu-item:hover {
+  background: #f9fafb;
+}
+
+.mobile-menu-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobile-menu-icon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.mobile-menu-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  flex: 1;
+}
+
+.mobile-menu-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.mobile-coin-balance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px dashed #fbbf24;
+  border-radius: 20px;
+  padding: 6px 12px;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.mobile-coin-icon {
+  font-size: 20px;
+}
+
+.mobile-coin-amount {
+  font-weight: 700;
+}
+
 .coin-balance {
  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
  border: 2px dashed #fbbf24;
  border-radius: 20px;
- padding: 12px 20px;
+ padding: 6px 12px;
  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
  font-family: "'EB Garamond', serif";
  color: #92400e;
@@ -217,7 +393,6 @@
  justify-content: center;
  align-items: center;
  z-index: 9999;
- backdrop-filter: blur(10px);
 }
 
 .processing-content {
@@ -272,7 +447,7 @@
 .content-container {
   display: flex;
   flex-direction: column;
- width: 100%;
+  width: 100%;
  height: 100%;
  overflow: hidden;
  background: white;
@@ -285,11 +460,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
- gap: 16px;
- margin-bottom: 32px;
- padding: 16px 0;
- border-bottom: 1px solid #e5e7eb;
- position: relative;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+}
+
+/* Mobile categories container - hidden on desktop */
+.mobile-categories-container {
+  display: none;
 }
 
 /* Center categories only in My Closet mode (not build mode) */
@@ -384,7 +564,7 @@
   justify-content: center;
  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
  min-width: 200px;
- position: absolute;
+  position: absolute;
  top: -5px;
  left: 70px;
  z-index: 100;
@@ -392,7 +572,7 @@
 
 .user-page .selection-status {
   display: flex;
- flex-direction: column;
+  flex-direction: column;
  gap: 4px;
  width: 100%;
 }
@@ -424,14 +604,14 @@
  flex: 1;
  overflow: visible;
  min-height: 0;
- padding-bottom: 120px;
+ padding-bottom: 20px;
 }
 
 /* Avatar Section */
 .avatar-section {
- flex: 0 0 240px;
+ flex: 0 0 280px;
   display: flex;
- flex-direction: column;
+  flex-direction: column;
   align-items: center;
  position: relative;
  min-height: 0;
@@ -456,19 +636,19 @@
  box-shadow: 0 4px 16px rgba(125, 211, 252, 0.2);
  transform: rotate(-1deg);
  transition: all 0.3s ease;
- max-height: 100%;
+ max-height: none;
  overflow: visible;
- z-index: 1;
+  z-index: 1;
 }
 
 .avatar-image {
- width: 280px;
- height: 560px;
+ width: 260px;
+ height: 520px;
  border-radius: 8px;
  object-fit: cover;
  border: 2px solid #7dd3fc;
  margin-bottom: 12px;
- background: #fff;
+  background: #fff;
  display: block;
  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
  transform: rotate(1deg);
@@ -477,15 +657,15 @@
 }
 
 .avatar-placeholder {
- width: 280px;
- height: 560px;
+ width: 260px;
+ height: 520px;
   border-radius: 8px;
  border: 2px dashed #7dd3fc;
  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
  margin-bottom: 12px;
- display: flex;
- align-items: center;
- justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
  color: #38bdf8;
  font-size: 64px;
   font-weight: 600;
@@ -558,6 +738,7 @@
  margin-top: -15px;
  font-family: 'Inter', sans-serif;
  letter-spacing: 0.5px;
+ z-index: 30;
 }
 
 .avatar-buttons-container {
@@ -611,7 +792,7 @@
  min-height: 0;
  overflow: visible;
  position: relative;
- margin-bottom: 120px;
+ margin-bottom: 20px;
 }
 
 .section-title {
@@ -875,3 +1056,586 @@
    left: 10px;
 }
 } 
+
+/* Mobile Layout - Based on Wireframe (My closet: Build) */
+@media (max-width: 600px) {
+  /* Main container adjustments for mobile */
+  .user-page {
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Logo overlay - hidden for mobile */
+  .user-page .logo-overlay {
+    display: none !important;
+    z-index: -1;
+  }
+
+  /* Navigation bar - mobile optimized */
+  .user-page .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #f3e8ff;
+    border-bottom: 2px solid #a78bfa;
+    z-index: 1000;
+    padding: 10px 8px;
+    box-shadow: 0 2px 12px rgba(139, 92, 246, 0.15);
+    height: 80px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .user-page .navbar-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+    position: relative;
+    z-index: 1001;
+  }
+
+    .user-page .navbar-title {
+    font-size: 18px;
+    margin-left: 0;
+    text-align: left;
+    margin-bottom: 0;
+    width: auto;
+    max-width: 60%;
+    box-sizing: border-box;
+    overflow: visible;
+    white-space: nowrap;
+    font-weight: 700;
+    color: #7c3aed;
+    text-shadow: 0 1px 2px rgba(124, 58, 237, 0.1);
+    z-index: 1002;
+    position: relative;
+    pointer-events: none;
+  }
+
+    /* Mobile navigation buttons - hidden on mobile */
+  .uploads-nav-buttons {
+    display: none;
+  }
+
+  /* Mobile hamburger menu - show on mobile */
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  .uploads-nav-buttons button {
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 12px;
+    min-width: auto;
+    flex: 1;
+    max-width: 110px;
+    height: 32px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Mobile button text - not needed with hamburger menu */
+  .uploads-nav-buttons button .btn-text {
+    display: none;
+  }
+
+  .uploads-nav-buttons button .btn-text-mobile {
+    display: none;
+  }
+
+  .coin-balance {
+    display: none;
+  }
+
+  /* Main content - mobile layout */
+  .user-page .main-content {
+    width: 100vw;
+    max-width: 100vw;
+    margin: 80px 0 0 0;
+    padding: 4px;
+    height: auto;
+    min-height: calc(100vh - 80px);
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+    background: white;
+  }
+
+  .content-container {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    background: white;
+    padding: 0;
+  }
+
+  /* Category filter - hidden on mobile */
+  .user-page .category-filter {
+    display: none;
+  }
+
+  /* Mobile categories container */
+  .mobile-categories-container {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .user-page .category-filter.build-mode {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+  }
+
+  /* Build status popup - mobile positioning */
+  .user-page .build-status-popup {
+    position: static;
+    min-width: auto;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 8px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .user-page .status-line {
+    gap: 8px;
+  }
+
+  .user-page .status-label {
+    font-size: 11px;
+  }
+
+  .user-page .status-value {
+    font-size: 11px;
+  }
+
+  /* Categories container - mobile layout */
+  .user-page .categories-container {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .category-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 16px;
+    min-width: auto;
+  }
+
+  /* Try on button - mobile styling */
+  .try-on-btn {
+    padding: 12px 24px;
+    font-size: 14px;
+    border-radius: 16px;
+    min-width: 120px;
+    height: 44px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    z-index: 50;
+    position: relative;
+    font-weight: 600;
+  }
+
+  /* Content area - mobile vertical layout */
+  .user-page .content-area {
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    height: auto;
+    min-height: calc(100vh - 160px);
+    overflow-y: visible;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    background: white;
+  }
+
+    /* Avatar section - mobile layout based on wireframe */
+  .user-page .avatar-section {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 12px;
+    border: 2px dashed #7dd3fc;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    overflow: hidden;
+    order: 1; /* Keep avatar section first */
+  }
+
+  /* Username - mobile styling */
+  .user-page .username {
+    font-size: 16px;
+    font-weight: 700;
+    color: #374151;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px dashed #fbbf24;
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    z-index: 30;
+  }
+
+  /* Avatar wrapper - mobile sizing */
+  .user-page .avatar-wrapper {
+    width: 100%;
+    max-width: 180px;
+    padding: 8px;
+    border-radius: 12px;
+    transform: none;
+    position: relative;
+  }
+
+  /* Avatar image - mobile sizing */
+  .user-page .avatar-image,
+  .user-page .avatar-placeholder {
+    width: 100%;
+    height: 250px;
+    border-radius: 8px;
+    transform: none;
+    margin-bottom: 6px;
+  }
+
+  /* Avatar action buttons - mobile positioning */
+  .user-page .avatar-heart-button,
+  .user-page .avatar-recurring-button {
+    position: absolute;
+    top: 8px;
+    z-index: 20;
+  }
+
+  .user-page .avatar-heart-button {
+    left: 8px;
+  }
+
+  .user-page .avatar-recurring-button {
+    right: 8px;
+  }
+
+  .user-page .avatar-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 50%;
+  }
+
+  /* Avatar buttons container - mobile layout */
+  .user-page .avatar-buttons-container {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  .user-page .ai-generated-badge {
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 12px;
+  }
+
+  .user-page .revert-avatar-btn {
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 12px;
+  }
+
+  /* Moving text - mobile adjustments */
+  .user-page .moving-beautiful-text {
+    font-size: 16px;
+    animation: moveText 12s linear infinite;
+  }
+
+    /* Clothing section - mobile layout */
+  .user-page .clothing-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+    overflow: visible;
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    order: 3; /* Keep clothing section last */
+  }
+
+  .user-page .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #7c3aed;
+    margin-bottom: 16px;
+    text-align: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+    text-shadow: 0 1px 2px rgba(124, 58, 237, 0.1);
+  }
+
+  .user-page .item-count {
+    position: static;
+    font-size: 16px;
+    font-weight: 700;
+    color: #7c3aed;
+    margin: 0 auto 16px auto;
+    display: block;
+    text-align: center;
+    width: fit-content;
+    max-width: 90%;
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: 2px solid #a78bfa;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  /* Closet grid - mobile layout based on wireframe */
+  .user-page .closet-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    height: 500px;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+    border: 2px dashed #fbcfe8;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+    margin-top: 24px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Closet items - mobile sizing */
+  .user-page .closet-item {
+    width: 100%;
+    aspect-ratio: 1;
+    height: auto;
+    border-radius: 8px;
+    transform: none;
+    padding: 8px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .user-page .closet-item:hover {
+    transform: translateY(-2px);
+  }
+
+  .user-page .closet-item.build-mode {
+    transform: none;
+  }
+
+  .user-page .closet-item.build-mode:hover {
+    transform: translateY(-2px);
+  }
+
+  .user-page .closet-item.selected {
+    transform: scale(1.02);
+  }
+
+  /* Card content - mobile adjustments */
+  .user-page .card-front,
+  .user-page .card-back {
+    padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .user-page .description-content {
+    padding: 12px;
+  }
+
+  .user-page .description-content h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .user-page .description-content p {
+    font-size: 12px;
+    margin-bottom: 12px;
+    max-height: 80px;
+  }
+
+  .user-page .flip-back-btn {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+
+  /* Add item button - mobile positioning */
+  .user-page .add-item-overlay-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 28px;
+    z-index: 1000;
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.3);
+  }
+
+  /* Processing overlay - mobile adjustments */
+  .user-page .processing-overlay {
+    padding: 20px;
+  }
+
+  .user-page .processing-content {
+    gap: 16px;
+  }
+
+  .user-page .spinner {
+    width: 60px;
+    height: 60px;
+    border-width: 4px;
+  }
+
+  .user-page .processing-text {
+    font-size: 20px;
+  }
+
+  .user-page .processing-subtext {
+    font-size: 14px;
+  }
+
+  /* No items message - mobile styling */
+  .user-page .no-items {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    padding: 20px;
+  }
+
+  /* Star background - mobile adjustments */
+  .user-page .star-bg {
+    z-index: -1;
+  }
+  
+  .user-page .star-bg img {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Disable gradient overlay on mobile */
+  .user-page::before {
+    display: none;
+  }
+}
+
+/* Extra small mobile optimizations */
+@media (max-width: 400px) {
+  .user-page .navbar-title {
+    font-size: 16px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .uploads-nav-buttons button {
+    font-size: 11px;
+    padding: 4px 6px;
+    max-width: 90px;
+    height: 28px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .user-page .coin-balance {
+    font-size: 11px;
+    padding: 4px 6px;
+    min-width: 75px;
+    height: 28px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Very small mobile optimizations */
+@media (max-width: 350px) {
+  .user-page .navbar-title {
+    font-size: 14px;
+  }
+
+  .uploads-nav-buttons button {
+    font-size: 10px;
+    padding: 3px 4px;
+    max-width: 80px;
+    height: 26px;
+  }
+
+  .user-page .coin-balance {
+    font-size: 10px;
+    padding: 3px 4px;
+    min-width: 70px;
+    height: 26px;
+  }
+
+  .user-page .uploads-nav-buttons {
+    gap: 2px;
+  }
+}
