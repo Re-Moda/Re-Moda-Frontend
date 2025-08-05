@@ -383,8 +383,11 @@
   align-items: center;
   justify-content: center;
  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
- margin-right: 12px;
  min-width: 200px;
+ position: absolute;
+ top: -5px;
+ left: 70px;
+ z-index: 100;
 }
 
 .user-page .selection-status {
@@ -398,6 +401,7 @@
   display: flex;
  justify-content: space-between;
   align-items: center;
+ gap: 12px;
 }
 
 .user-page .status-label {
@@ -408,6 +412,7 @@
 .user-page .status-value {
  color: #1f2937;
   font-weight: 600;
+ margin-left: 8px;
 }
 
 /* Content Area */
@@ -419,6 +424,7 @@
  flex: 1;
  overflow: visible;
  min-height: 0;
+ padding-bottom: 120px;
 }
 
 /* Avatar Section */
@@ -429,6 +435,9 @@
   align-items: center;
  position: relative;
  min-height: 0;
+ max-height: 100%;
+ overflow: visible;
+ z-index: 1;
 }
 
 .user-avatar-container {
@@ -447,6 +456,9 @@
  box-shadow: 0 4px 16px rgba(125, 211, 252, 0.2);
  transform: rotate(-1deg);
  transition: all 0.3s ease;
+ max-height: 100%;
+ overflow: visible;
+ z-index: 1;
 }
 
 .avatar-image {
@@ -485,8 +497,8 @@
 
 .avatar-heart-button {
  position: absolute;
- top: 12px;
- left: 60px;
+ top: 8px;
+ left: 8px;
  z-index: 20;
   }
 
@@ -599,6 +611,7 @@
  min-height: 0;
  overflow: visible;
  position: relative;
+ margin-bottom: 120px;
 }
 
 .section-title {
@@ -634,6 +647,7 @@
  align-items: start;
  position: relative;
  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.1);
+ margin-bottom: 20px;
 }
 
 .add-item-overlay-btn {

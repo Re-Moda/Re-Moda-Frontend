@@ -117,6 +117,10 @@ const UserPage = () => {
   // Coin balance and upload count states
   const [coinBalance, setCoinBalance] = useState(100);
   
+  // Analysis states
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  
   // Load generated avatar URL from localStorage on mount (only if user doesn't have a real avatar)
   useEffect(() => {
     const savedGeneratedAvatarUrl = localStorage.getItem('generatedAvatarUrl');
@@ -460,11 +464,15 @@ const UserPage = () => {
     setLoadingTryOn(true);
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
-      console.log('Starting try-on with:', { selectedTopId, selectedBottomId });
+      console.log('Starting try-on with:', { selectedTopId, selectedBottomId, selectedShoesId });
       
       const res = await axios.post(
         `${API_BASE_URL}/outfits/generate-avatar`,
-        { topId: selectedTopId, bottomId: selectedBottomId },
+        { 
+          topId: selectedTopId, 
+          bottomId: selectedBottomId,
+          shoesId: selectedShoesId // Include shoes if selected
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -502,8 +510,8 @@ const UserPage = () => {
       
       // Create new outfit via backend
       const outfitData = {
-        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}`,
-        clothingItemIds: [selectedTopId, selectedBottomId], // Correct field name (camelCase)
+        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}${selectedShoesId ? ` and ${closetItems.find(i => i.id === selectedShoesId)?.label || 'Shoes'}` : ''}`,
+        clothingItemIds: selectedShoesId ? [selectedTopId, selectedBottomId, selectedShoesId] : [selectedTopId, selectedBottomId], // Include shoes if selected
         image_key: generatedAvatarUrl, // Use image_key instead of generated_image_url
         bucket_name: "clothing-items-remoda", // Add bucket name
         is_favorite: true,
@@ -519,6 +527,7 @@ const UserPage = () => {
       if (response.data && response.data.success) {
         console.log('Outfit created and favorited successfully:', response.data.data);
         console.log('Full response from backend:', response.data);
+        
         showToast('❤️ Outfit added to favorites! Check the "Favourites" category to see it.', 'success');
         
         // Refresh outfits from backend
@@ -551,8 +560,8 @@ const UserPage = () => {
       
       // Create new outfit via backend
       const outfitData = {
-        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}`,
-        clothingItemIds: [selectedTopId, selectedBottomId], // Correct field name (camelCase)
+        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}${selectedShoesId ? ` and ${closetItems.find(i => i.id === selectedShoesId)?.label || 'Shoes'}` : ''}`,
+        clothingItemIds: selectedShoesId ? [selectedTopId, selectedBottomId, selectedShoesId] : [selectedTopId, selectedBottomId], // Include shoes if selected
         image_key: generatedAvatarUrl, // Use image_key instead of generated_image_url
         bucket_name: "clothing-items-remoda", // Add bucket name
         is_favorite: false,
@@ -568,6 +577,7 @@ const UserPage = () => {
       if (response.data && response.data.success) {
         console.log('Outfit created and marked as worn successfully:', response.data.data);
         console.log('Full response from backend:', response.data);
+        
         showToast('✓ Outfit marked as worn!', 'success');
         
         // Refresh outfits from backend
@@ -599,8 +609,8 @@ const UserPage = () => {
       
       // Create new outfit via backend
       const outfitData = {
-        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}`,
-        clothingItemIds: [selectedTopId, selectedBottomId], // Correct field name (camelCase)
+        title: `Outfit with ${closetItems.find(i => i.id === selectedTopId)?.label || 'Top'} and ${closetItems.find(i => i.id === selectedBottomId)?.label || 'Bottom'}${selectedShoesId ? ` and ${closetItems.find(i => i.id === selectedShoesId)?.label || 'Shoes'}` : ''}`,
+        clothingItemIds: selectedShoesId ? [selectedTopId, selectedBottomId, selectedShoesId] : [selectedTopId, selectedBottomId], // Include shoes if selected
         image_key: generatedAvatarUrl, // Use image_key instead of generated_image_url
         bucket_name: "clothing-items-remoda", // Add bucket name
         is_favorite: false,
@@ -616,6 +626,7 @@ const UserPage = () => {
       if (response.data && response.data.success) {
         console.log('Outfit created and marked as recurring successfully:', response.data.data);
         console.log('Full response from backend:', response.data);
+        
         showToast('✓ Outfit added to recurring! Check the "Recurring" category to see it.', 'success');
         
         // Refresh outfits from backend
@@ -785,25 +796,137 @@ const UserPage = () => {
   const markAsWorn = async (outfitId) => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
-      // Try to directly update the outfit's recurring status
-      const response = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}`, {
-        is_recurring: false
-      }, {
+      // First, mark the outfit as worn to update wear counts
+      console.log('🔄 Calling wear count update endpoint for outfit ID:', outfitId);
+      console.log('🔄 Endpoint:', `${API_BASE_URL}/outfits/${outfitId}/worn`);
+      
+      const wearResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && response.data.success) {
-        console.log('Outfit removed from recurring successfully');
-        showToast('Outfit removed from recurring!', 'success');
+      console.log('✅ Wear count response:', wearResponse.data);
+      
+      if (wearResponse.data && wearResponse.data.success) {
+        console.log('✅ Outfit marked as worn successfully, wear counts updated');
+        showToast('Outfit marked as worn! Wear counts updated.', 'success');
+        
+        // Refresh closet items to show updated wear counts
+        await fetchClosetItems();
+        
+        // Then toggle the recurring status
+        const recurringResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}`, {
+          is_recurring: false
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (recurringResponse.data && recurringResponse.data.success) {
+          console.log('✅ Outfit removed from recurring successfully');
+          // Refresh outfits from backend
+          loadOutfits();
+        }
+      } else {
+        console.error('❌ Wear count update failed:', wearResponse.data);
+        showToast('Failed to mark outfit as worn. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('❌ Error marking outfit as worn:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      showToast('Failed to mark outfit as worn. Please try again.', 'error');
+    }
+  };
+
+  // Mark existing outfit as worn (for wear count updates)
+  const markExistingOutfitAsWorn = async (outfitId) => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      console.log('🔄 Marking existing outfit as worn for outfit ID:', outfitId);
+      console.log('🔄 Endpoint:', `${API_BASE_URL}/outfits/${outfitId}/worn`);
+      
+      const wearResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('✅ Wear count response:', wearResponse.data);
+      
+      if (wearResponse.data && wearResponse.data.success) {
+        console.log('✅ Existing outfit marked as worn successfully, wear counts updated');
+        showToast('Outfit marked as worn! Wear counts updated.', 'success');
+        
+        // Refresh closet items to show updated wear counts
+        await fetchClosetItems();
+        
         // Refresh outfits from backend
         loadOutfits();
       } else {
-        showToast('Failed to remove from recurring. Please try again.', 'error');
+        console.error('❌ Wear count update failed:', wearResponse.data);
+        showToast('Failed to mark outfit as worn. Please try again.', 'error');
       }
     } catch (error) {
-      console.error('Error removing from recurring:', error);
-      showToast('Failed to remove from recurring. Please try again.', 'error');
+      console.error('❌ Error marking existing outfit as worn:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      showToast('Failed to mark outfit as worn. Please try again.', 'error');
     }
+  };
+
+  // Test function to check if wear count endpoint exists
+  const testWearCountEndpoint = async () => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      console.log('🧪 Testing wear count endpoint...');
+      console.log('🧪 Endpoint:', `${API_BASE_URL}/outfits/1/worn`);
+      
+      const response = await axios.patch(`${API_BASE_URL}/outfits/1/worn`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('✅ Wear count endpoint test response:', response.data);
+      showToast('Wear count endpoint is working!', 'success');
+    } catch (error) {
+      console.error('❌ Wear count endpoint test failed:', error);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error data:', error.response?.data);
+      showToast(`Wear count endpoint failed: ${error.response?.status || 'Unknown error'}`, 'error');
+    }
+  };
+
+  // Analyze wardrobe function
+  const analyzeWardrobe = async () => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    try {
+      // First refresh closet items to get latest wear count data
+      console.log('🔄 Refreshing closet items before analysis...');
+      await fetchClosetItems();
+      
+      console.log('🔄 Running wardrobe analysis...');
+      const response = await axios.post(
+        `${API_BASE_URL}/mcp/analyze-wardrobe`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      console.log('✅ Analysis response:', response.data);
+      
+      if (response.data && response.data.success) {
+        const { data } = response.data;
+        displayAnalysisModal(data);
+      } else {
+        showToast('Failed to analyze wardrobe. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('❌ Error analyzing wardrobe:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      showToast('Failed to analyze wardrobe. Please try again.', 'error');
+    }
+  };
+
+  // Display analysis modal function
+  const displayAnalysisModal = (data) => {
+    setAnalysisData(data);
+    setShowAnalysisModal(true);
   };
 
   const fetchClosetItems = async () => {
@@ -1105,10 +1228,7 @@ const UserPage = () => {
             
             <button
               className="nav-btn analyze-btn"
-              onClick={() => {
-                // TODO: Implement wardrobe analysis functionality
-                alert('Wardrobe Analysis feature coming soon!');
-              }}
+              onClick={analyzeWardrobe}
             >
               <span className="btn-icon">📊 </span>
               Analyze Wardrobe
@@ -1174,6 +1294,10 @@ const UserPage = () => {
                   <div className="status-line">
                     <span className="status-label">Selected Bottom:</span>
                     <span className="status-value">{selectedBottomId ? '✓' : 'No bottom selected'}</span>
+                  </div>
+                  <div className="status-line">
+                    <span className="status-label">Selected Shoes:</span>
+                    <span className="status-value">{selectedShoesId ? '✓' : 'No shoes selected'}</span>
                   </div>
                 </div>
               </div>
@@ -1260,7 +1384,7 @@ const UserPage = () => {
                   return (
                     <div
                       key={item.id}
-                      className={`closet-item ${buildMode ? 'build-mode' : ''} ${buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? 'selected' : ''} ${flippedItems.has(item.id) ? 'flipped' : ''}`}
+                      className={`closet-item ${buildMode ? 'build-mode' : ''} ${buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id) || (selectedShoesId && selectedShoesId === item.id)) ? 'selected' : ''} ${flippedItems.has(item.id) ? 'flipped' : ''}`}
                       onClick={() => {
                         if (!buildMode) return;
                         
@@ -1292,8 +1416,15 @@ const UserPage = () => {
                         
                         // Handle shoes selection
                         if ((item.category || item.tag)?.toLowerCase() === 'shoes') {
-                          setSelectedShoesId(item.id);
-                          showToast('Shoes selected!', 'success');
+                          if (selectedShoesId === item.id) {
+                            // Deselect if already selected
+                            setSelectedShoesId(null);
+                            showToast('Shoes deselected!', 'info');
+                          } else {
+                            // Select new shoes
+                            setSelectedShoesId(item.id);
+                            showToast('Shoes selected!', 'success');
+                          }
                         }
                       }}
                     >
@@ -1389,6 +1520,37 @@ const UserPage = () => {
                                   title={item.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
                                 >
                                   {item.is_favorite ? '❤️' : '🤍'}
+                                </button>
+                              )}
+                              
+                              {/* Mark as Worn button for favorite outfits */}
+                              {item.is_favorite && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markExistingOutfitAsWorn(item.id);
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    left: 8,
+                                    background: '#4CAF50',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: 16,
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 10
+                                  }}
+                                  title="Mark as Worn"
+                                >
+                                  ✓
                                 </button>
                               )}
                               
@@ -1580,6 +1742,125 @@ const UserPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Analysis Modal */}
+      {showAnalysisModal && analysisData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: 32,
+            maxWidth: 600,
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 4px 32px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h2 style={{ color: '#7c3aed', marginBottom: 24 }}>Wardrobe Analysis</h2>
+            
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ color: '#374151', marginBottom: 16 }}>Statistics</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Total Items</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#7c3aed' }}>
+                    {analysisData.analysis?.totalItems || 0}
+                  </div>
+                </div>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Never Worn</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>
+                    {analysisData.analysis?.itemsWornZeroTimes || 0}
+                  </div>
+                </div>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Worn Once</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#f59e0b' }}>
+                    {analysisData.analysis?.itemsWornOnce || 0}
+                  </div>
+                </div>
+                <div style={{ background: '#f3f4f6', padding: 12, borderRadius: 8 }}>
+                  <div style={{ fontWeight: 600, color: '#374151' }}>Not Worn in 6 Months</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#dc2626' }}>
+                    {analysisData.analysis?.itemsNotWornIn6Months || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {analysisData.suggestedForDonation && analysisData.suggestedForDonation.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ color: '#374151', marginBottom: 16 }}>
+                  Suggested for Donation ({analysisData.suggestedForDonation.length} items)
+                </h3>
+                <div style={{ maxHeight: 200, overflow: 'auto' }}>
+                  {analysisData.suggestedForDonation.map(item => (
+                    <div key={item.id} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: 12,
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 8,
+                      marginBottom: 8
+                    }}>
+                      <img 
+                        src={item.image_key} 
+                        alt={item.label}
+                        style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }}
+                      />
+                      <span style={{ flex: 1, fontWeight: 600 }}>{item.label}</span>
+                      <span style={{ color: '#6b7280' }}>Worn: {item.wear_count || 0} times</span>
+                      <button 
+                        onClick={() => moveToUnused(item.id)}
+                        style={{
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '6px 12px',
+                          cursor: 'pointer',
+                          fontSize: 12
+                        }}
+                      >
+                        Move to Unused
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowAnalysisModal(false)}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '12px 24px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
