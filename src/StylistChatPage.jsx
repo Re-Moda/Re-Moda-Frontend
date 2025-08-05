@@ -1122,7 +1122,7 @@ const StylistChatPage = () => {
             Back to Closet
           </button>
           <div className="chat-coin-balance">
-            {coinBalance} coins
+            🪙 {coinBalance} coins
           </div>
         </div>
         
@@ -1174,16 +1174,14 @@ const StylistChatPage = () => {
               Clear Chat
             </button>
             <div className="chat-coin-balance">
-              {coinBalance} coins
+             {coinBalance} coins
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area - Flex row for desktop, column for mobile */}
-      <div className="main-content">
-        {/* Left Side - Avatar Section */}
-        <div className="avatar-section">
+      {/* Avatar Section */}
+      <div className="avatar-section">
           <div className="avatar-section-title">
             Your Avatar
           </div>
@@ -1359,7 +1357,6 @@ const StylistChatPage = () => {
 
         </div>
       </div> {/* Close chat-section */}
-      </div> {/* Close main-content */}
 
       {/* Loading overlay */}
       {isLoading && (
