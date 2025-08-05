@@ -101,13 +101,47 @@ const StylistChatPage = () => {
   // MCP Server Integration
   const callMCPServer = async (command) => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const lowerCommand = command.toLowerCase();
     
     try {
-      // Call MCP server endpoint
-      const response = await axios.post(`${API_BASE_URL}/mcp/execute`, {
-        command: command,
-        userId: sessionStorage.getItem('userId') || localStorage.getItem('userId')
-      }, {
+      // Parse command and call appropriate MCP route
+      let endpoint = '';
+      let payload = {};
+      
+      // Move old items (not worn in X months)
+      if (lowerCommand.includes('move') && (lowerCommand.includes('old') || lowerCommand.includes('havent') || lowerCommand.includes('haven\'t') || lowerCommand.includes('not worn'))) {
+        endpoint = '/mcp/move-old-items';
+        payload = { months: 3 }; // Default to 3 months
+      }
+      // Move low wear items
+      else if (lowerCommand.includes('move') && (lowerCommand.includes('least') || lowerCommand.includes('low') || lowerCommand.includes('few'))) {
+        endpoint = '/mcp/move-low-wear-items';
+        payload = { maxWearCount: 3 }; // Default to 3 wears
+      }
+      // Move items by description
+      else if (lowerCommand.includes('move') && (lowerCommand.includes('blue') || lowerCommand.includes('shirt') || lowerCommand.includes('pants'))) {
+        endpoint = '/mcp/move-item-by-description';
+        // Extract description from command
+        const descriptionMatch = command.match(/move.*?(?:that are|that is|with|containing)\s+(.+)/i);
+        const description = descriptionMatch ? descriptionMatch[1] : 'item';
+        payload = { description: description };
+      }
+      // Get donation suggestions
+      else if (lowerCommand.includes('donation') || lowerCommand.includes('suggest')) {
+        endpoint = '/mcp/donation-suggestions';
+        payload = { percentage: 5 };
+      }
+      // Analyze wardrobe
+      else if (lowerCommand.includes('analyze') || lowerCommand.includes('analysis')) {
+        endpoint = '/mcp/analyze-wardrobe';
+        payload = {};
+      }
+      else {
+        throw new Error('Command not recognized');
+      }
+      
+      console.log(`Calling MCP endpoint: ${endpoint}`, payload);
+      const response = await axios.post(`${API_BASE_URL}${endpoint}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -152,6 +186,14 @@ const StylistChatPage = () => {
       }
     } catch (error) {
       console.error('MCP Server failed, falling back to manual commands:', error);
+      // Add a message to indicate MCP server failed
+      const fallbackMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: `🤖 MCP Server not available, using fallback commands...`,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, fallbackMessage]);
     }
     
     // Fallback to manual command handling
@@ -335,6 +377,9 @@ const StylistChatPage = () => {
   const [uploading, setUploading] = useState(false);
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState(null);
   const fileInputRef = useRef();
+
+  // Add state to track current outfit data
+  const [currentOutfitData, setCurrentOutfitData] = useState(null);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -714,6 +759,14 @@ const StylistChatPage = () => {
             localStorage.setItem('generatedAvatarUrl', avatarImage);
           }
           
+          // Store the current outfit data for the buttons to use
+          setCurrentOutfitData({
+            title: recommendation.title,
+            avatarImage: avatarImage,
+            outfit: outfit,
+            clothingItemIds: recommendation.clothingItemIds || []
+          });
+          
           // Also store the outfit info for the UserPage
           localStorage.setItem('lastGeneratedOutfit', JSON.stringify({
             title: recommendation.title,
@@ -778,6 +831,14 @@ const StylistChatPage = () => {
                   localStorage.setItem('generatedAvatarUrl', generatedImage);
                 }
               }
+              
+              // Store the current outfit data for the buttons to use
+              setCurrentOutfitData({
+                title: recommendation.title,
+                avatarImage: generatedImage,
+                outfit: fallbackResponse.data.data,
+                clothingItemIds: [tops[0].id, bottoms[0].id]
+              });
               
               const successMessage = {
                 id: Date.now(),
@@ -1018,6 +1079,150 @@ const StylistChatPage = () => {
 
   // Function to spend coins for AI features
 
+  // Helper function to add outfit to favorites
+  const addOutfitToFavorites = async () => {
+    if (!currentOutfitData || !generatedAvatarUrl) {
+      showToast('No outfit generated yet! Create an outfit first.', 'error');
+      return;
+    }
+
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    let createResponse = null;
+    
+    try {
+      // Create outfit and mark as favorite
+      const outfitData = {
+        title: currentOutfitData.title || "Chat Generated Outfit",
+        clothingItemIds: currentOutfitData.clothingItemIds || [],
+        image_key: generatedAvatarUrl,
+        bucket_name: "clothing-items-remoda",
+        is_favorite: true,
+        is_recurring: false
+      };
+      
+      createResponse = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (createResponse.data.success) {
+        const outfitId = createResponse.data.data.id;
+        
+        // Now mark it as worn to update wear counts
+        const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (wearResponse.data.success) {
+          showToast('❤️ Outfit added to favorites and marked as worn!', 'success');
+          
+          // Refresh outfits on UserPage
+          localStorage.setItem('refreshOutfits', 'true');
+        } else {
+          // If wear endpoint fails, still show success for outfit creation
+          showToast('❤️ Outfit added to favorites!', 'success');
+        }
+      } else {
+        showToast('Failed to add to favorites. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error favoriting outfit:', error);
+      
+      // Try fallback to PATCH endpoint
+      try {
+        if (createResponse?.data?.success) {
+          const outfitId = createResponse.data.data.id;
+          const patchResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (patchResponse.data.success) {
+            showToast('❤️ Outfit added to favorites and marked as worn!', 'success');
+            localStorage.setItem('refreshOutfits', 'true');
+          } else {
+            showToast('❤️ Outfit added to favorites!', 'success');
+          }
+        } else {
+          showToast('Failed to add to favorites. Please try again.', 'error');
+        }
+      } catch (patchError) {
+        console.error('PATCH endpoint also failed:', patchError);
+        showToast('Failed to add to favorites. Please try again.', 'error');
+      }
+    }
+  };
+
+  // Helper function to add outfit to worn (with wear count update)
+  const addOutfitToWorn = async () => {
+    if (!currentOutfitData || !generatedAvatarUrl) {
+      showToast('No outfit generated yet! Create an outfit first.', 'error');
+      return;
+    }
+
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    let createResponse = null;
+    
+    try {
+      // First create the outfit
+      const outfitData = {
+        title: currentOutfitData.title || "Chat Generated Outfit",
+        clothingItemIds: currentOutfitData.clothingItemIds || [],
+        image_key: generatedAvatarUrl,
+        bucket_name: "clothing-items-remoda",
+        is_favorite: false,
+        is_recurring: true
+      };
+      
+      createResponse = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (createResponse.data.success) {
+        const outfitId = createResponse.data.data.id;
+        
+        // Now mark it as worn to update wear counts
+        const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (wearResponse.data.success) {
+          showToast('✓ Outfit added to recurring and marked as worn!', 'success');
+          
+          // Refresh outfits on UserPage
+          localStorage.setItem('refreshOutfits', 'true');
+        } else {
+          // If wear endpoint fails, still show success for outfit creation
+          showToast('✓ Outfit added to recurring!', 'success');
+        }
+      } else {
+        showToast('Failed to add to recurring. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error marking outfit as worn:', error);
+      
+      // Try fallback to PATCH endpoint
+      try {
+        if (createResponse?.data?.success) {
+          const outfitId = createResponse.data.data.id;
+          const patchResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (patchResponse.data.success) {
+            showToast('✓ Outfit added to recurring and marked as worn!', 'success');
+            localStorage.setItem('refreshOutfits', 'true');
+          } else {
+            showToast('✓ Outfit added to recurring!', 'success');
+          }
+        } else {
+          showToast('Failed to add to recurring. Please try again.', 'error');
+        }
+      } catch (patchError) {
+        console.error('PATCH endpoint also failed:', patchError);
+        showToast('Failed to add to recurring. Please try again.', 'error');
+      }
+    }
+  };
+
   return (
     <div className="stylist-chat-page">
       {/* Chat History Sidebar */}
@@ -1104,6 +1309,9 @@ const StylistChatPage = () => {
               setGeneratedAvatarUrl(null);
               localStorage.removeItem('generatedAvatarUrl');
               
+              // Clear current outfit data
+              setCurrentOutfitData(null);
+              
               // Refresh chat sessions list to remove the deleted session
               await loadChatSessions();
               
@@ -1163,6 +1371,9 @@ const StylistChatPage = () => {
                 setGeneratedAvatarUrl(null);
                 localStorage.removeItem('generatedAvatarUrl');
                 
+                // Clear current outfit data
+                setCurrentOutfitData(null);
+                
                 // Refresh chat sessions list to remove the deleted session
                 await loadChatSessions();
                 
@@ -1201,70 +1412,20 @@ const StylistChatPage = () => {
               <>
                 {/* Heart button */}
                 <button
-                  className="avatar-favorite-btn"
-                  onClick={async () => {
-                    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                    try {
-                      // Create outfit and mark as favorite
-                      const outfitData = {
-                        title: "Chat Generated Outfit",
-                        clothingItemIds: [1, 2], // Use first two items as fallback
-                        image_key: generatedAvatarUrl,
-                        bucket_name: "clothing-items-remoda",
-                        is_favorite: true,
-                        is_recurring: false
-                      };
-                      
-                      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
-                        headers: { Authorization: `Bearer ${token}` }
-                      });
-                      
-                      if (response.data.success) {
-                        showToast('❤️ Outfit added to favorites!', 'success');
-                      } else {
-                        showToast('Failed to add to favorites. Please try again.', 'error');
-                      }
-                    } catch (error) {
-                      console.error('Error favoriting outfit:', error);
-                      showToast('Failed to add to favorites. Please try again.', 'error');
-                    }
-                  }}
-                  title="Add to Favourites"
+                  className={`avatar-favorite-btn ${currentOutfitData ? 'available' : 'disabled'}`}
+                  onClick={addOutfitToFavorites}
+                  disabled={!currentOutfitData}
+                  title={currentOutfitData ? "Add to Favourites" : "Create an outfit first"}
                 >
                   ❤️
                 </button>
                 
                 {/* Add to Worn button */}
                 <button
-                  className="avatar-worn-btn"
-                  onClick={async () => {
-                    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                    try {
-                      // Create outfit and mark as recurring
-                      const outfitData = {
-                        title: "Chat Generated Outfit",
-                        clothingItemIds: [1, 2], // Use first two items as fallback
-                        image_key: generatedAvatarUrl,
-                        bucket_name: "clothing-items-remoda",
-                        is_favorite: false,
-                        is_recurring: true
-                      };
-                      
-                      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
-                        headers: { Authorization: `Bearer ${token}` }
-                      });
-                      
-                      if (response.data.success) {
-                        showToast('✓ Outfit added to recurring!', 'success');
-                      } else {
-                        showToast('Failed to add to recurring. Please try again.', 'error');
-                      }
-                    } catch (error) {
-                      console.error('Error marking outfit as recurring:', error);
-                      showToast('Failed to add to recurring. Please try again.', 'error');
-                    }
-                  }}
-                  title="Add to Recurring"
+                  className={`avatar-worn-btn ${currentOutfitData ? 'available' : 'disabled'}`}
+                  onClick={addOutfitToWorn}
+                  disabled={!currentOutfitData}
+                  title={currentOutfitData ? "Add to Recurring & Mark as Worn" : "Create an outfit first"}
                 >
                   ✓
                 </button>

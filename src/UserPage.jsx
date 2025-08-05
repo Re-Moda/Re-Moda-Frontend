@@ -54,7 +54,7 @@ function UserAvatar({ generatedAvatarUrl, avatarUrl, username, uploading, handle
            </div>
          )}
         
-         {/* Recurring button on generated avatar - positioned in top right corner in build mode */}
+         {/* Recurring button on generated avatar - positioned in bottom right corner in build mode */}
          {generatedAvatarUrl && (
            <div className={`avatar-recurring-button ${buildMode ? 'build-mode' : ''}`}>
              <button
@@ -499,12 +499,21 @@ const UserPage = () => {
 
   // Heart button (favorites) functionality
   const handleFavorite = async () => {
+    console.log('🔥 handleFavorite function called!');
+    console.log('🔥 generatedAvatarUrl:', generatedAvatarUrl);
+    console.log('🔥 selectedTopId:', selectedTopId);
+    console.log('🔥 selectedBottomId:', selectedBottomId);
+    console.log('🔥 selectedShoesId:', selectedShoesId);
+    
     if (!generatedAvatarUrl) {
+      console.log('❌ No generatedAvatarUrl, showing error toast');
       showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
       return;
     }
     
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    let createResponse = null;
+    
     try {
       // No duplicate checking - allow all outfits to be added
       console.log('Creating new outfit and marking as favorite...');
@@ -521,18 +530,42 @@ const UserPage = () => {
       
       console.log('Sending outfit data:', outfitData);
       
-      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+      createResponse = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && response.data.success) {
-        console.log('Outfit created and favorited successfully:', response.data.data);
-        console.log('Full response from backend:', response.data);
+      if (createResponse.data && createResponse.data.success) {
+        console.log('Outfit created and favorited successfully:', createResponse.data.data);
+        console.log('Full response from backend:', createResponse.data);
         
-        showToast('❤️ Outfit added to favorites! Check the "Favourites" category to see it.', 'success');
+        // Now update wear counts for all items in the outfit
+        const outfitId = createResponse.data.data.id;
+        console.log('🔄 Calling wear count update endpoint for outfit ID:', outfitId);
+        console.log('🔄 Trying POST endpoint first:', `${API_BASE_URL}/outfits/${outfitId}/wear`);
+        
+        const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('✅ Wear count response:', wearResponse.data);
+        
+        if (wearResponse.data && wearResponse.data.success) {
+          console.log('✅ Outfit marked as worn successfully, wear counts updated');
+          console.log('✅ Updated outfit data:', wearResponse.data.data);
+          showToast('❤️ Outfit added to favorites and marked as worn!', 'success');
+        } else {
+          console.error('❌ Wear count update failed:', wearResponse.data);
+          showToast('❤️ Outfit added to favorites! (Wear count update failed)', 'warning');
+        }
         
         // Refresh outfits from backend
         loadOutfits();
+        
+        // Force refresh analysis data to show updated wear counts
+        console.log('🔄 Refreshing analysis data after outfit creation...');
+        setTimeout(() => {
+          analyzeWardrobe();
+        }, 500);
       } else {
         showToast('Failed to add to favorites. Please try again.', 'error');
       }
@@ -549,12 +582,21 @@ const UserPage = () => {
 
   // Add to Worn functionality
   const handleMarkAsWorn = async () => {
+    console.log('🔥 handleMarkAsWorn function called!');
+    console.log('🔥 generatedAvatarUrl:', generatedAvatarUrl);
+    console.log('🔥 selectedTopId:', selectedTopId);
+    console.log('🔥 selectedBottomId:', selectedBottomId);
+    console.log('🔥 selectedShoesId:', selectedShoesId);
+    
     if (!generatedAvatarUrl) {
+      console.log('❌ No generatedAvatarUrl, showing error toast');
       showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
       return;
     }
     
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    let createResponse = null;
+    
     try {
       // No duplicate checking - allow all outfits to be added
       console.log('Creating new outfit and marking as worn...');
@@ -566,23 +608,47 @@ const UserPage = () => {
         image_key: generatedAvatarUrl, // Use image_key instead of generated_image_url
         bucket_name: "clothing-items-remoda", // Add bucket name
         is_favorite: false,
-        is_recurring: false
+        is_recurring: true
       };
       
       console.log('Sending outfit data:', outfitData);
       
-      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+      createResponse = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && response.data.success) {
-        console.log('Outfit created and marked as worn successfully:', response.data.data);
-        console.log('Full response from backend:', response.data);
+      if (createResponse.data && createResponse.data.success) {
+        console.log('Outfit created and marked as worn successfully:', createResponse.data.data);
+        console.log('Full response from backend:', createResponse.data);
         
-        showToast('✓ Outfit marked as worn!', 'success');
+        // Now update wear counts for all items in the outfit
+        const outfitId = createResponse.data.data.id;
+        console.log('🔄 Calling wear count update endpoint for outfit ID:', outfitId);
+        console.log('🔄 Trying POST endpoint first:', `${API_BASE_URL}/outfits/${outfitId}/wear`);
+        
+        const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('✅ Wear count response:', wearResponse.data);
+        
+        if (wearResponse.data && wearResponse.data.success) {
+          console.log('✅ Outfit marked as worn successfully, wear counts updated');
+          console.log('✅ Updated outfit data:', wearResponse.data.data);
+          showToast('✓ Outfit added to recurring and marked as worn!', 'success');
+        } else {
+          console.error('❌ Wear count update failed:', wearResponse.data);
+          showToast('✓ Outfit added to recurring! (Wear count update failed)', 'warning');
+        }
         
         // Refresh outfits from backend
         loadOutfits();
+        
+        // Force refresh analysis data to show updated wear counts
+        console.log('🔄 Refreshing analysis data after outfit creation...');
+        setTimeout(() => {
+          analyzeWardrobe();
+        }, 500);
       } else {
         showToast('Failed to mark as worn. Please try again.', 'error');
       }
@@ -598,12 +664,21 @@ const UserPage = () => {
 
   // Add to Recurring functionality
   const handleMarkAsRecurring = async () => {
+    console.log('🔥 handleMarkAsRecurring function called!');
+    console.log('🔥 generatedAvatarUrl:', generatedAvatarUrl);
+    console.log('🔥 selectedTopId:', selectedTopId);
+    console.log('🔥 selectedBottomId:', selectedBottomId);
+    console.log('🔥 selectedShoesId:', selectedShoesId);
+    
     if (!generatedAvatarUrl) {
+      console.log('❌ No generatedAvatarUrl, showing error toast');
       showToast('No outfit generated yet! Use "Try On" first to create an outfit.', 'error');
       return;
     }
     
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    let createResponse = null;
+    
     try {
       // No duplicate checking - allow all outfits to be added
       console.log('Creating new outfit and marking as recurring...');
@@ -620,18 +695,42 @@ const UserPage = () => {
       
       console.log('Sending outfit data:', outfitData);
       
-      const response = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
+      createResponse = await axios.post(`${API_BASE_URL}/outfits`, outfitData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && response.data.success) {
-        console.log('Outfit created and marked as recurring successfully:', response.data.data);
-        console.log('Full response from backend:', response.data);
+      if (createResponse.data && createResponse.data.success) {
+        console.log('Outfit created and marked as recurring successfully:', createResponse.data.data);
+        console.log('Full response from backend:', createResponse.data);
         
-        showToast('✓ Outfit added to recurring! Check the "Recurring" category to see it.', 'success');
+        // Now update wear counts for all items in the outfit
+        const outfitId = createResponse.data.data.id;
+        console.log('🔄 Calling wear count update endpoint for outfit ID:', outfitId);
+        console.log('🔄 Trying POST endpoint first:', `${API_BASE_URL}/outfits/${outfitId}/wear`);
+        
+        const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('✅ Wear count response:', wearResponse.data);
+        
+        if (wearResponse.data && wearResponse.data.success) {
+          console.log('✅ Outfit marked as worn successfully, wear counts updated');
+          console.log('✅ Updated outfit data:', wearResponse.data.data);
+          showToast('✓ Outfit added to recurring and marked as worn!', 'success');
+        } else {
+          console.error('❌ Wear count update failed:', wearResponse.data);
+          showToast('✓ Outfit added to recurring! (Wear count update failed)', 'warning');
+        }
         
         // Refresh outfits from backend
         loadOutfits();
+        
+        // Force refresh analysis data to show updated wear counts
+        console.log('🔄 Refreshing analysis data after outfit creation...');
+        setTimeout(() => {
+          analyzeWardrobe();
+        }, 500);
       } else {
         showToast('Failed to add to recurring. Please try again.', 'error');
       }
@@ -797,11 +896,11 @@ const UserPage = () => {
   const markAsWorn = async (outfitId) => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
-      // First, mark the outfit as worn to update wear counts
+      // First, mark the outfit as worn to update wear counts using POST endpoint
       console.log('🔄 Calling wear count update endpoint for outfit ID:', outfitId);
-      console.log('🔄 Endpoint:', `${API_BASE_URL}/outfits/${outfitId}/worn`);
+      console.log('🔄 Trying POST endpoint first:', `${API_BASE_URL}/outfits/${outfitId}/wear`);
       
-      const wearResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+      const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -809,12 +908,13 @@ const UserPage = () => {
       
       if (wearResponse.data && wearResponse.data.success) {
         console.log('✅ Outfit marked as worn successfully, wear counts updated');
+        console.log('✅ Updated outfit data:', wearResponse.data.data);
         showToast('Outfit marked as worn! Wear counts updated.', 'success');
         
         // Refresh closet items to show updated wear counts
         await fetchClosetItems();
         
-        // Then toggle the recurring status
+        // Then toggle the recurring status using PATCH endpoint
         const recurringResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}`, {
           is_recurring: false
         }, {
@@ -831,10 +931,50 @@ const UserPage = () => {
         showToast('Failed to mark outfit as worn. Please try again.', 'error');
       }
     } catch (error) {
-      console.error('❌ Error marking outfit as worn:', error);
+      console.error('❌ POST endpoint failed, trying PATCH endpoint...');
       console.error('❌ Error response:', error.response?.data);
       console.error('❌ Error status:', error.response?.status);
-      showToast('Failed to mark outfit as worn. Please try again.', 'error');
+      
+      // Fallback to PATCH endpoint
+      try {
+        console.log('🔄 Trying PATCH endpoint:', `${API_BASE_URL}/outfits/${outfitId}/worn`);
+        
+        const wearResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('✅ PATCH Wear count response:', wearResponse.data);
+        
+        if (wearResponse.data && wearResponse.data.success) {
+          console.log('✅ Outfit marked as worn successfully via PATCH, wear counts updated');
+          console.log('✅ Updated outfit data:', wearResponse.data.data);
+          showToast('Outfit marked as worn! Wear counts updated.', 'success');
+          
+          // Refresh closet items to show updated wear counts
+          await fetchClosetItems();
+          
+          // Then toggle the recurring status using PATCH endpoint
+          const recurringResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}`, {
+            is_recurring: false
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (recurringResponse.data && recurringResponse.data.success) {
+            console.log('✅ Outfit removed from recurring successfully');
+            // Refresh outfits from backend
+            loadOutfits();
+          }
+        } else {
+          console.error('❌ PATCH Wear count update failed:', wearResponse.data);
+          showToast('Failed to mark outfit as worn. Please try again.', 'error');
+        }
+      } catch (patchError) {
+        console.error('❌ Both POST and PATCH endpoints failed');
+        console.error('❌ PATCH Error response:', patchError.response?.data);
+        console.error('❌ PATCH Error status:', patchError.response?.status);
+        showToast('Failed to mark outfit as worn. Please try again.', 'error');
+      }
     }
   };
 
@@ -843,9 +983,10 @@ const UserPage = () => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
       console.log('🔄 Marking existing outfit as worn for outfit ID:', outfitId);
-      console.log('🔄 Endpoint:', `${API_BASE_URL}/outfits/${outfitId}/worn`);
+      console.log('🔄 Trying POST endpoint first:', `${API_BASE_URL}/outfits/${outfitId}/wear`);
       
-      const wearResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+      // Try POST endpoint first
+      const wearResponse = await axios.post(`${API_BASE_URL}/outfits/${outfitId}/wear`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -853,6 +994,7 @@ const UserPage = () => {
       
       if (wearResponse.data && wearResponse.data.success) {
         console.log('✅ Existing outfit marked as worn successfully, wear counts updated');
+        console.log('✅ Updated outfit data:', wearResponse.data.data);
         showToast('Outfit marked as worn! Wear counts updated.', 'success');
         
         // Refresh closet items to show updated wear counts
@@ -865,10 +1007,40 @@ const UserPage = () => {
         showToast('Failed to mark outfit as worn. Please try again.', 'error');
       }
     } catch (error) {
-      console.error('❌ Error marking existing outfit as worn:', error);
+      console.error('❌ POST endpoint failed, trying PATCH endpoint...');
       console.error('❌ Error response:', error.response?.data);
       console.error('❌ Error status:', error.response?.status);
-      showToast('Failed to mark outfit as worn. Please try again.', 'error');
+      
+      // Fallback to PATCH endpoint
+      try {
+        console.log('🔄 Trying PATCH endpoint:', `${API_BASE_URL}/outfits/${outfitId}/worn`);
+        
+        const wearResponse = await axios.patch(`${API_BASE_URL}/outfits/${outfitId}/worn`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('✅ PATCH Wear count response:', wearResponse.data);
+        
+        if (wearResponse.data && wearResponse.data.success) {
+          console.log('✅ Existing outfit marked as worn successfully via PATCH, wear counts updated');
+          console.log('✅ Updated outfit data:', wearResponse.data.data);
+          showToast('Outfit marked as worn! Wear counts updated.', 'success');
+          
+          // Refresh closet items to show updated wear counts
+          await fetchClosetItems();
+          
+          // Refresh outfits from backend
+          loadOutfits();
+        } else {
+          console.error('❌ PATCH Wear count update failed:', wearResponse.data);
+          showToast('Failed to mark outfit as worn. Please try again.', 'error');
+        }
+      } catch (patchError) {
+        console.error('❌ Both POST and PATCH endpoints failed');
+        console.error('❌ PATCH Error response:', patchError.response?.data);
+        console.error('❌ PATCH Error status:', patchError.response?.status);
+        showToast('Failed to mark outfit as worn. Please try again.', 'error');
+      }
     }
   };
 
@@ -876,20 +1048,37 @@ const UserPage = () => {
   const testWearCountEndpoint = async () => {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     try {
-      console.log('🧪 Testing wear count endpoint...');
-      console.log('🧪 Endpoint:', `${API_BASE_URL}/outfits/1/worn`);
+      console.log('�� Testing wear count endpoints...');
+      console.log('🧪 Trying POST endpoint first:', `${API_BASE_URL}/outfits/1/wear`);
       
-      const response = await axios.patch(`${API_BASE_URL}/outfits/1/worn`, {}, {
+      // Try POST endpoint first
+      const response = await axios.post(`${API_BASE_URL}/outfits/1/wear`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('✅ Wear count endpoint test response:', response.data);
-      showToast('Wear count endpoint is working!', 'success');
+      console.log('✅ POST Wear count endpoint test response:', response.data);
+      showToast('POST wear count endpoint is working!', 'success');
     } catch (error) {
-      console.error('❌ Wear count endpoint test failed:', error);
+      console.error('❌ POST endpoint failed, trying PATCH...');
       console.error('❌ Error status:', error.response?.status);
       console.error('❌ Error data:', error.response?.data);
-      showToast(`Wear count endpoint failed: ${error.response?.status || 'Unknown error'}`, 'error');
+      
+      // Try PATCH endpoint as fallback
+      try {
+        console.log('🧪 Trying PATCH endpoint:', `${API_BASE_URL}/outfits/1/worn`);
+        
+        const patchResponse = await axios.patch(`${API_BASE_URL}/outfits/1/worn`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('✅ PATCH Wear count endpoint test response:', patchResponse.data);
+        showToast('PATCH wear count endpoint is working!', 'success');
+      } catch (patchError) {
+        console.error('❌ Both POST and PATCH endpoints failed');
+        console.error('❌ PATCH Error status:', patchError.response?.status);
+        console.error('❌ PATCH Error data:', patchError.response?.data);
+        showToast(`Both wear count endpoints failed: POST(${error.response?.status || 'Unknown'}), PATCH(${patchError.response?.status || 'Unknown'})`, 'error');
+      }
     }
   };
 
@@ -900,6 +1089,10 @@ const UserPage = () => {
       // First refresh closet items to get latest wear count data
       console.log('🔄 Refreshing closet items before analysis...');
       await fetchClosetItems();
+      
+      // Add a small delay to ensure backend has processed the wear count updates
+      console.log('⏳ Waiting for backend to process wear count updates...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       console.log('🔄 Running wardrobe analysis...');
       const response = await axios.post(
@@ -912,6 +1105,10 @@ const UserPage = () => {
       
       if (response.data && response.data.success) {
         const { data } = response.data;
+        console.log('📊 Analysis data received:', data);
+        console.log('📊 itemsWornOnce:', data.analysis?.itemsWornOnce);
+        console.log('📊 itemsWornZeroTimes:', data.analysis?.itemsWornZeroTimes);
+        console.log('📊 itemsNotWornIn6Months:', data.analysis?.itemsNotWornIn6Months);
         displayAnalysisModal(data);
       } else {
         showToast('Failed to analyze wardrobe. Please try again.', 'error');
