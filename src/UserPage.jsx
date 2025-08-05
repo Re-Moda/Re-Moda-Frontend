@@ -1099,29 +1099,40 @@ const UserPage = () => {
                 }
               }}
             >
-              <span className="btn-icon">{buildMode ? '🏠' : '✨'}</span>
+              <span className="btn-icon">{buildMode ? '🏠 ' : '✨ '}</span>
               {buildMode ? 'Back to My Closet' : 'Build your own (10 coins)'}
             </button>
             
             <button
-              className="nav-btn coins-btn"
-              onClick={() => window.location.href = "/thrift"}
+              className="nav-btn analyze-btn"
+              onClick={() => {
+                // TODO: Implement wardrobe analysis functionality
+                alert('Wardrobe Analysis feature coming soon!');
+              }}
             >
-              <span className="btn-icon">🪙</span>
-              Get More Coins
+              <span className="btn-icon">📊 </span>
+              Analyze Wardrobe
             </button>
             
             <button
               className="nav-btn chat-btn"
               onClick={() => window.location.href = '/stylist-chat'}
             >
-              <span className="btn-icon">💬</span>
+              <span className="btn-icon">💬 </span>
               Chat w/ ur stylist
+            </button>
+            
+            <button
+              className="nav-btn coins-btn"
+              onClick={() => window.location.href = "/thrift"}
+            >
+              <span className="btn-icon">🪙 </span>
+              Get More Coins
             </button>
             
             {/* Coin Balance */}
             <div className="coin-balance">
-              <span className="coin-icon">🪙</span>
+              <span className="coin-icon">🪙 </span>
               <span className="coin-amount">{Math.max(0, coinBalance)} coins</span>
             </div>
           </div>
@@ -1152,15 +1163,34 @@ const UserPage = () => {
         <div className="content-container">
           {/* Closet Category Filter - Horizontal at top */}
           <div className={`category-filter ${buildMode ? 'build-mode' : ''}`}>
-            {closetCategories.map(cat => (
-              <button
-                key={cat.key}
-                onClick={() => setSelectedCategory(cat.key)}
-                className={`category-btn ${selectedCategory === cat.key ? 'active' : ''}`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {/* Build Status Popup - shows selection status (left side in build mode) */}
+            {buildMode && (
+              <div className="build-status-popup">
+                <div className="selection-status">
+                  <div className="status-line">
+                    <span className="status-label">Selected Top:</span>
+                    <span className="status-value">{selectedTopId ? '✓' : 'No top selected'}</span>
+                  </div>
+                  <div className="status-line">
+                    <span className="status-label">Selected Bottom:</span>
+                    <span className="status-value">{selectedBottomId ? '✓' : 'No bottom selected'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Categories (right side in build mode) */}
+            <div className="categories-container">
+              {closetCategories.map(cat => (
+                <button
+                  key={cat.key}
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={`category-btn ${selectedCategory === cat.key ? 'active' : ''}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
             
             {/* Try On button - at the end of categories */}
             {buildMode && (
@@ -1233,8 +1263,34 @@ const UserPage = () => {
                       className={`closet-item ${buildMode ? 'build-mode' : ''} ${buildMode && ((selectedTopId && selectedTopId === item.id) || (selectedBottomId && selectedBottomId === item.id)) ? 'selected' : ''} ${flippedItems.has(item.id) ? 'flipped' : ''}`}
                       onClick={() => {
                         if (!buildMode) return;
-                        if ((item.category || item.tag)?.toLowerCase() === 'top') setSelectedTopId(item.id);
-                        if ((item.category || item.tag)?.toLowerCase() === 'bottom') setSelectedBottomId(item.id);
+                        
+                        // Handle top selection/deselection
+                        if ((item.category || item.tag)?.toLowerCase() === 'top') {
+                          if (selectedTopId === item.id) {
+                            // Deselect if already selected
+                            setSelectedTopId(null);
+                            showToast('Top deselected!', 'info');
+                          } else {
+                            // Select new top
+                            setSelectedTopId(item.id);
+                            showToast('Top selected!', 'success');
+                          }
+                        }
+                        
+                        // Handle bottom selection/deselection
+                        if ((item.category || item.tag)?.toLowerCase() === 'bottom') {
+                          if (selectedBottomId === item.id) {
+                            // Deselect if already selected
+                            setSelectedBottomId(null);
+                            showToast('Bottom deselected!', 'info');
+                          } else {
+                            // Select new bottom
+                            setSelectedBottomId(item.id);
+                            showToast('Bottom selected!', 'success');
+                          }
+                        }
+                        
+                        // Handle shoes selection
                         if ((item.category || item.tag)?.toLowerCase() === 'shoes') {
                           setSelectedShoesId(item.id);
                           showToast('Shoes selected!', 'success');
@@ -1447,16 +1503,7 @@ const UserPage = () => {
                                   }}
                                 />
                               )}
-                              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>
-                                {(() => {
-                                  const label = item.label || item.title || '';
-                                  const category = item.category || item.tag || '';
-                                  if (label && category) {
-                                    return `${label.charAt(0).toUpperCase() + label.slice(1)} ${category}`;
-                                  }
-                                  return label || item.title;
-                                })()}
-                              </div>
+
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

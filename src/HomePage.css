@@ -1,4 +1,4 @@
- body {
+.homepage-container {
  margin: 0;
  font-family: 'Poppins', sans-serif;
  background: linear-gradient(to right, #dfe7fd, #fef6ff);
@@ -1386,7 +1386,7 @@ box-shadow: 0 4px 12px rgba(203, 161, 255, 0.3);
 }
 
 /* Ensure page content fills the viewport */
-body {
+.homepage-container {
  margin: 0;
  padding: 0;
  overflow-x: hidden;
@@ -1769,26 +1769,7 @@ footer p {
 }
 
 /* Global styles to remove any unwanted borders/lines */
-html, body {
- margin: 0;
- padding: 0;
- overflow-x: hidden;
- min-height: 100vh;
- height: 100%;
- width: 100%;
- display: flex;
- flex-direction: column;
- border: none;
- outline: none;
- box-sizing: border-box;
-}
-
-html {
- height: 100%;
- width: 100%;
-}
-
-body {
+.homepage-container {
  margin: 0;
  padding: 0;
  overflow-x: hidden;
@@ -1819,7 +1800,7 @@ footer {
 
  /* Mobile specific border removal and margin fixes */
 @media (max-width: 430px) {
- body {
+ .homepage-container {
  border: none;
  outline: none;
  margin: 0;
